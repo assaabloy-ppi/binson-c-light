@@ -119,7 +119,7 @@ potentially many function calls. For example:
 It should be possible for the application code to check for errors *once*
 after a serialization (or deserialization). Checking for errors after every line
 of code is cumbersome and makes the code harder to read. This is likely implemented
-by checking "w.error" is similar for every binson_writer_x function (for the serialization
+by checking "w.error" or similar for every binson_writer_x function (for the serialization
 case):
 
     void binson_write_integer_field(binson_writer* w, ...) 
