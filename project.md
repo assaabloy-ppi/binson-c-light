@@ -47,7 +47,7 @@ Project information, scope, requirements:
 * The software should build and run on Linux Ubuntu + GCC.
 * High code quality is important.
 * The code should follow the field ordering notes below in this document.
-* See the "Byte array size" section.
+* See the "Output buffer size" section.
 * See the "Error handling" section.
 
 Feel free to discuss the requirements; they will likely evolve during the project.
@@ -71,11 +71,11 @@ the fields are ordered correctly and does not need to check for this.
 To reduce code size and complexity, field order checks by the serialize could be 
 omitted if needed.
 
-Byte array size
----------------
+Output buffer size
+------------------
 
-When a Binson object is serialized to a byte array, there is the issue of array
-size. The resulting length in bytes is typically not known in advance.
+When a Binson object is serialized to an output byte array, there is the issue 
+of array size. The resulting length in bytes is typically not known in advance.
 The binson-c-light serializer should check that is it not writing beond the
 boundary of the array.
 
@@ -99,6 +99,9 @@ the feature; code does not suggest any specific naming approach etc):
     buffer size and run the code again. This time the size is known in advance.
     */
     
+If buffer_size == 0, the code is used to calculate the result size. No actual
+data will be written to buffer in this case.
+
 Error handling
 --------------
 
