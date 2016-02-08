@@ -1,4 +1,4 @@
-Date: 2016-02-05
+Date: 2016-02-08
 Author: Frans Lundberg, ASSA ABLOY AB
 
 
@@ -30,7 +30,7 @@ Project information, scope, requirements:
   and use raw UTF-8 bytes when serializing.
 * Deliverables, the following files (filenames may be changed if appropriate):
      - binson_light.c           // source code
-     - binson_light.h           // header file
+     - binson_light.h           // header file(s), possibly two versions, one for Linux and one for Arduino Nan
      - README.md                // information
      - binson_light_test.c      // main method with some tests
      - binson_light_examples.c  // example code
@@ -38,9 +38,8 @@ Project information, scope, requirements:
 * The library binson-c-light is used by including
   the C-source (binson_light.c, binson_light.h) directly in the application project.
 * The C code is designed for small devices. It should work on Arduino Nano.
-* There are natural limitations on the Arduino Nano, for example int64_t is
-  not supported, so on Arduino Nano, support for 64-bit integer 
-  (and 64-bit float, I guess) is not required.
+* There are natural limitations on the Arduino Nano, for example 64-bit floating point numbers
+  are not supported, so for Arduino, Binson type "double" does not need to be supported.
 * The source should build with simple GCC commands described in README.md. No build framework or
   test framework should be used.
 * The software should run on Arduino Nano.
