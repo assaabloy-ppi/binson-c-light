@@ -11,19 +11,19 @@ void binson_write_integer( binson_writer *pw, uint64_t ival );
 #ifdef WITH_FP
 void binson_write_double( binson_writer *pw, double dval );
 #endif
-void binson_write_string( binson_writer *pw, char* pstr );
-static void _binson_write_name( binson_writer *pw, char* pstr, uint8_t is_pgmspace );
-void binson_write_name( binson_writer *pw, char* pstr );
-void binson_write_string_with_len( binson_writer *pw, char* pstr, binson_tok_size len );
-void binson_write_bytes( binson_writer *pw, uint8_t* pbuf, binson_tok_size len );
+void binson_write_string( binson_writer *pw, const char* pstr );
+static void _binson_write_name( binson_writer *pw, const char* pstr, uint8_t is_pgmspace );
+void binson_write_name( binson_writer *pw, const char* pstr );
+void binson_write_string_with_len( binson_writer *pw, const char* pstr, binson_tok_size len );
+void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size len );
 
 /* function versions to interpret pointer arguments as program space pointers (flash location) */
-//#if defined AVR8 && defined WITH_AVR_PGMSPACE								  
-void binson_write_string_p( binson_writer *pw, char* pstr );
-void binson_write_name_p( binson_writer *pw, char* pstr );
-void binson_write_string_with_len_p( binson_writer *pw, char* pstr, binson_tok_size len );
-void binson_write_bytes_p( binson_writer *pw, uint8_t* pbuf, binson_tok_size len );
-//#endif
+#if defined AVR8 && defined WITH_AVR_PGMSPACE								  
+void binson_write_string_p( binson_writer *pw, const char* pstr );
+void binson_write_name_p( binson_writer *pw, const char* pstr );
+void binson_write_string_with_len_p( binson_writer *pw, const char* pstr, binson_tok_size len );
+void binson_write_bytes_p( binson_writer *pw, const uint8_t* pbuf, binson_tok_size len );
+#endif
 
 
 static inline void	_binson_io_reset( binson_io *io );
@@ -101,6 +101,7 @@ static inline void	_binson_io_purge( binson_io *io )
 /* */
 static inline uint8_t	_binson_io_write( binson_io *io, const uint8_t *psrc, binson_size sz, uint8_t is_pgmspace )
 {
+  UNUSED(is_pgmspace); /* unused for non-avr8 arch. used to suppress compiler warning */
   uint8_t res = BINSON_ID_UNKNOWN;   /* zero result mean success */
   io->counter += sz;
   
@@ -252,19 +253,19 @@ void binson_write_double( binson_writer *pw, double dval )
 #endif
 
 /* */
-void binson_write_string( binson_writer *pw, char* pstr )
+void binson_write_string( binson_writer *pw, const char* pstr )
 {
   binson_write_string_with_len( pw, pstr, strlen(pstr) );  
 }
 
 /* */
-void binson_write_name( binson_writer *pw, char* pstr )
+void binson_write_name( binson_writer *pw, const char* pstr )
 {
   _binson_write_name( pw, pstr, 0);
 } 
 
 /* */
-static void _binson_write_name( binson_writer *pw, char* pstr, uint8_t is_pgmspace )
+static void _binson_write_name( binson_writer *pw, const char* pstr, uint8_t is_pgmspace )
 {
   pw->tmp_val.bbuf_val.bptr = (uint8_t *)pstr; 
   pw->tmp_val.bbuf_val.bsize = is_pgmspace? strlen_P(pstr) : strlen(pstr);  ///!!
@@ -289,7 +290,7 @@ static void _binson_write_name( binson_writer *pw, char* pstr, uint8_t is_pgmspa
 }
 
 /* */
-void binson_write_string_with_len( binson_writer *pw, char* pstr, binson_tok_size len )
+void binson_write_string_with_len( binson_writer *pw, const char* pstr, binson_tok_size len )
 {
   pw->tmp_val.bbuf_val.bptr = (uint8_t *)pstr; 
   pw->tmp_val.bbuf_val.bsize = len; 
@@ -297,28 +298,28 @@ void binson_write_string_with_len( binson_writer *pw, char* pstr, binson_tok_siz
 }
 
 /* */
-void binson_write_bytes( binson_writer *pw, uint8_t* pbuf, binson_tok_size len )
+void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size len )
 {
-  pw->tmp_val.bbuf_val.bptr = pbuf; 
+  pw->tmp_val.bbuf_val.bptr = (uint8_t *)pbuf; 
   pw->tmp_val.bbuf_val.bsize = len; 
  _binson_writer_write_token( pw, BINSON_ID_BYTES, &pw->tmp_val, 0 );  
 }
 
-//#if defined AVR8 && defined WITH_AVR_PGMSPACE								  
+#if defined AVR8 && defined WITH_AVR_PGMSPACE								  
 /* */
-void binson_write_string_p( binson_writer *pw, char* pstr )
+void binson_write_string_p( binson_writer *pw, const char* pstr )
 {
   binson_write_string_with_len_p( pw, pstr, strlen_P(pstr) /*sizeof(pstr)-1*/ ); /* check this carefully */
 }
 
 /* */
-void binson_write_name_p( binson_writer *pw, char* pstr )
+void binson_write_name_p( binson_writer *pw, const char* pstr )
 {
   _binson_write_name( pw, pstr, 1 );  
 }
 
 /* */
-void binson_write_string_with_len_p( binson_writer *pw, char* pstr, binson_tok_size len )
+void binson_write_string_with_len_p( binson_writer *pw, const char* pstr, binson_tok_size len )
 {
   pw->tmp_val.bbuf_val.bptr = (uint8_t *)pstr; 
   pw->tmp_val.bbuf_val.bsize = len; 
@@ -326,13 +327,13 @@ void binson_write_string_with_len_p( binson_writer *pw, char* pstr, binson_tok_s
 }
 
 /* */
-void binson_write_bytes_p( binson_writer *pw, uint8_t* pbuf, binson_tok_size len )
+void binson_write_bytes_p( binson_writer *pw, const uint8_t* pbuf, binson_tok_size len )
 {
-  pw->tmp_val.bbuf_val.bptr = pbuf; 
+  pw->tmp_val.bbuf_val.bptr = (uint8_t *)pbuf; 
   pw->tmp_val.bbuf_val.bsize = len; 
  _binson_writer_write_token( pw, BINSON_ID_BYTES, &pw->tmp_val, 1 );   
 }
-//#endif
+#endif
 
 /*======================== UTIL ===============================*/
 

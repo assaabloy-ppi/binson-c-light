@@ -298,15 +298,16 @@ void USART_Init(unsigned int ubrr)
   UCSR0C = (1<<UCSZ00) | (1 << UCSZ01);
 }
 
+/*
 void USART_Transmit(unsigned char data )
 {
-  /* Wait for empty transmit buffer */
+  / Wait for empty transmit buffer /
   while ( !( UCSR0A & (1<<UDRE0)) )
   {
     _delay_ms(1);
   }
   UDR0 = data;
-}
+}*/
 
 void uart_putchar(char c, FILE *stream)
 {
@@ -316,13 +317,7 @@ void uart_putchar(char c, FILE *stream)
   loop_until_bit_is_set(UCSR0A, UDRE0);
   UDR0 = c;
 }
-
-FILE uart_str = FDEV_SETUP_STREAM(uart_putchar, NULL, _FDEV_SETUP_WRITE);
-
 #endif
-
-
-
 
 /*=====================*/
 int main(void)
@@ -336,6 +331,7 @@ int main(void)
  binson_writer_init( &w, buf, sizeof(buf), NULL );
  
 #ifdef AVR8 
+ FILE uart_str = FDEV_SETUP_STREAM(uart_putchar, NULL, _FDEV_SETUP_WRITE);
  USART_Init(MYUBRR);
  stdout = stderr = &uart_str;
  

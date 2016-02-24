@@ -60,6 +60,7 @@ typedef uint16_t binson_size;       /* type to keep raw data block sizes and off
 #define CLEARBIT(x,b) 		(x &= ~(1<<b))
 #define CHECKBIT(x,b) 		(x & (1<<b))
 
+#define UNUSED(x) (void)(x)   /* for unused variable warning suppression */
 /*********************************************/  
 #define BINSON_ID_UNKNOWN        0x00  
 #define BINSON_ID_OBJ_BEGIN      0x40
@@ -163,8 +164,8 @@ void binson_writer_init( binson_writer *pw, uint8_t *pbuf, binson_size buf_size,
 void binson_writer_reset( binson_writer *pw );
 void binson_writer_purge( binson_writer *pw );
 
-inline binson_size binson_writer_get_counter( binson_writer *pw ) { return pw->io.counter; };
-inline uint8_t binson_writer_state( binson_writer *pw, uint8_t bitmask ) { return CHECKBITMASK(pw->state_flags, bitmask ); };
+inline binson_size binson_writer_get_counter( binson_writer *pw ) { return pw->io.counter; }
+inline uint8_t binson_writer_state( binson_writer *pw, uint8_t bitmask ) { return CHECKBITMASK(pw->state_flags, bitmask ); }
 
 
 void binson_write_object_begin( binson_writer *pw );
@@ -176,62 +177,24 @@ void binson_write_integer( binson_writer *pw, uint64_t ival );
 #ifdef WITH_FP
 void binson_write_double( binson_writer *pw, double dval );
 #endif
-void binson_write_string( binson_writer *pw, char* pstr );
-void binson_write_name( binson_writer *pw, char* pstr );
-void binson_write_string_with_len( binson_writer *pw, char* pstr, binson_tok_size len );
-void binson_write_bytes( binson_writer *pw, uint8_t* pbuf, binson_tok_size len );
+void binson_write_string( binson_writer *pw, const char* pstr );
+void binson_write_name( binson_writer *pw, const char* pstr );
+void binson_write_string_with_len( binson_writer *pw, const char* pstr, binson_tok_size len );
+void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size len );
 
 /* function versions to interpret pointer arguments as program space pointers (flash location) */
-//#if defined AVR8 && defined WITH_AVR_PGMSPACE								  
-void binson_write_string_p( binson_writer *pw, char* pstr );
-void binson_write_name_p( binson_writer *pw, char* pstr );
-void binson_write_string_with_len_p( binson_writer *pw, char* pstr, binson_tok_size len );
-void binson_write_bytes_p( binson_writer *pw, uint8_t* pbuf, binson_tok_size len );
-//#endif
-
-/*
-#define binson_writer_write_token( pwriter, token_type, val )  _binson_writer_write_token(pwriter, token_type, val, 0);
-#define binson_write_name( pwriter, pstr )	( pwriter->tmp_val.str = pstr; \
-						  _binson_writer_write_token(pwriter, BINSON_ID_STRING, pwriter->tmp_val, 0); )    
-#define binson_write_object_begin( pwriter )	 _binson_writer_write_token(pwriter, BINSON_ID_OBJ_BEGIN, NULL, 0);
-#define binson_write_object_end( pwriter )	 _binson_writer_write_token(pwriter, BINSON_ID_OBJ_END, NULL, 0);
-#define binson_write_array_begin( pwriter )	 _binson_writer_write_token(pwriter, BINSON_ID_ARRAY_BEGIN, NULL, 0);
-#define binson_write_array_end( pwriter )	 _binson_writer_write_token(pwriter, BINSON_ID_ARRAY_END, NULL, 0);  
-#define binson_write_boolean( pwriter, bval )	( pwriter->tmp_val.bool_val = bval; \
-							  _binson_writer_write_token(pwriter, BINSON_ID_BOOLEAN, pwriter->tmp_val, 0); )
-#define binson_write_integer( pwriter, ival )	( pwriter->tmp_val.int_val = ival; \
-						  _binson_writer_write_token(pwriter, BINSON_ID_INTEGER, pwriter->tmp_val, 0); )
-#ifdef WITH_FP
-  #define binson_write_double( pwriter, dval )		( pwriter->tmp_val.double_val = dval; \
-							  _binson_writer_write_token(pwriter, BINSON_ID_DOUBLE, pwriter->tmp_val, 0); )
-#endif  
-#define binson_write_string( pwriter, pstr )		( pwriter->tmp_val.str = pstr; \
-							  _binson_writer_write_token(pwriter, BINSON_ID_STRING, pwriter->tmp_val, 0); )
-#define binson_write_string_with_len( pwriter, pstr, len )	( pwriter->tmp_val.str = NULL; \
-								  pwriter->tmp_val.bbuf_val.bptr = pstr; \
-								  pwriter->tmp_val.bbuf_val.bsize = len; \
-								  _binson_writer_write_token(pwriter, BINSON_ID_STRING, pwriter->tmp_val, 0); ) 
-#define binson_write_bytes( pwriter, pbuf, buf_size )	( pwriter->tmp_val.str = NULL; \
-								  pwriter->tmp_val.bbuf_val.bptr = pbuf; \
-								  pwriter->tmp_val.bbuf_val.bsize = buf_size; \
-								  _binson_writer_write_token(pwriter, BINSON_ID_BYTES, pwriter->tmp_val, 0); )
-	
-/ function versions to interpret pointer arguments as program space pointers (flash location) /
 #if defined AVR8 && defined WITH_AVR_PGMSPACE								  
-  #define binson_writer_write_token_p( pwriter, token_type, val )  _binson_writer_write_token(pwriter, token_type, val, 1);  
-  #define binson_write_name_p( pwriter, pstr )	( pwriter->tmp_val.str = pstr; \
-						  _binson_writer_write_token(pwriter, BINSON_ID_STRING, pwriter->tmp_val, 1); )
-  #define binson_write_string_with_len_p( pwriter, pstr, len )	( pwriter->tmp_val.str = NULL; \
-								  pwriter->tmp_val.bbuf_val.bptr = pstr; \
-								  pwriter->tmp_val.bbuf_val.bsize = len; \
-								  _binson_writer_write_token(pwriter, BINSON_ID_STRING, pwriter->tmp_val, 1); ) 							  
-  #define binson_write_string_p( pwriter, pstr )	( binson_write_string_with_len_p( pwriter, pstr, sizeof(*pstr)-1 ) )
-  #define binson_write_bytes_p( pwriter, pbuf, buf_size )	( pwriter->tmp_val.str = NULL; \
-								  pwriter->tmp_val.bbuf_val.bptr = pbuf; \
-								  pwriter->tmp_val.bbuf_val.bsize = buf_size; \
-								  _binson_writer_write_token(pwriter, BINSON_ID_BYTES, pwriter->tmp_val, 1); )
-#endif								  
-*/
+void binson_write_string_p( binson_writer *pw, const char* pstr );
+void binson_write_name_p( binson_writer *pw, const char* pstr );
+void binson_write_string_with_len_p( binson_writer *pw, const char* pstr, binson_tok_size len );
+void binson_write_bytes_p( binson_writer *pw, const uint8_t* pbuf, binson_tok_size len );
+#else
+#define binson_write_string_p		binson_write_string
+#define binson_write_name_p		binson_write_name
+#define binson_write_string_with_len_p	binson_write_string_with_len
+#define binson_write_bytes_p		binson_write_bytes
+#endif
+
 /*======================== PARSER ===============================*/
 
 /*  event structure is used to pass  found token details to user's callback function */
