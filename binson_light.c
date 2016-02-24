@@ -18,34 +18,29 @@ void binson_write_string_with_len( binson_writer *pw, char* pstr, binson_tok_siz
 void binson_write_bytes( binson_writer *pw, uint8_t* pbuf, binson_tok_size len );
 
 /* function versions to interpret pointer arguments as program space pointers (flash location) */
-#if defined AVR8 && defined WITH_AVR_PGMSPACE								  
+//#if defined AVR8 && defined WITH_AVR_PGMSPACE								  
 void binson_write_string_p( binson_writer *pw, char* pstr );
 void binson_write_name_p( binson_writer *pw, char* pstr );
 void binson_write_string_with_len_p( binson_writer *pw, char* pstr, binson_tok_size len );
 void binson_write_bytes_p( binson_writer *pw, uint8_t* pbuf, binson_tok_size len );
-#endif
+//#endif
 
 
 static inline void	_binson_io_reset( binson_io *io );
 static inline void      _binson_io_init( binson_io *io, uint8_t *pbuf, binson_size size );
 static inline void	_binson_io_purge( binson_io *io );
-static inline uint8_t	_binson_io_write( binson_io *io, const uint8_t *psrc, binson_size sz );
-static inline uint8_t	_binson_io_write_byte( binson_io *io, const uint8_t src_byte );
+static inline uint8_t	_binson_io_write( binson_io *io, const uint8_t *psrc, binson_size sz, uint8_t is_pgmspace );
+static inline uint8_t	_binson_io_write_byte( binson_io *io, const uint8_t src_byte, uint8_t is_pgmspace );
  
 static uint8_t		_binson_util_pack_integer( int64_t val, uint8_t *pbuf, uint8_t force_64bit );
 static int64_t		_binson_util_unpack_integer( uint8_t *pbuf, uint8_t bsize );
-static inline uint8_t	_binson_util_next_pow2( uint8_t n );
+static inline uint8_t	_binson_util_sizeof_idx( uint8_t n );
 
 static inline int8_t  	_binson_util_cmp_bbuf2bbuf( bbuf *bb1, bbuf *bb2 );
 
 // int8_t binson_util_cmp_str2bbuf   (+ _p version)
 // int8_t binson_util_cmp_bbuf2bbuf
 // uint8_t binson_util_cpy_bbuf2str
-
-#ifndef WITH_LIBC
-static inline uint8_t* memcpy( uint8_t *dst, uint8_t const *src, binson_size len );
-static inline binson_tok_size strlen( const char *src );
-#endif
 
 /*======================== binson_writer methods ===============================*/
 
@@ -54,15 +49,18 @@ void binson_writer_init( binson_writer *pw, uint8_t *pbuf, binson_size buf_size,
 {
   memset( pw, 0, sizeof(binson_writer) );
 #ifdef WITH_WRITER_CB  
-  pw->cb = cb;
-#endif    
+  if (pbuf && buf_size)   /* do not flood callback with BINSON_ID_BUF_FULL events */
+    pw->cb = cb;
+#endif     
   _binson_io_init( &(pw->io), pbuf, buf_size );
-}
+} 
 
 /* */
 void binson_writer_reset( binson_writer *pw )
 {
   binson_writer_purge( pw );
+  _binson_io_reset( &(pw->io) );
+  
   CLEARBITMASK( pw->state_flags, BINSON_WRITER_STATE_MASK_ERROR );  /* clear all error flags */
 }
 
@@ -101,7 +99,7 @@ static inline void	_binson_io_purge( binson_io *io )
 }
 
 /* */
-static inline uint8_t	_binson_io_write( binson_io *io, const uint8_t *psrc, binson_size sz )
+static inline uint8_t	_binson_io_write( binson_io *io, const uint8_t *psrc, binson_size sz, uint8_t is_pgmspace )
 {
   uint8_t res = BINSON_ID_UNKNOWN;   /* zero result mean success */
   io->counter += sz;
@@ -111,16 +109,25 @@ static inline uint8_t	_binson_io_write( binson_io *io, const uint8_t *psrc, bins
   
   if (io->buf_used + sz > io->buf_size - BINSON_CFG_BUF_GUARD_LIMIT)
     res = BINSON_ID_BUF_GUARD;
+
+  if (io->pbuf) {
+#if defined AVR8 && defined WITH_AVR_PGMSPACE	  
+    if (is_pgmspace)
+      memcpy_P( io->pbuf + io->buf_used, psrc, sz );  /* interpret psrc as program-space pointer */
+    else
+#endif    
+      memcpy( io->pbuf + io->buf_used, psrc, sz );
+  }
   
-  memcpy( io->pbuf, psrc, sz );
+  io->buf_used += sz;
   
   return res;
 }
 
 /* */
-static inline uint8_t	_binson_io_write_byte( binson_io *io, const uint8_t src_byte )
+static inline uint8_t	_binson_io_write_byte( binson_io *io, const uint8_t src_byte, uint8_t is_pgmspace )
 {
-  return _binson_io_write( io, &src_byte, 1 );    
+  return _binson_io_write( io, &src_byte, 1, is_pgmspace );    
 }
 
 /*
@@ -141,17 +148,17 @@ binson_tok_size  _binson_writer_write_token( binson_writer *pwriter, const uint8
     case BINSON_ID_DOUBLE:
 #endif                  
     {
-      uint8_t pack_buf[ sizeof(int64_t) + 2];
+      uint8_t pack_buf[ sizeof(int64_t) + 1];
       
 #ifdef WITH_FP      
-      isize = pack_buf[1] = _binson_util_pack_integer( val->int_val, &(pack_buf[2]), (token_type == BINSON_ID_DOUBLE)? 1:0 );      
-      pack_buf[0] = token_type + (token_type == BINSON_ID_DOUBLE)? 0 : _binson_util_next_pow2( isize ); 
+      isize = _binson_util_pack_integer( val->int_val, &(pack_buf[1]), (token_type == BINSON_ID_DOUBLE)? 1:0 );      
+      pack_buf[0] = token_type + ((token_type == BINSON_ID_DOUBLE)? 0 : _binson_util_sizeof_idx( isize )); 
 #else
-      isize = pack_buf[1] = _binson_util_pack_integer( val->int_val, &(pack_buf[2]), 0 );      
-      pack_buf[0] = token_type + _binson_util_next_pow2( isize ); //calculate binson INTEGER signature      
+      isize = _binson_util_pack_integer( val->int_val, &(pack_buf[1]), 0 );      
+      pack_buf[0] = token_type + _binson_util_sizeof_idx( isize ); //calculate binson INTEGER signature      
 #endif            
-      isize += 2;      
-      res = _binson_io_write( &(pwriter->io), pack_buf, isize );     
+      isize++;      
+      res = _binson_io_write( &(pwriter->io), pack_buf, isize, 0 );     
      
       break;
     }
@@ -165,8 +172,8 @@ binson_tok_size  _binson_writer_write_token( binson_writer *pwriter, const uint8
       tval.int_val = tok_size;
       
        // single level of recursuion is not a crime, but still stack size must be monitored
-      isize = _binson_writer_write_token( pwriter, token_type+1, &tval, is_pgmspace);
-      res = _binson_io_write( &(pwriter->io), val->bbuf_val.bptr, tok_size );
+      isize = _binson_writer_write_token( pwriter, token_type+1, &tval, is_pgmspace); /* writes sig+len*/
+      res = _binson_io_write( &(pwriter->io), val->bbuf_val.bptr, tok_size, is_pgmspace );  /* writes payload: string (without \0) or bytearray */
       isize += tok_size;
       break;
     }
@@ -177,11 +184,11 @@ binson_tok_size  _binson_writer_write_token( binson_writer *pwriter, const uint8
     case BINSON_ID_ARRAY_END:
     case BINSON_ID_TRUE:
     case BINSON_ID_FALSE:
-      res = _binson_io_write_byte( &(pwriter->io), token_type );
+      res = _binson_io_write_byte( &(pwriter->io), token_type, 0 );
       break;
 
     case BINSON_ID_BOOLEAN:
-      res = _binson_io_write_byte( &(pwriter->io), val->bool_val? BINSON_ID_TRUE : BINSON_ID_FALSE );
+      res = _binson_io_write_byte( &(pwriter->io), val->bool_val? BINSON_ID_TRUE : BINSON_ID_FALSE, 0 );
       break;    
       
     default:
@@ -260,7 +267,7 @@ void binson_write_name( binson_writer *pw, char* pstr )
 static void _binson_write_name( binson_writer *pw, char* pstr, uint8_t is_pgmspace )
 {
   pw->tmp_val.bbuf_val.bptr = (uint8_t *)pstr; 
-  pw->tmp_val.bbuf_val.bsize = strlen(pstr); 
+  pw->tmp_val.bbuf_val.bsize = is_pgmspace? strlen_P(pstr) : strlen(pstr);  ///!!
   _binson_writer_write_token( pw, BINSON_ID_STRING, &pw->tmp_val, is_pgmspace );
   
 #ifdef WITH_ORDER_CHECKS
@@ -297,11 +304,11 @@ void binson_write_bytes( binson_writer *pw, uint8_t* pbuf, binson_tok_size len )
  _binson_writer_write_token( pw, BINSON_ID_BYTES, &pw->tmp_val, 0 );  
 }
 
-#if defined AVR8 && defined WITH_AVR_PGMSPACE								  
+//#if defined AVR8 && defined WITH_AVR_PGMSPACE								  
 /* */
 void binson_write_string_p( binson_writer *pw, char* pstr )
 {
-  binson_write_string_with_len_p( pw, pstr, sizeof(*pstr)-1 ); /* check this carefully */
+  binson_write_string_with_len_p( pw, pstr, strlen_P(pstr) /*sizeof(pstr)-1*/ ); /* check this carefully */
 }
 
 /* */
@@ -325,7 +332,7 @@ void binson_write_bytes_p( binson_writer *pw, uint8_t* pbuf, binson_tok_size len
   pw->tmp_val.bbuf_val.bsize = len; 
  _binson_writer_write_token( pw, BINSON_ID_BYTES, &pw->tmp_val, 1 );   
 }
-#endif
+//#endif
 
 /*======================== UTIL ===============================*/
 
@@ -356,7 +363,7 @@ static uint8_t	_binson_util_pack_integer( int64_t val, uint8_t *pbuf, uint8_t fo
   const int32_t bound16 = ((int32_t)1U) << 15;
   const int64_t bound32 = ((int64_t)1ULL) << 31;
 
-#if  __BYTE_ORDER == __LITTLE_ENDIAN
+#if __BYTE_ORDER == __LITTLE_ENDIAN
   
 #ifdef WITH_FP
   if (force_64bit)
@@ -413,15 +420,15 @@ static uint8_t	_binson_util_pack_integer( int64_t val, uint8_t *pbuf, uint8_t fo
 #endif
 }
 
-/* round argument to next power of 2. work for n<=8 */
-static inline uint8_t	_binson_util_next_pow2( uint8_t n )
+/* convert sizeof argument to index in constant list */
+static inline uint8_t	_binson_util_sizeof_idx( uint8_t n )
 {
- if (n == 3)
-   return 4;
- else if (n > 4)
-   return 8;
- else
+ if (n < 4)
    return n;
+ else if (n == 4)
+   return 3;
+ else
+   return 4;
 }
 
 /* compare two bytearrays in lexicographical sense.  return value same as  strcmp() */
@@ -445,42 +452,4 @@ static inline int8_t  	_binson_util_cmp_bbuf2bbuf( bbuf *bb1, bbuf *bb2 )
   while (c1 == c2);
   
   return (c1 - c2) == 0? (bb1->bptr - bb2->bptr) : (c1 - c2);  
-}
-
-
-#ifndef WITH_LIBC
-/* our version of memcpy */
-static inline uint8_t* memcpy( uint8_t *dst, uint8_t const *src, binson_size len )
-{
-    //char * pDst = (char *) dst;
-    //char const * pSrc = (char const *) src;
-
-    while (len--)
-    {
-        *dst++ = *src++;
-    }
-    return (dst);
-}
-
-/* our version of strlen */
-static inline binson_tok_size strlen( const char *src )
-{
-  binson_tok_size len = 0;
-  
-  while ( *(src + len) )
-    len++;
-  
-  return len;
-}
-#endif
-
-int dbg(void)
-{
-  /*int64_t val = 777;
-  uint8_t buf[10];
-
-   val += _binson_util_pack_integer( val, buf, 0);
-   val += _binson_util_unpack_integer( buf, 8 );
-   */
-   return  1;//(int)val;//
 }

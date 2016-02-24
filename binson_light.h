@@ -11,20 +11,14 @@ extern "C" {
 #define WITH_WRITER_CB	   /* use callback for writer to notify user when warnings/errors happened */
 #define WITH_AVR_PGMSPACE  /* build routines to access strings/data in flash memory for avr8 arch */
 #define WITH_FP 	   /* with floating point support */
-#define WITH_LIBC	   /* use AVR Libc routines to process memory, strings, etc */
 #define WITH_ORDER_CHECKS  /* build code for key lexicographic order tracking  */
 
 /*****************************************/  
 /*********** lib configuration ***************/
 #include <stdint.h>  
+#include <string.h>
 
-#ifdef WITH_LIBC
-  #include <string.h>
-#else
-  #define NULL ((void *) 0)
-#endif  
-
-#if AVR8
+#ifdef AVR8
   #define  __LITTLE_ENDIAN	1234
   #define  __BYTE_ORDER 	__LITTLE_ENDIAN
   #undef WITH_FP  
@@ -34,6 +28,8 @@ extern "C" {
 #else
   #include <endian.h>
   #define PROGMEM	 /* empty declaration modifier */
+  #define strlen_P	strlen
+  #define memcpy_P	memcpy
 #endif
 
 /* free bytes threshold to begin generating BINSON_ID_BUF_GUARD events */
@@ -94,8 +90,8 @@ typedef uint16_t binson_size;       /* type to keep raw data block sizes and off
 #define BINSON_ID_BYTES_16       0x19
 #define BINSON_ID_BYTES_32       0x1a  
   
-#define BINSON_ID_BEGIN		 0xe0
-#define BINSON_ID_END		 0xe1  
+#define BINSON_ID_BEGIN		 0xe0  /* used in notification callback */
+#define BINSON_ID_END		 0xe1  /* used in notification callback */
 
 #define BINSON_ID_WRONG_ORDER	 0xfc  /* some fields are out of lexicographic order */
 #define BINSON_ID_BUF_GUARD	 0xfd
@@ -142,7 +138,8 @@ typedef uint8_t (*binson_writer_cb)(binson_writer *obj, uint8_t event_id, void* 
 #define BINSON_WRITER_MODE_BIT_IGNORE_ERR	0x01  /* Bit 0. Continue processing, ignoring error flags in state_flag */
 
 #define BINSON_WRITER_STATE_BIT_WRONG_ORDER	0x01  /* bit 0 */
-#define BINSON_WRITER_STATE_MASK_ERROR		0x07  /* bits 0-3 */
+#define BINSON_WRITER_STATE_BIT_BUF_FULL	0x02  /* bit 1 */
+#define BINSON_WRITER_STATE_MASK_ERROR		0x07  /* bits 0-2 */
 
 typedef struct _binson_writer {
 
@@ -166,6 +163,10 @@ void binson_writer_init( binson_writer *pw, uint8_t *pbuf, binson_size buf_size,
 void binson_writer_reset( binson_writer *pw );
 void binson_writer_purge( binson_writer *pw );
 
+inline binson_size binson_writer_get_counter( binson_writer *pw ) { return pw->io.counter; };
+inline uint8_t binson_writer_state( binson_writer *pw, uint8_t bitmask ) { return CHECKBITMASK(pw->state_flags, bitmask ); };
+
+
 void binson_write_object_begin( binson_writer *pw );
 void binson_write_object_end( binson_writer *pw );
 void binson_write_array_begin( binson_writer *pw );
@@ -181,12 +182,12 @@ void binson_write_string_with_len( binson_writer *pw, char* pstr, binson_tok_siz
 void binson_write_bytes( binson_writer *pw, uint8_t* pbuf, binson_tok_size len );
 
 /* function versions to interpret pointer arguments as program space pointers (flash location) */
-#if defined AVR8 && defined WITH_AVR_PGMSPACE								  
+//#if defined AVR8 && defined WITH_AVR_PGMSPACE								  
 void binson_write_string_p( binson_writer *pw, char* pstr );
 void binson_write_name_p( binson_writer *pw, char* pstr );
 void binson_write_string_with_len_p( binson_writer *pw, char* pstr, binson_tok_size len );
 void binson_write_bytes_p( binson_writer *pw, uint8_t* pbuf, binson_tok_size len );
-#endif
+//#endif
 
 /*
 #define binson_writer_write_token( pwriter, token_type, val )  _binson_writer_write_token(pwriter, token_type, val, 0);
@@ -266,9 +267,6 @@ uint8_t      binson_parser_init( binson_parser *pparser );
 
 /*======================== UTIL ===============================*/
 
-
-//debug
-//int dbg(void);
 //uint8_t	_binson_io_write_byte( binson_io *io, const uint8_t src_byte );
 binson_tok_size  _binson_writer_write_token( binson_writer *pwriter, const uint8_t token_type, binson_value *val, const uint8_t is_pgmspace);
 
