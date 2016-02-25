@@ -267,7 +267,7 @@ uint8_t  test_writer_progmem( binson_writer *w )
 #endif
 
 
-#if defined AVR8 && defined WITH_AVR_PGMSPACE	
+#if defined AVR8
  #ifndef F_CPU
     #define 16000000UL
 #endif // F_CPU

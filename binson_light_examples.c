@@ -57,8 +57,10 @@ binson_size gen_msg( binson_writer *pw, uint16_t cid )
 
   // {"cid":123, "cmd":"req", "data":"0x008100ff00"}
   binson_write_object_begin( pw );    
+
   binson_write_name_p( pw, name_cid );
   binson_write_integer( pw, cid );
+
   binson_write_name_p( pw, name_cmd );  
   binson_write_string_p( pw, cmd_reqest );
   binson_write_name_p( pw, name_data );    

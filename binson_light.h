@@ -27,19 +27,30 @@ extern "C" {
   #endif
 #else
   #include <endian.h>
+#endif
+
+#if !defined AVR8 || !defined WITH_AVR_PGMSPACE
   #define PROGMEM	 /* empty declaration modifier */
   #define strlen_P	strlen
   #define memcpy_P	memcpy
 #endif
 
 /* free bytes threshold to begin generating BINSON_ID_BUF_GUARD events */
+#ifndef BINSON_CFG_BUF_GUARD_LIMIT
 #define BINSON_CFG_BUF_GUARD_LIMIT  16		
+#endif
 
 /* If guard threshold is reached allows to send BINSON_ID_BUF_GUARD event to user callback, */
 /* and if callback returns nonzero lbrary clears buffer leaving all counters and state unchanged */
 /* If build with WITH_WRITER_CB this also valid for writer */
+#ifndef BINSON_CFG_BUF_GUARD_ALLOW_PURGE
 #define BINSON_CFG_BUF_GUARD_ALLOW_PURGE  1	
+#endif
 
+/* Maximum nesting level of binson OBJECT's/ARRAY's */
+#ifndef BINSON_CFG_MAX_DEPTH
+#define BINSON_CFG_MAX_DEPTH	3
+#endif
 
 typedef uint8_t  binson_tok_size;   /* type to keep token length (key and value are separate tokens). uint8_t limits it to 255 bytes */
 typedef uint16_t binson_size;       /* type to keep raw data block sizes and offsets */
@@ -156,7 +167,8 @@ typedef struct _binson_writer {
 #endif  
 
 #ifdef WITH_ORDER_CHECKS
-  bbuf prev_key;  /* used to store prevoius key written to verify lexicographic ordering in realtime */
+  uint8_t cur_depth;
+  bbuf    key_stack[BINSON_CFG_MAX_DEPTH];  /* used to store prevoius key written to verify lexicographic ordering in realtime */
 #endif     
 } _binson_writer;
   

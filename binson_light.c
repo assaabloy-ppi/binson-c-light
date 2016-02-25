@@ -25,7 +25,6 @@ void binson_write_string_with_len_p( binson_writer *pw, const char* pstr, binson
 void binson_write_bytes_p( binson_writer *pw, const uint8_t* pbuf, binson_tok_size len );
 #endif
 
-
 static inline void	_binson_io_reset( binson_io *io );
 static inline void      _binson_io_init( binson_io *io, uint8_t *pbuf, binson_size size );
 static inline void	_binson_io_purge( binson_io *io );
@@ -36,6 +35,7 @@ static uint8_t		_binson_util_pack_integer( int64_t val, uint8_t *pbuf, uint8_t f
 static int64_t		_binson_util_unpack_integer( uint8_t *pbuf, uint8_t bsize );
 static inline uint8_t	_binson_util_sizeof_idx( uint8_t n );
 
+static inline void  	_binson_util_cpy_bbuf( bbuf *dst, bbuf *src );
 static inline int8_t  	_binson_util_cmp_bbuf2bbuf( bbuf *bb1, bbuf *bb2 );
 
 // int8_t binson_util_cmp_str2bbuf   (+ _p version)
@@ -47,6 +47,8 @@ static inline int8_t  	_binson_util_cmp_bbuf2bbuf( bbuf *bb1, bbuf *bb2 );
 /* */
 void binson_writer_init( binson_writer *pw, uint8_t *pbuf, binson_size buf_size, binson_writer_cb cb )
 {
+  UNUSED(cb);
+  
   memset( pw, 0, sizeof(binson_writer) );
 #ifdef WITH_WRITER_CB  
   if (pbuf && buf_size)   /* do not flood callback with BINSON_ID_BUF_FULL events */
@@ -70,8 +72,9 @@ void binson_writer_purge( binson_writer *pw )
   _binson_io_purge( &(pw->io) );
   
 #ifdef WITH_ORDER_CHECKS
-  pw->prev_key.bptr = 0;
-  pw->prev_key.bsize = 0;  
+  pw->cur_depth = 0;
+  pw->key_stack[0].bptr = 0;
+  pw->key_stack[0].bsize = 0;
 #endif    
 }
 
@@ -138,6 +141,7 @@ binson_tok_size  _binson_writer_write_token( binson_writer *pwriter, const uint8
 {
   uint8_t 		res;  // write result
   binson_tok_size 	isize = 1;  // default is to write single byte
+  UNUSED(res);    
       
   switch (token_type)
   {
@@ -180,9 +184,9 @@ binson_tok_size  _binson_writer_write_token( binson_writer *pwriter, const uint8
     }
       
     case BINSON_ID_OBJ_BEGIN:
+    case BINSON_ID_ARRAY_BEGIN:              
     case BINSON_ID_OBJ_END:
-    case BINSON_ID_ARRAY_BEGIN:
-    case BINSON_ID_ARRAY_END:
+    case BINSON_ID_ARRAY_END:	
     case BINSON_ID_TRUE:
     case BINSON_ID_FALSE:
       res = _binson_io_write_byte( &(pwriter->io), token_type, 0 );
@@ -209,24 +213,38 @@ binson_tok_size  _binson_writer_write_token( binson_writer *pwriter, const uint8
 void binson_write_object_begin( binson_writer *pw )
 {
   _binson_writer_write_token( pw, BINSON_ID_OBJ_BEGIN, NULL, 0);
+#ifdef WITH_ORDER_CHECKS  
+  pw->cur_depth++;
+  memset( &pw->key_stack[pw->cur_depth], 0, sizeof(bbuf) );
+#endif  
 }
 
 /* */
 void binson_write_object_end( binson_writer *pw )
 {
   _binson_writer_write_token( pw, BINSON_ID_OBJ_END, NULL, 0);  
+#ifdef WITH_ORDER_CHECKS  
+  pw->cur_depth--;  
+#endif    
 }
 
 /* */
 void binson_write_array_begin( binson_writer *pw )
 {
-  _binson_writer_write_token( pw, BINSON_ID_ARRAY_BEGIN, NULL, 0);    
+  _binson_writer_write_token( pw, BINSON_ID_ARRAY_BEGIN, NULL, 0);   
+#ifdef WITH_ORDER_CHECKS  
+  pw->cur_depth++;  
+  memset( &pw->key_stack[pw->cur_depth], 0, sizeof(bbuf) );
+#endif    
 }
 
 /* */
 void binson_write_array_end( binson_writer *pw )
 {
-  _binson_writer_write_token( pw, BINSON_ID_ARRAY_END, NULL, 0);      
+  _binson_writer_write_token( pw, BINSON_ID_ARRAY_END, NULL, 0);  
+#ifdef WITH_ORDER_CHECKS  
+  pw->cur_depth--;  
+#endif    
 }
 
 /* */
@@ -272,7 +290,7 @@ static void _binson_write_name( binson_writer *pw, const char* pstr, uint8_t is_
   _binson_writer_write_token( pw, BINSON_ID_STRING, &pw->tmp_val, is_pgmspace );
   
 #ifdef WITH_ORDER_CHECKS
-  if ( _binson_util_cmp_bbuf2bbuf( &(pw->prev_key), &(pw->tmp_val.bbuf_val) ) > 0)
+  if ( _binson_util_cmp_bbuf2bbuf( &pw->key_stack[pw->cur_depth], &(pw->tmp_val.bbuf_val) ) >= 0)
   {
       /* set error flag */
       SETBITMASK( pw->state_flags, BINSON_WRITER_STATE_BIT_WRONG_ORDER );
@@ -283,9 +301,8 @@ static void _binson_write_name( binson_writer *pw, const char* pstr, uint8_t is_
 #endif    
   }
 
-  // try to optimize later
-  pw->prev_key.bptr = pw->tmp_val.bbuf_val.bptr;
-  pw->prev_key.bsize = pw->tmp_val.bbuf_val.bsize;  
+  /* store last key name for current depth level */
+  _binson_util_cpy_bbuf( &pw->key_stack[pw->cur_depth], &pw->tmp_val.bbuf_val );
 #endif   
 }
 
@@ -430,6 +447,13 @@ static inline uint8_t	_binson_util_sizeof_idx( uint8_t n )
    return 3;
  else
    return 4;
+}
+
+/* */
+static inline void _binson_util_cpy_bbuf( bbuf *dst, bbuf *src )
+{
+  dst->bptr = src->bptr;
+  dst->bsize = src->bsize;
 }
 
 /* compare two bytearrays in lexicographical sense.  return value same as  strcmp() */
