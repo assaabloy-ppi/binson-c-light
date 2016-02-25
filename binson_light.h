@@ -1,3 +1,31 @@
+/*
+ *  Copyright (c) 2015 ASSA ABLOY AB
+ *
+ *  This file is part of binson-c-light, BINSON serialization format library in C.
+ *
+ *  binson-c-light is free software; you can redistribute it and/or modify it under
+ *  the terms of the GNU Lesser General Public License (LGPL) as published
+ *  by the Free Software Foundation; either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  As a special exception, the Contributors give you permission to link
+ *  this library with independent modules to produce an executable,
+ *  regardless of the license terms of these independent modules, and to
+ *  copy and distribute the resulting executable under terms of your choice,
+ *  provided that you also meet, for each linked independent module, the
+ *  terms and conditions of the license of that module. An independent
+ *  module is a module which is not derived from or based on this library.
+ *  If you modify this library, you must extend this exception to your
+ *  version of the library.
+ *
+ *  binson-c-light is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ *  FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef BINSON_LIGHT_H_INCLUDED
 #define BINSON_LIGHT_H_INCLUDED
@@ -49,7 +77,7 @@ extern "C" {
 
 /* Maximum nesting level of binson OBJECT's/ARRAY's */
 #ifndef BINSON_CFG_MAX_DEPTH
-#define BINSON_CFG_MAX_DEPTH	3
+#define BINSON_CFG_MAX_DEPTH	5
 #endif
 
 typedef uint8_t  binson_tok_size;   /* type to keep token length (key and value are separate tokens). uint8_t limits it to 255 bytes */
@@ -112,8 +140,13 @@ typedef uint16_t binson_size;       /* type to keep raw data block sizes and off
 
 typedef struct bbuf    /* buffer pointer + size aggregation */ 
 {    
-  uint8_t          	*bptr;
+  uint8_t              *bptr;
   binson_tok_size	bsize;
+
+#if defined AVR8 && defined WITH_AVR_PGMSPACE	
+  uint8_t               is_pgm;
+#endif  
+  
 } bbuf;
 
 typedef union binson_value {
@@ -125,7 +158,6 @@ typedef union binson_value {
     double    double_val;
 #endif
     
-    //char *str;
     bbuf bbuf_val;
     
 } binson_value;  
@@ -143,9 +175,7 @@ typedef struct binson_io {
 /*======================== WRITER ===============================*/
 
 typedef struct _binson_writer binson_writer; /* forward decl */
-//#ifdef WITH_WRITER_CB
 typedef uint8_t (*binson_writer_cb)(binson_writer *obj, uint8_t event_id, void* param );
-//#endif
 
 #define BINSON_WRITER_MODE_BIT_IGNORE_ERR	0x01  /* Bit 0. Continue processing, ignoring error flags in state_flag */
 
@@ -155,12 +185,12 @@ typedef uint8_t (*binson_writer_cb)(binson_writer *obj, uint8_t event_id, void* 
 
 typedef struct _binson_writer {
 
-  uint8_t   	mode_flags;  
+  //uint8_t   	mode_flags;  
   uint8_t   	state_flags;  /* state bitflags: errors, etc */
   
   binson_io     io;  /* smart buffer */
   
-  binson_value tmp_val;		/* used to simplify passing simple types to/from meta functions */
+  binson_value  tmp_val;		/* used to simplify passing simple types to/from meta functions */
   
 #ifdef WITH_WRITER_CB
   binson_writer_cb  cb;   
@@ -168,7 +198,7 @@ typedef struct _binson_writer {
 
 #ifdef WITH_ORDER_CHECKS
   uint8_t cur_depth;
-  bbuf    key_stack[BINSON_CFG_MAX_DEPTH];  /* used to store prevoius key written to verify lexicographic ordering in realtime */
+  bbuf    key_stack[ BINSON_CFG_MAX_DEPTH ];  /* used to store prevoius key written to verify lexicographic ordering in realtime */
 #endif     
 } _binson_writer;
   
@@ -178,7 +208,6 @@ void binson_writer_purge( binson_writer *pw );
 
 inline binson_size binson_writer_get_counter( binson_writer *pw ) { return pw->io.counter; }
 inline uint8_t binson_writer_state( binson_writer *pw, uint8_t bitmask ) { return CHECKBITMASK(pw->state_flags, bitmask ); }
-
 
 void binson_write_object_begin( binson_writer *pw );
 void binson_write_object_end( binson_writer *pw );
@@ -194,7 +223,7 @@ void binson_write_name( binson_writer *pw, const char* pstr );
 void binson_write_string_with_len( binson_writer *pw, const char* pstr, binson_tok_size len );
 void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size len );
 
-/* function versions to interpret pointer arguments as program space pointers (flash location) */
+/* AVR8 only. "_p" functions are interpreting pointer argument as 'program space' pointer (flash) */
 #if defined AVR8 && defined WITH_AVR_PGMSPACE								  
 void binson_write_string_p( binson_writer *pw, const char* pstr );
 void binson_write_name_p( binson_writer *pw, const char* pstr );
@@ -227,23 +256,19 @@ typedef uint8_t (*binson_parser_cb)(binson_parser *obj, void* param );
 
 struct binson_parser {
 
-  uint8_t   	mode_flags;  
+  //uint8_t   	mode_flags;  
   uint8_t   	state_flags;
   
-  binson_io     io;  /* smart buffer */
+  binson_io    	io;  /* smart buffer */
   
   binson_event      event;
   binson_parser_cb  cb;    /* single callback used to pass all found type of tokens to lib's user */
-
 };
 
 uint8_t      binson_parser_init( binson_parser *pparser );
 //#define      binson_parser_purge_buf( pparser )  (pparser->buf_used = 0);
 
 /*======================== UTIL ===============================*/
-
-//uint8_t	_binson_io_write_byte( binson_io *io, const uint8_t src_byte );
-binson_tok_size  _binson_writer_write_token( binson_writer *pwriter, const uint8_t token_type, binson_value *val, const uint8_t is_pgmspace);
 
 #ifdef __cplusplus
 }

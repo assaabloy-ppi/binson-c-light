@@ -1,7 +1,37 @@
+/*
+ *  Copyright (c) 2015 ASSA ABLOY AB
+ *
+ *  This file is part of binson-c-light, BINSON serialization format library in C.
+ *
+ *  binson-c-light is free software; you can redistribute it and/or modify it under
+ *  the terms of the GNU Lesser General Public License (LGPL) as published
+ *  by the Free Software Foundation; either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  As a special exception, the Contributors give you permission to link
+ *  this library with independent modules to produce an executable,
+ *  regardless of the license terms of these independent modules, and to
+ *  copy and distribute the resulting executable under terms of your choice,
+ *  provided that you also meet, for each linked independent module, the
+ *  terms and conditions of the license of that module. An independent
+ *  module is a module which is not derived from or based on this library.
+ *  If you modify this library, you must extend this exception to your
+ *  version of the library.
+ *
+ *  binson-c-light is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ *  FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "binson_light.h"
 
 /*======================== Forward declarations  ===============================*/
+static inline void _binson_write_name( binson_writer *pw, const char* pstr, uint8_t is_pgmspace );
+
 void binson_write_object_begin( binson_writer *pw );
 void binson_write_object_end( binson_writer *pw );
 void binson_write_array_begin( binson_writer *pw );
@@ -12,12 +42,11 @@ void binson_write_integer( binson_writer *pw, uint64_t ival );
 void binson_write_double( binson_writer *pw, double dval );
 #endif
 void binson_write_string( binson_writer *pw, const char* pstr );
-static void _binson_write_name( binson_writer *pw, const char* pstr, uint8_t is_pgmspace );
 void binson_write_name( binson_writer *pw, const char* pstr );
 void binson_write_string_with_len( binson_writer *pw, const char* pstr, binson_tok_size len );
 void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size len );
 
-/* function versions to interpret pointer arguments as program space pointers (flash location) */
+/* AVR8 only. "_p" functions are interpreting pointer argument as 'program space' pointer (flash) */
 #if defined AVR8 && defined WITH_AVR_PGMSPACE								  
 void binson_write_string_p( binson_writer *pw, const char* pstr );
 void binson_write_name_p( binson_writer *pw, const char* pstr );
@@ -36,10 +65,13 @@ static int64_t		_binson_util_unpack_integer( uint8_t *pbuf, uint8_t bsize );
 static inline uint8_t	_binson_util_sizeof_idx( uint8_t n );
 
 static inline void  	_binson_util_cpy_bbuf( bbuf *dst, bbuf *src );
-static inline int8_t  	_binson_util_cmp_bbuf2bbuf( bbuf *bb1, bbuf *bb2 );
+static inline int16_t  	_binson_util_cmp_bbuf2bbuf( bbuf *bb1, bbuf *bb2 );
+
+#ifdef WITH_ORDER_CHECKS
+static inline void 	_binson_util_writer_track_keyorder( binson_writer *pw, int8_t dir_sign );
+#endif
 
 // int8_t binson_util_cmp_str2bbuf   (+ _p version)
-// int8_t binson_util_cmp_bbuf2bbuf
 // uint8_t binson_util_cpy_bbuf2str
 
 /*======================== binson_writer methods ===============================*/
@@ -77,7 +109,6 @@ void binson_writer_purge( binson_writer *pw )
   pw->key_stack[0].bsize = 0;
 #endif    
 }
-
 
 /*======================== IO (smart buffer helpers) ===========================*/
 /* */
@@ -134,9 +165,7 @@ static inline uint8_t	_binson_io_write_byte( binson_io *io, const uint8_t src_by
   return _binson_io_write( io, &src_byte, 1, is_pgmspace );    
 }
 
-/*
- * 
- */
+/* */
 binson_tok_size  _binson_writer_write_token( binson_writer *pwriter, const uint8_t token_type, binson_value *val, const uint8_t is_pgmspace)
 {
   uint8_t 		res;  // write result
@@ -153,7 +182,7 @@ binson_tok_size  _binson_writer_write_token( binson_writer *pwriter, const uint8
     case BINSON_ID_DOUBLE:
 #endif                  
     {
-      uint8_t pack_buf[ sizeof(int64_t) + 1];
+      uint8_t pack_buf[ sizeof(int64_t) + 1 ];
       
 #ifdef WITH_FP      
       isize = _binson_util_pack_integer( val->int_val, &(pack_buf[1]), (token_type == BINSON_ID_DOUBLE)? 1:0 );      
@@ -214,8 +243,7 @@ void binson_write_object_begin( binson_writer *pw )
 {
   _binson_writer_write_token( pw, BINSON_ID_OBJ_BEGIN, NULL, 0);
 #ifdef WITH_ORDER_CHECKS  
-  pw->cur_depth++;
-  memset( &pw->key_stack[pw->cur_depth], 0, sizeof(bbuf) );
+  _binson_util_writer_track_keyorder( pw, +1 );
 #endif  
 }
 
@@ -224,7 +252,7 @@ void binson_write_object_end( binson_writer *pw )
 {
   _binson_writer_write_token( pw, BINSON_ID_OBJ_END, NULL, 0);  
 #ifdef WITH_ORDER_CHECKS  
-  pw->cur_depth--;  
+  _binson_util_writer_track_keyorder( pw, -1 );
 #endif    
 }
 
@@ -233,8 +261,7 @@ void binson_write_array_begin( binson_writer *pw )
 {
   _binson_writer_write_token( pw, BINSON_ID_ARRAY_BEGIN, NULL, 0);   
 #ifdef WITH_ORDER_CHECKS  
-  pw->cur_depth++;  
-  memset( &pw->key_stack[pw->cur_depth], 0, sizeof(bbuf) );
+  _binson_util_writer_track_keyorder( pw, +1 );
 #endif    
 }
 
@@ -243,7 +270,7 @@ void binson_write_array_end( binson_writer *pw )
 {
   _binson_writer_write_token( pw, BINSON_ID_ARRAY_END, NULL, 0);  
 #ifdef WITH_ORDER_CHECKS  
-  pw->cur_depth--;  
+  _binson_util_writer_track_keyorder( pw, -1 );
 #endif    
 }
 
@@ -286,10 +313,13 @@ void binson_write_name( binson_writer *pw, const char* pstr )
 static void _binson_write_name( binson_writer *pw, const char* pstr, uint8_t is_pgmspace )
 {
   pw->tmp_val.bbuf_val.bptr = (uint8_t *)pstr; 
-  pw->tmp_val.bbuf_val.bsize = is_pgmspace? strlen_P(pstr) : strlen(pstr);  ///!!
+  pw->tmp_val.bbuf_val.bsize = is_pgmspace? strlen_P(pstr) : strlen(pstr); 
+#if defined AVR8 && defined WITH_AVR_PGMSPACE								  
+  pw->tmp_val.bbuf_val.is_pgm = is_pgmspace;
+#endif  
   _binson_writer_write_token( pw, BINSON_ID_STRING, &pw->tmp_val, is_pgmspace );
   
-#ifdef WITH_ORDER_CHECKS
+#ifdef WITH_ORDER_CHECKS  
   if ( _binson_util_cmp_bbuf2bbuf( &pw->key_stack[pw->cur_depth], &(pw->tmp_val.bbuf_val) ) >= 0)
   {
       /* set error flag */
@@ -326,7 +356,7 @@ void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size
 /* */
 void binson_write_string_p( binson_writer *pw, const char* pstr )
 {
-  binson_write_string_with_len_p( pw, pstr, strlen_P(pstr) /*sizeof(pstr)-1*/ ); /* check this carefully */
+  binson_write_string_with_len_p( pw, pstr, strlen_P(pstr) );
 }
 
 /* */
@@ -354,11 +384,7 @@ void binson_write_bytes_p( binson_writer *pw, const uint8_t* pbuf, binson_tok_si
 
 /*======================== UTIL ===============================*/
 
-/* private functions */
-
-/*
- * 
- */
+/* */
 static int64_t	_binson_util_unpack_integer( uint8_t *pbuf, uint8_t bsize )
 {
   int64_t i64 = pbuf[bsize-1] & 0x80 ? -1LL:0;  /* prefill with ones or zeroes depending of sign presence */
@@ -371,9 +397,7 @@ static int64_t	_binson_util_unpack_integer( uint8_t *pbuf, uint8_t bsize )
   return i64;
 }
 
-/*
- * 
- */
+/* */
 static uint8_t	_binson_util_pack_integer( int64_t val, uint8_t *pbuf, uint8_t force_64bit )
 {
   (void)(force_64bit); /* suppress unused warnings when WITH_FP is undefined */
@@ -454,27 +478,51 @@ static inline void _binson_util_cpy_bbuf( bbuf *dst, bbuf *src )
 {
   dst->bptr = src->bptr;
   dst->bsize = src->bsize;
+#if defined AVR8 && defined WITH_AVR_PGMSPACE								  
+  dst->is_pgm = src->is_pgm;
+#endif    
 }
 
 /* compare two bytearrays in lexicographical sense.  return value same as  strcmp() */
-static inline int8_t  	_binson_util_cmp_bbuf2bbuf( bbuf *bb1, bbuf *bb2 )
+static inline int16_t  	_binson_util_cmp_bbuf2bbuf( bbuf *bb1, bbuf *bb2 )
 {
  const uint8_t *s1 = (const uint8_t *) bb1->bptr;
  const uint8_t *s2 = (const uint8_t *) bb2->bptr;
  binson_tok_size n = MIN(bb1->bsize, bb2->bsize); 
- binson_tok_size cnt = 0;
  uint8_t c1 = 0;
  uint8_t c2 = 0;
 
   do {     
-      if (cnt == n)
-	break;      
+    if (n-- == 0)
+      break;      
 
-      c1 = (uint8_t) *s1++;
-      c2 = (uint8_t) *s2++;      
-      cnt++;
+#if defined AVR8 && defined WITH_AVR_PGMSPACE
+      c1 = bb1->is_pgm? pgm_read_byte(s1++) : (uint8_t) *s1++;            
+      c2 = bb2->is_pgm? pgm_read_byte(s2++) : (uint8_t) *s2++;      
+#else
+      c1 = (uint8_t) *s1++;      
+      c2 = (uint8_t) *s2++;            
+#endif
   }
   while (c1 == c2);
   
-  return (c1 - c2) == 0? (bb1->bptr - bb2->bptr) : (c1 - c2);  
+  return (c1 == c2)? (bb1->bsize - bb2->bsize) : (c1 - c2);  
 }
+
+#ifdef WITH_ORDER_CHECKS
+/* */
+static inline void 	_binson_util_writer_track_keyorder( binson_writer *pw, int8_t dir_sign )
+{
+  bbuf   *pb;
+  int8_t  tmp_depth = pw->cur_depth + dir_sign;
+  
+  if (tmp_depth < 0 || tmp_depth >= BINSON_CFG_MAX_DEPTH)
+    return;
+  else
+    pw->cur_depth = (uint8_t)tmp_depth;
+  
+  pb = &pw->key_stack[(uint8_t)tmp_depth];
+  pb->bptr = NULL;
+  pb->bsize = 0;
+}
+#endif

@@ -25,7 +25,7 @@ const char  cmd_reqest[] PROGMEM = "req";
 const char  cmd_ack[] PROGMEM = "ack";
 const uint8_t data_bin1[] PROGMEM = { 0x01, 0x02, 0x03 };
 
-/* */
+/* writer callback */
 uint8_t gen_cb( binson_writer *pw, uint8_t event_id, void* param )
 {
   UNUSED(pw); UNUSED(param);
@@ -59,8 +59,7 @@ binson_size gen_msg( binson_writer *pw, uint16_t cid )
   binson_write_object_begin( pw );    
 
   binson_write_name_p( pw, name_cid );
-  binson_write_integer( pw, cid );
-
+  binson_write_integer( pw, cid );  
   binson_write_name_p( pw, name_cmd );  
   binson_write_string_p( pw, cmd_reqest );
   binson_write_name_p( pw, name_data );    
@@ -127,8 +126,8 @@ int main()
 #ifdef AVR8  
  _delay_ms(1000);
 #endif
-  }  
+  }    
+  // be carefull because 'buf' doesnt exist now 
   
-  // be carefull because 'buf' doesnt exist here 
   return 0;
 }

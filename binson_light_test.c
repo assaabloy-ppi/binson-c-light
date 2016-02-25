@@ -12,7 +12,59 @@ const char abc_p [] PROGMEM = "abc";
 const char cab_p [] PROGMEM = "cab";
 const uint8_t bytes_p[] PROGMEM = { 0x00, 0x81, 0x00, 0xff, 0x00 };
 #endif
-				
+
+
+#if defined AVR8
+ #ifndef F_CPU
+    #define 16000000UL
+  #endif // F_CPU
+
+#include <avr/io.h>
+#include <util/delay.h>
+
+#include <stdio.h>
+
+#define set_bit(target, num)    (   target |=   _BV(num))
+#define clear_bit(target, num)  (   target &=   ~ _BV(num))
+#define toggle_bit(target, num) (   target ^=   _BV(num))
+
+#define DELAY_IN_MS 100 /* 1 sec */
+
+#define BAUD 19200
+#define MYUBRR F_CPU/16/BAUD-1
+
+void USART_Init(unsigned int ubrr)
+{
+  /*Set baud rate */
+  UBRR0H = (unsigned char)(ubrr>>8);
+  UBRR0L = (unsigned char)ubrr;
+  /*Enable receiver and transmitter */
+  UCSR0B = (1<<RXEN0)|(1<<TXEN0);
+  /* Set frame format: 8data, 1 stop bit */
+  UCSR0C = (1<<UCSZ00) | (1 << UCSZ01);
+}
+
+/*
+void USART_Transmit(unsigned char data )
+{
+  / Wait for empty transmit buffer /
+  while ( !( UCSR0A & (1<<UDRE0)) )
+  {
+    _delay_ms(1);
+  }
+  UDR0 = data;
+}*/
+
+void uart_putchar(char c, FILE *stream)
+{
+  if (c == '\n')
+     uart_putchar('\r', stream);
+  
+  loop_until_bit_is_set(UCSR0A, UDRE0);
+  UDR0 = c;
+}
+#endif
+
 /*======== CRC ========*/			
 #define CRC_POLYNOMIAL 0x8005
 typedef uint16_t crc;
@@ -107,8 +159,13 @@ int8_t  test_writer_string( binson_writer *w )
   binson_writer_reset( w );
     
   binson_write_string( w, s1 );  		UT_TEST(0x7800);  
+  binson_write_name( w, s1 );  			UT_TEST(0x7800);  
+  
   binson_write_string( w, s2 );  		UT_TEST(0xb910);  
+  binson_write_name( w, s2 );  			UT_TEST(0xb910);  
+  
   binson_write_string( w, s3 );  		UT_TEST(0x63bc);  
+  binson_write_name( w, s3 );  			UT_TEST(0x63bc);  
   
   binson_write_string_with_len( w, s2, 3);	UT_TEST(0xf0bb);  
        
@@ -161,8 +218,10 @@ int8_t  test_writer_structure( binson_writer *w )
   binson_write_object_end( w );
   binson_write_object_end( w );
   binson_write_object_end( w );
-  binson_write_object_end( w );  	UT_TEST(0x0b1a);
-    
+  binson_write_object_end( w );  	
+  //for (uint8_t i=0; i<w->io.counter; i++) printf("0x%02x ", *(w->io.pbuf+i));
+  UT_TEST(0x0b1a);  
+  
   // {"abc":{"cba":{}}, "b":{"abc":{}}}
   binson_write_object_begin( w );
   binson_write_name( w, abc );
@@ -266,58 +325,6 @@ uint8_t  test_writer_progmem( binson_writer *w )
 }
 #endif
 
-
-#if defined AVR8
- #ifndef F_CPU
-    #define 16000000UL
-#endif // F_CPU
-
-#include <avr/io.h>
-#include <util/delay.h>
-
-#include <stdio.h>
-
-
-#define set_bit(target, num)    (   target |=   _BV(num))
-#define clear_bit(target, num)  (   target &=   ~ _BV(num))
-#define toggle_bit(target, num) (   target ^=   _BV(num))
-
-#define DELAY_IN_MS 100 /* 1 sec */
-
-#define BAUD 19200
-#define MYUBRR F_CPU/16/BAUD-1
-
-void USART_Init(unsigned int ubrr)
-{
-  /*Set baud rate */
-  UBRR0H = (unsigned char)(ubrr>>8);
-  UBRR0L = (unsigned char)ubrr;
-  /*Enable receiver and transmitter */
-  UCSR0B = (1<<RXEN0)|(1<<TXEN0);
-  /* Set frame format: 8data, 1 stop bit */
-  UCSR0C = (1<<UCSZ00) | (1 << UCSZ01);
-}
-
-/*
-void USART_Transmit(unsigned char data )
-{
-  / Wait for empty transmit buffer /
-  while ( !( UCSR0A & (1<<UDRE0)) )
-  {
-    _delay_ms(1);
-  }
-  UDR0 = data;
-}*/
-
-void uart_putchar(char c, FILE *stream)
-{
-  if (c == '\n')
-     uart_putchar('\r', stream);
-  
-  loop_until_bit_is_set(UCSR0A, UDRE0);
-  UDR0 = c;
-}
-#endif
 
 /*=====================*/
 int main(void)
