@@ -46,13 +46,13 @@ Install gcc and libs (Ubuntu)
 $ sudo apt-get install build-essential
 `
 
-Install avr-gcc toolchain
+Install avr-gcc toolchain (Ubuntu)
 
 `
 $ sudo apt-get install gcc-avr binutils-avr gdb-avr avr-libc avrdude
 `
 
-To build both for both Linux and AVR8 run from project dir:
+To build for both Linux and AVR8 run from project dir:
 
 `
 $ ./build.sh
