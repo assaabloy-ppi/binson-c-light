@@ -1,70 +1,12 @@
 
 #include <stdint.h>
+#include <inttypes.h>
 #include <math.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "binson_light.h"
-				
-			
-/* AVR8 only: data marked as PROGMEM stored in flash memory */	
-#if defined AVR8 && defined WITH_AVR_PGMSPACE	
-const char abc_p [] PROGMEM = "abc";
-const char cab_p [] PROGMEM = "cab";
-const uint8_t bytes_p[] PROGMEM = { 0x00, 0x81, 0x00, 0xff, 0x00 };
-#endif
-
-
-#if defined AVR8
- #ifndef F_CPU
-    #define 16000000UL
-  #endif // F_CPU
-
-#include <avr/io.h>
-#include <util/delay.h>
-
-#include <stdio.h>
-
-#define set_bit(target, num)    (   target |=   _BV(num))
-#define clear_bit(target, num)  (   target &=   ~ _BV(num))
-#define toggle_bit(target, num) (   target ^=   _BV(num))
-
-#define DELAY_IN_MS 100 /* 1 sec */
-
-#define BAUD 19200
-#define MYUBRR F_CPU/16/BAUD-1
-
-void USART_Init(unsigned int ubrr)
-{
-  /*Set baud rate */
-  UBRR0H = (unsigned char)(ubrr>>8);
-  UBRR0L = (unsigned char)ubrr;
-  /*Enable receiver and transmitter */
-  UCSR0B = (1<<RXEN0)|(1<<TXEN0);
-  /* Set frame format: 8data, 1 stop bit */
-  UCSR0C = (1<<UCSZ00) | (1 << UCSZ01);
-}
-
-/*
-void USART_Transmit(unsigned char data )
-{
-  / Wait for empty transmit buffer /
-  while ( !( UCSR0A & (1<<UDRE0)) )
-  {
-    _delay_ms(1);
-  }
-  UDR0 = data;
-}*/
-
-void uart_putchar(char c, FILE *stream)
-{
-  if (c == '\n')
-     uart_putchar('\r', stream);
-  
-  loop_until_bit_is_set(UCSR0A, UDRE0);
-  UDR0 = c;
-}
-#endif
-
+						
 /*======== CRC ========*/			
 #define CRC_POLYNOMIAL 0x8005
 typedef uint16_t crc;
@@ -131,7 +73,6 @@ int8_t  test_writer_integer( binson_writer *w )
 }
 
 /*=====================*/
-#ifdef WITH_FP 
 int8_t  test_writer_double( binson_writer *w )
 {
   int8_t test_no = -1;
@@ -147,7 +88,6 @@ int8_t  test_writer_double( binson_writer *w )
   
   return -1;
 }
-#endif
 /*=====================*/
 int8_t  test_writer_string( binson_writer *w )
 {
@@ -300,31 +240,32 @@ int8_t  test_writer_structure( binson_writer *w )
 }
 
 /*=====================*/
-#if defined AVR8 && defined WITH_AVR_PGMSPACE	
-uint8_t  test_writer_progmem( binson_writer *w )
+int8_t test_parser_basic( binson_parser *p )
 {
-  int8_t test_no = -1;
-  binson_writer_reset( w );
+  int8_t test_no = -1;  
+  char  strbuf[128];   // buffer used to convert bbuf strings to asciiz
+  
+  // { "a":123, "bcd":"Hello world!" }
+  const uint8_t b1[] = "\x40\x14\x01\x61\x10\x7b\x14\x03\x62\x63\x64\x14\x0c\x48\x65\x6c\x6c\x6f\x20\x77\x6f\x72\x6c\x64\x21\x41";
+   
+  
+  binson_parser_reset( p );
+  
+  // { "a":123, "bcd":"Hello world!" }
+  memcpy( p->io.pbuf, b1, sizeof(b1) );
+  
+  binson_parser_field( p, "a" );  assert( p->error_flags == BINSON_ID_OK );  
+  printf( "a: %"PRId64"\n", binson_parser_get_integer( p )  ); assert( p->error_flags == BINSON_ID_OK );
+  binson_parser_field( p, "bcd" );  assert( p->error_flags == BINSON_ID_OK );
+  binson_parser_get_string_copy( p, strbuf );  assert( p->error_flags == BINSON_ID_OK );
+  printf( "bcd: %s\n", strbuf  );
 
-  // {"abc":false}
-  binson_write_object_begin( w );    
-  binson_write_name_p( w, abc_p );
-  binson_write_boolean( w, 0 );
-  binson_write_object_end( w );		  	UT_TEST(0xbd8e); 
-  
-  
-  // {"abc":"cab", "ca":"0x008100ff00"}
-  binson_write_object_begin( w );    
-  binson_write_name_p( w, abc_p );
-  binson_write_string_p( w, cab_p );
-  binson_write_string_with_len_p( w, cab_p, 2 );
-  binson_write_bytes_p( w, bytes_p, sizeof(bytes_p) );
-  binson_write_object_end( w );		  	UT_TEST(0xde43); 
     
-  return -1;
+  
+  
+  
+  return -1;  
 }
-#endif
-
 
 /*=====================*/
 int main(void)
@@ -334,37 +275,22 @@ int main(void)
  
  uint8_t buf[128];
  binson_writer w;
+ binson_parser p;
  
- binson_writer_init( &w, buf, sizeof(buf), NULL );
- 
-#ifdef AVR8 
- FILE uart_str = FDEV_SETUP_STREAM(uart_putchar, NULL, _FDEV_SETUP_WRITE);
- USART_Init(MYUBRR);
- stdout = stderr = &uart_str;
- 
-while(1) 
-{
-#endif
-  
+ binson_writer_init( &w, buf, sizeof(buf) );
+ binson_parser_init( &p, buf, sizeof(buf) );
+   
  putchar('\n');
  putchar('1'); UT_RUN( test_writer_boolean( &w ) );
  putchar('2'); UT_RUN( test_writer_integer( &w ) );
-#ifdef WITH_FP 
  putchar('3'); UT_RUN( test_writer_double( &w ) );
-#endif 
  putchar('4'); UT_RUN( test_writer_string( &w ) );
  putchar('5'); UT_RUN( test_writer_bytes( &w ) );
  putchar('6'); UT_RUN( test_writer_structure( &w ) );
-
-#if defined AVR8 && defined WITH_AVR_PGMSPACE	
- putchar('7'); UT_RUN( test_writer_progmem( &w ) ); 
-#endif
+ putchar('\n');
+ putchar('7'); UT_RUN( test_parser_basic( &p ) );
   
  putchar('\n'); putchar('\n');
-#ifdef AVR8  
- _delay_ms(1000);
-}
-#endif
 
-  return failures;
+ return failures;
 }

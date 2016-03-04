@@ -34,52 +34,11 @@
 extern "C" {
 #endif
 
-/*********** build options ***************/  
-
-#define WITH_WRITER_CB	   /* use callback for writer to notify user when warnings/errors happened */
-#define WITH_AVR_PGMSPACE  /* build routines to access strings/data in flash memory for avr8 arch */
-#define WITH_FP 	   /* with floating point support */
-#define WITH_ORDER_CHECKS  /* build code for key lexicographic order tracking  */
-
-/*****************************************/  
-/*********** lib configuration ***************/
 #include <stdint.h>  
 #include <string.h>
-
-#ifdef AVR8
-  #define  __LITTLE_ENDIAN	1234
-  #define  __BYTE_ORDER 	__LITTLE_ENDIAN
-  #undef WITH_FP  
-  #ifdef WITH_AVR_PGMSPACE
-    #include <avr/pgmspace.h>
-  #endif
-#else
-  #include <endian.h>
-#endif
-
-#if !defined AVR8 || !defined WITH_AVR_PGMSPACE
-  #define PROGMEM	 /* empty declaration modifier */
-  #define strlen_P	strlen
-  #define memcpy_P	memcpy
-#endif
-
-/* free bytes threshold to begin generating BINSON_ID_BUF_GUARD events */
-#ifndef BINSON_CFG_BUF_GUARD_LIMIT
-#define BINSON_CFG_BUF_GUARD_LIMIT  16		
-#endif
-
-/* If guard threshold is reached allows to send BINSON_ID_BUF_GUARD event to user callback, */
-/* and if callback returns nonzero lbrary clears buffer leaving all counters and state unchanged */
-/* If build with WITH_WRITER_CB this also valid for writer */
-#ifndef BINSON_CFG_BUF_GUARD_ALLOW_PURGE
-#define BINSON_CFG_BUF_GUARD_ALLOW_PURGE  1	
-#endif
-
-/* Maximum nesting level of binson OBJECT's/ARRAY's */
-#ifndef BINSON_CFG_MAX_DEPTH
-#define BINSON_CFG_MAX_DEPTH	5
-#endif
-
+#include <endian.h>
+#include <stdbool.h>
+  
 typedef uint8_t  binson_tok_size;   /* type to keep token length (key and value are separate tokens). uint8_t limits it to 255 bytes */
 typedef uint16_t binson_size;       /* type to keep raw data block sizes and offsets */
 
@@ -101,7 +60,11 @@ typedef uint16_t binson_size;       /* type to keep raw data block sizes and off
 
 #define UNUSED(x) (void)(x)   /* for unused variable warning suppression */
 /*********************************************/  
-#define BINSON_ID_UNKNOWN        0x00  
+
+#define BINSON_ID_UNKNOWN        0x00
+#define BINSON_ID_OBJECT         0x01
+#define BINSON_ID_ARRAY 	 0x02
+
 #define BINSON_ID_OBJ_BEGIN      0x40
 #define BINSON_ID_OBJ_END        0x41
 #define BINSON_ID_ARRAY_BEGIN    0x42
@@ -133,38 +96,34 @@ typedef uint16_t binson_size;       /* type to keep raw data block sizes and off
 #define BINSON_ID_BEGIN		 0xe0  /* used in notification callback */
 #define BINSON_ID_END		 0xe1  /* used in notification callback */
 
-#define BINSON_ID_WRONG_ORDER	 0xfc  /* some fields are out of lexicographic order */
-#define BINSON_ID_BUF_GUARD	 0xfd
-#define BINSON_ID_BUF_FULL	 0xfe
-#define BINSON_ID_PARSING_ERROR  0xff
+/* error codes */
+#define BINSON_ID_OK	 		0x00
+#define BINSON_ID_BUF_FULL	 	0xf0
+#define BINSON_ID_PARSE_NO_FIELD_NAME	0xf1
+#define BINSON_ID_PARSE_END_OF_OBJECT	0xf2
+#define BINSON_ID_PARSE_WRONG_STATE	0xf3
+#define BINSON_ID_PARSE_WRONG_TYPE	0xf4
+#define BINSON_ID_PARSE_BAD_LEN		0xf5
 
 typedef struct bbuf    /* buffer pointer + size aggregation */ 
 {    
   uint8_t              *bptr;
   binson_tok_size	bsize;
-
-#if defined AVR8 && defined WITH_AVR_PGMSPACE	
-  uint8_t               is_pgm;
-#endif  
   
 } bbuf;
 
-typedef union binson_value {
-
-    uint8_t   bool_val;
-    int64_t   int_val;
-    
-#ifdef WITH_FP
-    double    double_val;
-#endif
-    
-    bbuf bbuf_val;
+typedef union binson_value
+{
+    int64_t   int_val;    
+    double    double_val;      
+    uint8_t   bool_val;    
+    bbuf      bbuf_val;
     
 } binson_value;  
 
 /* smart buffer structure used for both writer and parser */
-typedef struct binson_io {
-  
+typedef struct binson_io
+{  
   uint8_t      *pbuf;
   binson_size  	buf_size;
   binson_size   buf_used;  
@@ -174,40 +133,23 @@ typedef struct binson_io {
 
 /*======================== WRITER ===============================*/
 
-typedef struct _binson_writer binson_writer; /* forward decl */
-typedef uint8_t (*binson_writer_cb)(binson_writer *obj, uint8_t event_id, void* param );
+#define BINSON_WRITER_ERROR_BIT_WRONG_ORDER	0x01  /* bit 0 */
+#define BINSON_WRITER_ERROR_BIT_BUF_FULL	0x02  /* bit 1 */
 
-#define BINSON_WRITER_MODE_BIT_IGNORE_ERR	0x01  /* Bit 0. Continue processing, ignoring error flags in state_flag */
-
-#define BINSON_WRITER_STATE_BIT_WRONG_ORDER	0x01  /* bit 0 */
-#define BINSON_WRITER_STATE_BIT_BUF_FULL	0x02  /* bit 1 */
-#define BINSON_WRITER_STATE_MASK_ERROR		0x07  /* bits 0-2 */
-
-typedef struct _binson_writer {
-
-  //uint8_t   	mode_flags;  
-  uint8_t   	state_flags;  /* state bitflags: errors, etc */
+typedef struct binson_writer
+{
+  uint8_t   	error_flags;        
+  binson_io     io;  	      /* smart buffer */  
+  binson_value  tmp_val;      /* used to simplify passing simple types to/from meta functions */
   
-  binson_io     io;  /* smart buffer */
+} binson_writer;
   
-  binson_value  tmp_val;		/* used to simplify passing simple types to/from meta functions */
-  
-#ifdef WITH_WRITER_CB
-  binson_writer_cb  cb;   
-#endif  
-
-#ifdef WITH_ORDER_CHECKS
-  uint8_t cur_depth;
-  bbuf    key_stack[ BINSON_CFG_MAX_DEPTH ];  /* used to store prevoius key written to verify lexicographic ordering in realtime */
-#endif     
-} _binson_writer;
-  
-void binson_writer_init( binson_writer *pw, uint8_t *pbuf, binson_size buf_size, binson_writer_cb cb );
+void binson_writer_init( binson_writer *pw, uint8_t *pbuf, binson_size buf_size  );
 void binson_writer_reset( binson_writer *pw );
 void binson_writer_purge( binson_writer *pw );
 
 inline binson_size binson_writer_get_counter( binson_writer *pw ) { return pw->io.counter; }
-inline uint8_t binson_writer_state( binson_writer *pw, uint8_t bitmask ) { return CHECKBITMASK(pw->state_flags, bitmask ); }
+inline uint8_t binson_writer_geterror( binson_writer *pw, uint8_t bitmask ) { return CHECKBITMASK(pw->error_flags, bitmask ); }
 
 void binson_write_object_begin( binson_writer *pw );
 void binson_write_object_end( binson_writer *pw );
@@ -215,60 +157,69 @@ void binson_write_array_begin( binson_writer *pw );
 void binson_write_array_end( binson_writer *pw );
 void binson_write_boolean( binson_writer *pw, uint8_t bval );
 void binson_write_integer( binson_writer *pw, uint64_t ival );
-#ifdef WITH_FP
 void binson_write_double( binson_writer *pw, double dval );
-#endif
 void binson_write_string( binson_writer *pw, const char* pstr );
 void binson_write_name( binson_writer *pw, const char* pstr );
 void binson_write_string_with_len( binson_writer *pw, const char* pstr, binson_tok_size len );
 void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size len );
 
-/* AVR8 only. "_p" functions are interpreting pointer argument as 'program space' pointer (flash) */
-#if defined AVR8 && defined WITH_AVR_PGMSPACE								  
-void binson_write_string_p( binson_writer *pw, const char* pstr );
-void binson_write_name_p( binson_writer *pw, const char* pstr );
-void binson_write_string_with_len_p( binson_writer *pw, const char* pstr, binson_tok_size len );
-void binson_write_bytes_p( binson_writer *pw, const uint8_t* pbuf, binson_tok_size len );
-#else
-#define binson_write_string_p		binson_write_string
-#define binson_write_name_p		binson_write_name
-#define binson_write_string_with_len_p	binson_write_string_with_len
-#define binson_write_bytes_p		binson_write_bytes
-#endif
-
 /*======================== PARSER ===============================*/
 
-/*  event structure is used to pass  found token details to user's callback function */
-typedef struct binson_event {
+#define BINSON_PARSER_STATE_ZERO			0x00 
+#define BINSON_PARSER_STATE_BEFORE_FIELD		0x01 
+#define BINSON_PARSER_STATE_BEFORE_ARRAY_VALUE		0x02 
+#define BINSON_PARSER_STATE_BEFORE_ARRAY		0x03 
+#define BINSON_PARSER_STATE_END_OF_ARRAY		0x04 
+#define BINSON_PARSER_STATE_BEFORE_OBJECT		0x05 
+#define BINSON_PARSER_STATE_END_OF_OBJECT		0x06
 
-  uint8_t   id;
+typedef struct binson_parser
+{
+  binson_io    	io; 
+  uint8_t   	state;
+  uint8_t   	error_flags;      
   
-  uint8_t  *pkey;
-  uint8_t   key_len;
+  bbuf  	name;  
+  uint8_t	val_type;
+  binson_value  val;  
   
-  uint8_t  *pval;
-  uint8_t   val_len;  
-  
-} binson_event;
+} binson_parser;
 
-typedef struct binson_parser binson_parser; /* forward decl */
-typedef uint8_t (*binson_parser_cb)(binson_parser *obj, void* param );
+void binson_parser_init( binson_parser *pp, uint8_t *pbuf, binson_size buf_size );
+void binson_parser_reset( binson_parser *pp );
 
-struct binson_parser {
+inline uint8_t binson_parser_geterror( binson_parser *pp, uint8_t bitmask ) { return CHECKBITMASK(pp->error_flags, bitmask ); }
 
-  //uint8_t   	mode_flags;  
-  uint8_t   	state_flags;
-  
-  binson_io    	io;  /* smart buffer */
-  
-  binson_event      event;
-  binson_parser_cb  cb;    /* single callback used to pass all found type of tokens to lib's user */
-};
+void 	binson_parser_field( binson_parser *pp, const char *name );
+bool 	binson_parser_next_field( binson_parser *pp );
+bool	binson_parser_next_array_value( binson_parser *pp );
+void	binson_parser_go_into_object( binson_parser *pp );
+void	binson_parser_go_into_array( binson_parser *pp );
+void	binson_parser_go_upto_object( binson_parser *pp );
+void	binson_parser_go_upto_array( binson_parser *pp );
 
-uint8_t      binson_parser_init( binson_parser *pparser );
-//#define      binson_parser_purge_buf( pparser )  (pparser->buf_used = 0);
+inline uint8_t 	binson_parser_get_type( binson_parser *pp ) { return pp->val_type; }
+inline uint8_t 	binson_parser_get_boolean( binson_parser *pp ) { return pp->val.bool_val; }
+inline int64_t 	binson_parser_get_integer( binson_parser *pp ) { return pp->val.int_val; }
+inline double 	binson_parser_get_double( binson_parser *pp ) { return pp->val.double_val; }
 
-/*======================== UTIL ===============================*/
+inline bbuf* 		binson_parser_get_name_bbuf( binson_parser *pp ) { return &pp->name; }
+inline binson_tok_size	binson_parser_get_name_len( binson_parser *pp ) { return pp->name.bsize; }
+void 			binson_parser_get_name_copy( binson_parser *pp, char *dst );
+int	 		binson_parser_cmp_name( binson_parser *pp, const char *pstr );
+bool	 		binson_parser_name_equals( binson_parser *pp, const char *pstr );
+
+inline bbuf* 		binson_parser_get_string_bbuf( binson_parser *pp ) { return &pp->val.bbuf_val; }
+inline binson_tok_size	binson_parser_get_string_len( binson_parser *pp ) { return pp->val.bbuf_val.bsize; }
+void 			binson_parser_get_string_copy( binson_parser *pp, char *dst );
+int	 		binson_parser_cmp_string( binson_parser *pp, const char *pstr );
+bool	 		binson_parser_string_equals( binson_parser *pp, const char *pstr );
+
+inline bbuf* 		binson_parser_get_bytes_bbuf( binson_parser *pp ) { return &pp->val.bbuf_val; }
+inline binson_tok_size	binson_parser_get_bytes_len( binson_parser *pp ) { return pp->val.bbuf_val.bsize; }
+void	 		binson_parser_get_bytes_copy( binson_parser *pp, bbuf *pbb );
+int	  		binson_parser_cmp_bytes( binson_parser *pp, bbuf *pbb );
+bool	 		binson_parser_bytes_equals( binson_parser *pp, bbuf *pbb );
 
 #ifdef __cplusplus
 }
