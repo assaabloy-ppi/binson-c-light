@@ -1,4 +1,6 @@
-Date: 2016-02-08
+Date: 2016-02-08: first version
+Date: 2016-03-07: major edit (Arduino Nano support removed etc)
+
 Author: Frans Lundberg, ASSA ABLOY AB
 
 
@@ -25,6 +27,7 @@ Project information, scope, requirements:
   on Github.
 * No dynamic memory allocation while serializing / deserializing is allowed.
 * A goal is to keep binson-light.c within 1500 lines of code. binson-java-light is around 600 lines.
+  Clean code and a small code size is important.
 * UTF-8 does not need to be handled "explicitely". Assuming US-ASCII for
   string literals is OK. It must however be possible to match field names using raw UTF-8 bytes
   and use raw UTF-8 bytes when serializing.
@@ -37,15 +40,13 @@ Project information, scope, requirements:
 * No dependencies on libraries beyond C lib.
 * The library binson-c-light is used by including
   the C-source (binson_light.c, binson_light.h) directly in the application project.
-* The C code is designed for small devices. It should work on Arduino Nano.
-* There are natural limitations on the Arduino Nano, for example 64-bit floating point numbers
-  are not supported, so for Arduino, Binson type "double" does not need to be supported.
+* The C code should be designed with small devices in mind, for example a Cortex M0 MCU.
+  8-bit and 16-bit processors do not have to be considered.
 * The source should build with simple GCC commands described in README.md. No build framework or
   test framework should be used.
-* The software should run on Arduino Nano.
 * The software should build and run on Linux Ubuntu + GCC.
 * High code quality is important.
-* The code should follow the field ordering notes below in this document.
+* The writer code does not need to enforce correct field ordering. It can be the responsibility of the application code.
 * See the "Output buffer size" section.
 * See the "Error handling" section.
 
@@ -53,22 +54,10 @@ Feel free to discuss the requirements; they will likely evolve during the projec
 
 The project is divided into three phases.
 
-* Phase 1: first implementation. A complete implementation. First test on Arduino Nano.
+* Phase 1: first implementation. A complete implementation.
 * Phase 2: refactoring of Phase 1 code after discussions with Frans Lundberg. More testing.
 * Phase 3: one month of support (fixing bugs, answering questions) after Phase 2 
   has been completed.
-  
-Field ordering
---------------
-
-The ordering of Binson fields is the responsibility of the application developer.
-
-Serializer: The serializer should raise an error condition if the application 
-developer tries to use a bad ordering of the fields. Parser: The parser can assume 
-the fields are ordered correctly and does not need to check for this.
-
-To reduce code size and complexity, field order checks by the serialize could be 
-omitted if needed.
 
 Output buffer size
 ------------------
