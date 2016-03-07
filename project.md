@@ -1,5 +1,5 @@
-Date: 2016-02-08: first version
-Date: 2016-03-07: major edit (Arduino Nano support removed etc)
+* 2016-03-07: edit: Arduino Nano support removed etc.
+* 2016-02-08: first version
 
 Author: Frans Lundberg, ASSA ABLOY AB
 
