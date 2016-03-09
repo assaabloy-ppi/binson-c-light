@@ -11,7 +11,7 @@ Features
 * Written in ANSI C (C99 standard)
 * Portable code. Tested at:
   * x86_64 Linux
-  * ARM Cortex-M3
+  * ARM Cortex-M3 (with QEMU)
 * Compatible with: 
   * [binson-java](https://github.com/franslundberg/binson-java)
   * [binson-java-light](https://github.com/franslundberg/binson-java-light)
@@ -39,8 +39,11 @@ Writer API usage
  for (int i=0; i<cnt; i++)
    printf( "0x%02x ", buf[i] ); 
 ```
-Will print: 0x40 0x14 0x03 0x63 0x69 0x64 0x10 0x7b 0x41
+Will print: 
 
+`
+0x40 0x14 0x03 0x63 0x69 0x64 0x10 0x7b 0x41
+`
 
 Parser API usage
 ---------
@@ -63,9 +66,10 @@ Parser API usage
 ```
 Will print:
 
+```
 a: 123
 bcd: Hello world!
-
+```
 
 
 Build
