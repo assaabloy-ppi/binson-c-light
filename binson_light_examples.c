@@ -20,10 +20,10 @@ const char  cmd_reqest[]  = "req";
 const char  cmd_ack[]  = "ack";
 const uint8_t data_bin1[]  = { 0x01, 0x02, 0x03 };
 
-
 /* */
 binson_size gen_msg( binson_writer *pw, uint16_t cid )
 {  
+  
   binson_writer_reset( pw );
 
   // {"cid":123, "cmd":"req", "data":"0x008100ff00"}
@@ -44,6 +44,7 @@ binson_size gen_msg( binson_writer *pw, uint16_t cid )
 void parser_demo1( binson_parser *p )
 {
   uint8_t  src[256];
+  int64_t fff = 0;;
   char     strbuf[32];   // buffer used to convert bbuf strings to asciiz  
   
   // {"a":[true,13,-2.34,"zxc",{"d":false, "e":"0x030405", "q":"qwe"},9223372036854775807]}
@@ -74,7 +75,7 @@ void parser_demo1( binson_parser *p )
   
   binson_parser_field( p, "e" );
   if ( binson_parser_get_type( p ) == BINSON_ID_BYTES )
-    for (int i=0; i<p->val.bbuf_val.bsize; i++)
+    for (int i=0; i<(int)p->val.bbuf_val.bsize; i++)
       printf( "0x%02x ", p->val.bbuf_val.bptr[i] );
   
   binson_parser_field( p, "q" );
@@ -83,7 +84,9 @@ void parser_demo1( binson_parser *p )
     
   binson_parser_go_upto_array( p );
   binson_parser_next_array_value( p );
-  printf( "%"PRId64"\n", binson_parser_get_integer( p )  );   
+  //printf( "%"PRId64"\n", binson_parser_get_integer( p )  );   
+  fff = binson_parser_get_integer( p );
+  printf( "%"PRId64"\n", fff  );   
 }
 
 /* */
@@ -105,13 +108,13 @@ int main()
     binson_writer_init( &w, buf, sz + GUARD_SPACE_LEN );  
     cnt = gen_msg( &w, 123 );
      
-    printf("sz: %d, cnt: %d\n", sz, cnt);
+    printf("sz: %u, cnt: %u\n", sz, cnt);  // for ARM32 replace %u to %lu
     for (uint8_t i=0; i<cnt; i++) printf("0x%02x ", buf[i]);
     putchar('\n');
   }    
   // be carefull because 'buf' doesnt exist now 
   
-  parser_demo1( &p );
+  parser_demo1( &p ); 
   
   return 0;
 }

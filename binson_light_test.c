@@ -14,15 +14,15 @@ typedef uint16_t crc;
 #define CRC_WIDTH  (8 * sizeof(crc))
 #define CRC_TOPBIT (1 << (CRC_WIDTH - 1))
 
-crc crc_16(uint8_t const *msg, uint8_t n)
+crc crc_16(uint8_t const *msg, unsigned int n)
 {
     crc  rm = 0;	
 
     for (uint8_t byte = 0; byte < n; ++byte)
     {
-        rm ^= (msg[byte] << (CRC_WIDTH - 8));
+        rm ^= (crc)(msg[byte] << (CRC_WIDTH - 8));
         for (uint8_t bit = 8; bit > 0; --bit)
-	  rm = (rm & CRC_TOPBIT)? (rm << 1) ^ CRC_POLYNOMIAL : (rm << 1);
+	      rm = (crc)((rm & CRC_TOPBIT)? (rm << 1) ^ CRC_POLYNOMIAL : (rm << 1));
     }
     return rm;
 }
@@ -33,7 +33,7 @@ crc crc_16(uint8_t const *msg, uint8_t n)
 			binson_writer_reset( w );
 			  
 #define UT_RUN(x)	res = (x); \
-			if (res == -1) putchar('+'); else { putchar(48 + (char)res); failures++; } \
+			if (res == -1) putchar('+'); else { putchar( (unsigned char)(48+res)); failures++; } \
 			putchar('\n'); 
 
 /*=====================*/
@@ -243,11 +243,12 @@ int8_t  test_writer_structure( binson_writer *w )
 int8_t test_parser_basic( binson_parser *p )
 {
   int8_t test_no = -1;  
+  UNUSED(test_no);
+
   char  strbuf[128];   // buffer used to convert bbuf strings to asciiz
   
   // { "a":123, "bcd":"Hello world!" }
-  const uint8_t b1[] = "\x40\x14\x01\x61\x10\x7b\x14\x03\x62\x63\x64\x14\x0c\x48\x65\x6c\x6c\x6f\x20\x77\x6f\x72\x6c\x64\x21\x41";
-   
+  const uint8_t b1[] = "\x40\x14\x01\x61\x10\x7b\x14\x03\x62\x63\x64\x14\x0c\x48\x65\x6c\x6c\x6f\x20\x77\x6f\x72\x6c\x64\x21\x41";  
   
   binson_parser_reset( p );
   
@@ -255,14 +256,13 @@ int8_t test_parser_basic( binson_parser *p )
   memcpy( p->io.pbuf, b1, sizeof(b1) );
   
   binson_parser_field( p, "a" );  assert( p->error_flags == BINSON_ID_OK );  
-  printf( "a: %"PRId64"\n", binson_parser_get_integer( p )  ); assert( p->error_flags == BINSON_ID_OK );
-  binson_parser_field( p, "bcd" );  assert( p->error_flags == BINSON_ID_OK );
-  binson_parser_get_string_copy( p, strbuf );  assert( p->error_flags == BINSON_ID_OK );
-  printf( "bcd: %s\n", strbuf  );
-
+  assert( p->error_flags == BINSON_ID_OK );
+  assert( binson_parser_get_integer( p ) == 123 );
     
-  
-  
+  binson_parser_field( p, "bcd" );  assert( p->error_flags == BINSON_ID_OK );
+  binson_parser_get_string_copy( p, strbuf ); 
+  assert( p->error_flags == BINSON_ID_OK );
+  assert( !strcmp(strbuf, "Hello world!") );
   
   return -1;  
 }
@@ -270,8 +270,8 @@ int8_t test_parser_basic( binson_parser *p )
 /*=====================*/
 int main(void)
 {
- int8_t res = -1;
- int8_t failures = 0;
+ int res = -1;
+ int failures = 0;
  
  uint8_t buf[128];
  binson_writer w;
