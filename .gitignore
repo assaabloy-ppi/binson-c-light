@@ -49,3 +49,9 @@ install_manifest.txt
 run_cmake.sh
 
 build/
+
+.cproject
+.project
+.settings
+
+bug*
