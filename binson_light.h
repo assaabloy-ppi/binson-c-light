@@ -33,8 +33,8 @@
 #include <stdint.h>
 #include <string.h>
 
-typedef uint32_t binson_tok_size;   /* type to keep token length (key and value are separate tokens). */
-typedef uint32_t binson_size;       /* type to keep raw data block sizes and offsets */
+typedef uint16_t binson_tok_size;   /* type to keep token length (key and value are separate tokens). */
+typedef uint16_t binson_size;       /* type to keep raw data block sizes and offsets */
 
 #ifndef bool
 #define bool        int   /* for 8-bit platforms better to use int8_t instead */
@@ -56,7 +56,7 @@ typedef uint32_t binson_size;       /* type to keep raw data block sizes and off
 
 #define BINSON_ID_UNKNOWN        0x00
 #define BINSON_ID_OBJECT         0x01
-#define BINSON_ID_ARRAY 	 0x02
+#define BINSON_ID_ARRAY 	     0x02
 
 #define BINSON_ID_OBJ_BEGIN      0x40
 #define BINSON_ID_OBJ_END        0x41
@@ -87,19 +87,20 @@ typedef uint32_t binson_size;       /* type to keep raw data block sizes and off
 #define BINSON_ID_BYTES_32       0x1a
 
 /* error codes */
-#define BINSON_ID_OK	 		0x00
-#define BINSON_ID_BUF_FULL	 	0xf0
+#define BINSON_ID_OK	 		        0x00
+#define BINSON_ID_BUF_FULL	 	        0xf0
 #define BINSON_ID_PARSE_NO_FIELD_NAME	0xf1
 #define BINSON_ID_PARSE_END_OF_OBJECT	0xf2
-#define BINSON_ID_PARSE_WRONG_STATE	0xf3
-#define BINSON_ID_PARSE_WRONG_TYPE	0xf4
-#define BINSON_ID_PARSE_BAD_LEN		0xf5
+#define BINSON_ID_PARSE_WRONG_STATE	    0xf3
+#define BINSON_ID_PARSE_WRONG_TYPE	    0xf4
+#define BINSON_ID_PARSE_BAD_LEN		    0xf5
+#define BINSON_ID_PARSE_END_OF_BUFFER   0xf6
 
 /* buffer pointer + size aggregation, also used for string references */
 typedef struct _bbuf
 {
   binson_tok_size	bsize;
-  uint8_t              *bptr;
+  uint8_t          *bptr;
 
 } bbuf;
 
@@ -128,7 +129,7 @@ typedef struct _binson_io
 /* main writer "object" structure */
 typedef struct _binson_writer
 {
-  uint8_t	error_flags;
+  uint8_t	    error_flags;
   binson_io     io;  	      /* smart buffer */
   binson_value  tmp_val;      /* used to simplify passing simple types to/from meta functions */
 
@@ -166,8 +167,8 @@ typedef struct binson_parser
   uint8_t   	state;
   uint8_t   	error_flags;
 
-  uint8_t	val_type;
-  bbuf  	name;
+  uint8_t	    val_type;
+  bbuf  	    name;
   binson_value  val;
 
 } binson_parser;
@@ -185,21 +186,21 @@ void	binson_parser_go_into_array( binson_parser *pp );
 void	binson_parser_go_upto_object( binson_parser *pp );
 void	binson_parser_go_upto_array( binson_parser *pp );
 
-/* parser getters */
 static inline uint8_t 	binson_parser_get_type( binson_parser *pp ) { return pp->val_type; }
-static inline uint8_t 	binson_parser_get_boolean( binson_parser *pp ) { return pp->val.bool_val; }
-static inline int64_t 	binson_parser_get_integer( binson_parser *pp ) { return pp->val.int_val; }
-static inline double 	binson_parser_get_double( binson_parser *pp ) { return pp->val.double_val; }
-static inline uint8_t  binson_parser_geterror( binson_parser *pp, uint8_t bitmask ) { return CHECKBITMASK(pp->error_flags, bitmask ); }
+uint8_t 	binson_parser_get_boolean( binson_parser *pp );
+int64_t 	binson_parser_get_integer( binson_parser *pp );
+double 	    binson_parser_get_double( binson_parser *pp );
+static inline uint8_t     binson_parser_geterror( binson_parser *pp, uint8_t bitmask ) { return CHECKBITMASK(pp->error_flags, bitmask ); }
 
 static inline bbuf* 		binson_parser_get_name_bbuf( binson_parser *pp ) { return &pp->name; }
 static inline binson_tok_size	binson_parser_get_name_len( binson_parser *pp ) { return pp->name.bsize; }
-void 			binson_parser_get_name_copy( binson_parser *pp, char *dst );
-int	 		binson_parser_cmp_name( binson_parser *pp, const char *pstr );
-bool	 		binson_parser_name_equals( binson_parser *pp, const char *pstr );
 
-static inline bbuf* 		binson_parser_get_string_bbuf( binson_parser *pp ) { return &pp->val.bbuf_val; }
-static inline void      binson_parser_cpy_string_bbuf( binson_parser *pp, bbuf *pbb ) { pbb->bptr = pp->val.bbuf_val.bptr;  pbb->bsize = pp->val.bbuf_val.bsize; }
+void binson_parser_get_name_copy( binson_parser *pp, char *dst );
+int	 binson_parser_cmp_name( binson_parser *pp, const char *pstr );
+bool binson_parser_name_equals( binson_parser *pp, const char *pstr );
+
+bbuf*  binson_parser_get_string_bbuf( binson_parser *pp );
+static inline void   binson_parser_cpy_string_bbuf( binson_parser *pp, bbuf *pbb ) { pbb->bptr = pp->val.bbuf_val.bptr;  pbb->bsize = pp->val.bbuf_val.bsize; }
 
 void    binson_util_set_bbuf( bbuf *pbb, uint8_t *bptr, binson_size bsize );
 void    binson_util_set_bbuf_for_asciiz( bbuf *pbb, const char* pstr );
@@ -209,13 +210,14 @@ int     binson_util_cmp_bbuf2bbuf( bbuf *bb1, bbuf *bb2 );
 int     binson_util_cmp_bbuf2asciiz( bbuf *bb1, const char* pstr );
 void    binson_util_cpy_bbuf2asciiz( char* pstr, bbuf *bb );
 
-static inline binson_tok_size	binson_parser_get_string_len( binson_parser *pp ) { return pp->val.bbuf_val.bsize; }
+binson_tok_size	binson_parser_get_string_len( binson_parser *pp );
 void 			binson_parser_get_string_copy( binson_parser *pp, char *dst );
-int	 		binson_parser_cmp_string( binson_parser *pp, const char *pstr );
+int	 		    binson_parser_cmp_string( binson_parser *pp, const char *pstr );
 bool	 		binson_parser_string_equals( binson_parser *pp, const char *pstr );
 
-static inline bbuf* 		binson_parser_get_bytes_bbuf( binson_parser *pp ) { return &pp->val.bbuf_val; }
-static inline binson_tok_size	binson_parser_get_bytes_len( binson_parser *pp ) { return pp->val.bbuf_val.bsize; }
+bbuf* binson_parser_get_bytes_bbuf( binson_parser *pp );
+binson_tok_size	binson_parser_get_bytes_len( binson_parser *pp );
+
 void	 		binson_parser_get_bytes_copy( binson_parser *pp, bbuf *pbb );
 int	  		binson_parser_cmp_bytes( binson_parser *pp, bbuf *pbb );
 bool	 		binson_parser_bytes_equals( binson_parser *pp, bbuf *pbb );

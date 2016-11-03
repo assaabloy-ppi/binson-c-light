@@ -268,6 +268,36 @@ int8_t test_parser_basic( binson_parser *p )
 }
 
 /*=====================*/
+int8_t test_parser_lenfuzz( binson_parser *p )
+{
+  int8_t test_no = -1;
+  UNUSED(test_no);
+
+  char  strbuf[128];   // buffer used to convert bbuf strings to asciiz
+
+  // { "a":123, "bcd":"Hello world!" }
+  const uint8_t b1[] = "\x40\x14\x01\x61\x10\x7b\x14\x03\x62\x63\x64\x14\x0c\x48\x65\x6c\x6c\x6f\x20\x77\x6f\x72\x6c\x64\x21\x41";
+  uint8_t i;
+
+  for (i=0; i<=254; i++)
+  {
+     binson_parser_reset( p );
+     // { "a":123, "bcd":"Hello world!" }
+     memcpy( p->io.pbuf, b1, sizeof(b1) );
+     p->io.pbuf[12] = i;   // simulate broken length
+
+     binson_parser_field( p, "bcd" );
+     if (p->error_flags != BINSON_ID_OK)
+         continue;
+
+     binson_parser_get_string_copy( p, strbuf );
+  }
+
+  return -1;
+}
+
+
+/*=====================*/
 int main(void)
 {
  int res = -1;
@@ -289,6 +319,7 @@ int main(void)
  putchar('6'); UT_RUN( test_writer_structure( &w ) );
  putchar('\n');
  putchar('7'); UT_RUN( test_parser_basic( &p ) );
+ putchar('8'); UT_RUN( test_parser_lenfuzz( &p ) );
   
  putchar('\n'); putchar('\n');
 

@@ -12,6 +12,7 @@ Features
 * Portable code. Tested at:
   * x86_64 Linux
   * ARM Cortex-M3 (with QEMU)
+  * ARM Cortex-M4 baremetal (nRF52832 SoC)
 * Compatible with: 
   * [binson-java](https://github.com/franslundberg/binson-java)
   * [binson-java-light](https://github.com/franslundberg/binson-java-light)
