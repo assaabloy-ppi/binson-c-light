@@ -1,4 +1,4 @@
-# Object files
+ Object files
 *.o
 *.ko
 *.obj
@@ -43,10 +43,10 @@ CMakeLists.txt
 CMakeCache.txt
 CMakeFiles/
 CMakeScripts
-Makefile
 cmake_install.cmake
 install_manifest.txt
 run_cmake.sh
+output
 
 build/
 
