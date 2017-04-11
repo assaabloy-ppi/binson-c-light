@@ -8,6 +8,7 @@ CFLAGS="-g -Os -std=c99 -Wall"
 
 gcc -I. $CFLAGS  binson_light.c binson_light_test.c  -o build/binson_light_test
 gcc -I. $CFLAGS  binson_light.c binson_light_examples.c  -o build/binson_light_examples
+gcc -I. $CFLAGS  binson_light.c binson_light_to_string.c binson_light_to_string_examples.c -o build/binson_light_to_string_examples
 
 #gcc -I. $CFLAGS  binson_light.c bug_3.c  -o build/bug_3
 
