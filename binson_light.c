@@ -476,7 +476,9 @@ bool binson_parser_next_array_value( binson_parser *pp )
 /* Go inside expected object */
 void binson_parser_go_into_object( binson_parser *pp )
 {
-    if ( pp->state != BINSON_PARSER_STATE_BEFORE_OBJECT )
+	if ( pp->state == BINSON_PARSER_STATE_ZERO )
+      _binson_parser_parse_begin( pp );
+    else if ( pp->state != BINSON_PARSER_STATE_BEFORE_OBJECT )
       pp->error_flags = BINSON_ID_PARSE_WRONG_STATE;
     else
       pp->state = BINSON_PARSER_STATE_BEFORE_FIELD;
