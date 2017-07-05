@@ -120,7 +120,7 @@ static char * binson_to_string_(char *str, int *max_str_size,
       if (buf)
         sprintf(tmp_str, " <data> bytes len: %d", buf->bsize);
       else
-        sprintf(tmp_str, " buf: %p", buf);
+        sprintf(tmp_str, " buf: %p", (void *)buf);
       str = append_str(str, tmp_str, max_str_size);
       break;
     case BINSON_ID_OBJECT:
