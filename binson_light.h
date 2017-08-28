@@ -42,6 +42,11 @@ typedef uint16_t binson_size;       /* type to keep raw data block sizes and off
 #define false       0
 #endif
 
+/*********** static config values ************/
+#ifndef MAX_DEPTH   /* maximal supported binson object/array nesting level */
+#define MAX_DEPTH   16       
+#endif
+
 /*********** usefull macros ******************/
 #define SETBITMASK(x,y) 	(x |= (y))	/* Set bitmask y in byte x*/
 #define CLEARBITMASK(x,y) 	(x &= (~y)) 	/* Clear bitmask y in byte x*/
@@ -56,7 +61,7 @@ typedef uint16_t binson_size;       /* type to keep raw data block sizes and off
 
 #define BINSON_ID_UNKNOWN        0x00
 #define BINSON_ID_OBJECT         0x01
-#define BINSON_ID_ARRAY 	     0x02
+#define BINSON_ID_ARRAY 	       0x02
 
 #define BINSON_ID_OBJ_BEGIN      0x40
 #define BINSON_ID_OBJ_END        0x41
@@ -75,7 +80,7 @@ typedef uint16_t binson_size;       /* type to keep raw data block sizes and off
 #define BINSON_ID_INTEGER_64     0x13
 
 #define BINSON_ID_STRING         0x12  /* Meta ID. Translated to one of 4 next consts during serialization */
-#define BINSON_ID_STRING_LEN	 0x13  /* indicates stringLen part of STRING object */
+#define BINSON_ID_STRING_LEN	   0x13  /* indicates stringLen part of STRING object */
 #define BINSON_ID_STRING_8       0x14
 #define BINSON_ID_STRING_16      0x15
 #define BINSON_ID_STRING_32      0x16
@@ -87,14 +92,23 @@ typedef uint16_t binson_size;       /* type to keep raw data block sizes and off
 #define BINSON_ID_BYTES_32       0x1a
 
 /* error codes */
-#define BINSON_ID_OK	 		        0x00
-#define BINSON_ID_BUF_FULL	 	        0xf0
-#define BINSON_ID_PARSE_NO_FIELD_NAME	0xf1
-#define BINSON_ID_PARSE_END_OF_OBJECT	0xf2
-#define BINSON_ID_PARSE_WRONG_STATE	    0xf3
-#define BINSON_ID_PARSE_WRONG_TYPE	    0xf4
-#define BINSON_ID_PARSE_BAD_LEN		    0xf5
-#define BINSON_ID_PARSE_END_OF_BUFFER   0xf6
+#define BINSON_ID_OK	 		                0x00
+#define BINSON_ID_INVALID_ARG             0xe0
+#define BINSON_ID_BUF_FULL	 	            0xf0
+#define BINSON_ID_PARSE_NO_FIELD_NAME	    0xf1
+#define BINSON_ID_PARSE_END_OF_OBJECT	    0xf2
+#define BINSON_ID_PARSE_WRONG_STATE	      0xf3
+#define BINSON_ID_PARSE_WRONG_TYPE	      0xf4
+#define BINSON_ID_PARSE_BAD_LEN		        0xf5
+#define BINSON_ID_PARSE_END_OF_BUFFER     0xf6
+#define BINSON_ID_PARSE_MAX_DEPTH_REACHED 0xf7
+
+/* scan modes used with binson_parser_advance() */
+#define BINSON_PARSER_ADVANCE_ONCE                 0x01
+#define BINSON_PARSER_ADVANCE_ONCE_SAME_DEPTH      0x02
+#define BINSON_PARSER_ADVANCE_END_SAME_DEPTH       0x04
+#define BINSON_PARSER_ADVANCE_END_THEN_UP          0x08
+#define BINSON_PARSER_ADVANCE_CMP_NAME             0x10
 
 /* buffer pointer + size aggregation, also used for string references */
 typedef struct _bbuf
@@ -164,12 +178,15 @@ static inline uint8_t binson_writer_geterror( binson_writer *pw, uint8_t bitmask
 typedef struct binson_parser
 {
   binson_io    	io;
-  uint8_t   	state;
-  uint8_t   	error_flags;
+  uint8_t   	  state;
+  uint8_t   	  error_flags;
 
-  uint8_t	    val_type;
-  bbuf  	    name;
+  uint8_t	      val_type;
+  bbuf  	      name;
   binson_value  val;
+
+  uint8_t       depth;
+  uint8_t       ret_stack[MAX_DEPTH];  
 
 } binson_parser;
 
@@ -177,14 +194,20 @@ typedef struct binson_parser
 void binson_parser_init( binson_parser *pp, uint8_t *pbuf, binson_size buf_size );
 void binson_parser_reset( binson_parser *pp );
 
-/* parser traversal methods */
-void 	binson_parser_field( binson_parser *pp, const char *name );
-bool 	binson_parser_next_field( binson_parser *pp );
-bool	binson_parser_next_array_value( binson_parser *pp );
-void	binson_parser_go_into_object( binson_parser *pp );
-void	binson_parser_go_into_array( binson_parser *pp );
-void	binson_parser_go_upto_object( binson_parser *pp );
-void	binson_parser_go_upto_array( binson_parser *pp );
+/* main parser traversal call */
+bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, const char *name );
+
+/* next calls are now shortcuts to 'binson_parser_advance()' */
+#define binson_parser_field(x, y)          binson_parser_advance(x, BINSON_PARSER_ADVANCE_END_SAME_DEPTH | \
+                                                                    BINSON_PARSER_ADVANCE_CMP_NAME, y)   
+#define binson_parser_next_field(x)        binson_parser_advance(x, BINSON_PARSER_ADVANCE_ONCE_SAME_DEPTH, NULL)   
+#define binson_parser_next_array_value(x)  binson_parser_advance(x, BINSON_PARSER_ADVANCE_ONCE_SAME_DEPTH, NULL)
+#define binson_parser_go_into(x)           binson_parser_advance(x, BINSON_PARSER_ADVANCE_ONCE, NULL)
+#define binson_parser_go_into_object(x)    binson_parser_advance(x, BINSON_PARSER_ADVANCE_ONCE, NULL)
+#define binson_parser_go_into_array(x)     binson_parser_advance(x, BINSON_PARSER_ADVANCE_ONCE, NULL)
+#define	binson_parser_go_up(x)             binson_parser_advance(x, BINSON_PARSER_ADVANCE_END_THEN_UP, NULL)      
+#define binson_parser_go_upto_object(x)    binson_parser_advance(x, BINSON_PARSER_ADVANCE_END_THEN_UP, NULL)        
+#define binson_parser_go_upto_array(x)     binson_parser_advance(x, BINSON_PARSER_ADVANCE_END_THEN_UP, NULL)
 
 static inline uint8_t 	binson_parser_get_type( binson_parser *pp ) { return pp->val_type; }
 uint8_t 	binson_parser_get_boolean( binson_parser *pp );
