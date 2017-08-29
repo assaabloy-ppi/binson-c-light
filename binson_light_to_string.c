@@ -61,6 +61,11 @@ static char *append_bbuf_str(char *dest, bbuf *buf, int *max_dest_dize)
   return &dest[size_to_copy];
 }
 
+bool next_wrapper( binson_parser *pp )
+{
+  return binson_parser_advance( pp, BINSON_PARSER_ADVANCE_ONCE_SAME_DEPTH, NULL );
+}
+
 static char * binson_to_string_(char *str, int *max_str_size,
                                 int level, binson_parser *parser,
                                 bool (*next)(binson_parser *pp), bool is_array)
@@ -131,7 +136,7 @@ static char * binson_to_string_(char *str, int *max_str_size,
         str = indent(level, str, max_str_size);
       }
       str = append_str(str, "{", max_str_size);
-      str = binson_to_string_(str, max_str_size, level + 1, parser, binson_parser_next_field, false);
+      str = binson_to_string_(str, max_str_size, level + 1, parser, next_wrapper, false);
       str = append_str(str, "\n", max_str_size);
       str = indent(level, str, max_str_size);
       str = append_str(str, "}", max_str_size);
@@ -142,7 +147,7 @@ static char * binson_to_string_(char *str, int *max_str_size,
       str = append_str(str, "\n", max_str_size);
       str = indent(level, str, max_str_size);
       str = append_str(str, "[", max_str_size);
-      str = binson_to_string_(str, max_str_size, level + 1, parser, binson_parser_next_array_value, true);
+      str = binson_to_string_(str, max_str_size, level + 1, parser, next_wrapper, true);
       str = append_str(str, "\n", max_str_size);
       str = indent(level, str, max_str_size);
       str = append_str(str, "]", max_str_size);
@@ -162,6 +167,6 @@ void binson_to_string(binson_parser *parser, char *str, int max_str_size)
 {
   int size = max_str_size;
   str = append_str(str, "{", &size);
-  str = binson_to_string_(str, &size, 1, parser, binson_parser_next_field, false);
+  str = binson_to_string_(str, &size, 1, parser, next_wrapper, false);
   str = append_str(str, "\n}\n", &size);
 }

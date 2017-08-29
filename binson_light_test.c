@@ -27,6 +27,41 @@ crc crc_16(uint8_t const *msg, unsigned int n)
     return rm;
 }
 
+void intToHex(int intnumber, char *txt)
+{    
+    unsigned char _s4='0';
+    char i=4;
+    //intnumber=0xffff;
+
+    do {
+        i--;
+        _s4 = (unsigned char)  ((intnumber >> i*4 ) & 0x000f);
+        if(_s4<10)
+            _s4=_s4+48;
+        else
+            _s4=_s4+55;
+
+        *txt++= _s4;    
+    } while(i);     
+}
+
+void print_hex_byte(uint8_t src_byte)
+{
+    unsigned char _s2='0';
+    char i=2;
+
+    do {
+        i--;
+        _s2 = (unsigned char)  ((src_byte >> i*4 ) & 0x0f);
+        if(_s2<10)
+            _s2=_s2+48;
+        else
+            _s2=_s2+55;
+
+        putchar(_s2);    
+    } while(i);   
+}
+
 /*=====================*/
 #define UT_TEST(x)	test_no++; \
 			if (crc_16(w->io.pbuf, w->io.counter) != x) return test_no; \
@@ -35,6 +70,10 @@ crc crc_16(uint8_t const *msg, unsigned int n)
 #define UT_RUN(x)	res = (x); \
 			if (res == -1) putchar('+'); else { putchar( (unsigned char)(48+res)); failures++; } \
 			putchar('\n'); 
+
+#define assert_flags(x) \
+      if (x->error_flags != BINSON_ID_OK ) \
+         { fputs("error_flags=", stdout); print_hex_byte(x->error_flags); fputs(" state=", stdout); print_hex_byte(x->state); }
 
 /*=====================*/
 int8_t  test_writer_boolean( binson_writer *w )
@@ -240,6 +279,35 @@ int8_t  test_writer_structure( binson_writer *w )
 }
 
 /*=====================*/
+int8_t test_parser_1( binson_parser *p )
+{
+  int8_t test_no = -1;  
+  UNUSED(test_no);
+
+  char  strbuf[128];   // buffer used to convert bbuf strings to asciiz
+  int64_t  t_int;
+  bool   res;
+  
+  // { "a":123, "bcd":"Hello world!" }
+  const uint8_t b1[] = "\x40\x14\x01\x61\x10\x7b\x14\x03\x62\x63\x64\x14\x0c\x48\x65\x6c\x6c\x6f\x20\x77\x6f\x72\x6c\x64\x21\x41";  
+
+  memcpy( p->io.pbuf, b1, sizeof(b1) );  
+  binson_parser_reset( p );
+  assert_flags(p);
+
+  /* testing begin here */
+  res = binson_parser_field( p, "a" );  assert(res == 1); assert_flags(p);
+  t_int = binson_parser_get_integer( p );  assert_flags(p); assert(t_int == 123);
+      
+  res = binson_parser_field( p, "bcd" );   assert(res == 1); assert_flags(p);
+  binson_parser_get_string_copy( p, strbuf ); 
+  assert_flags(p);
+  assert( !strcmp(strbuf, "Hello world!") );
+  
+  return -1;  
+}
+
+/*=====================*/
 int8_t test_parser_basic( binson_parser *p )
 {
   int8_t test_no = -1;  
@@ -310,18 +378,18 @@ int main(void)
  binson_writer_init( &w, buf, sizeof(buf) );
  binson_parser_init( &p, buf, sizeof(buf) );
    
- putchar('\n');
- putchar('1'); UT_RUN( test_writer_boolean( &w ) );
- putchar('2'); UT_RUN( test_writer_integer( &w ) );
- putchar('3'); UT_RUN( test_writer_double( &w ) );
- putchar('4'); UT_RUN( test_writer_string( &w ) );
- putchar('5'); UT_RUN( test_writer_bytes( &w ) );
- putchar('6'); UT_RUN( test_writer_structure( &w ) );
- putchar('\n');
- putchar('7'); UT_RUN( test_parser_basic( &p ) );
- putchar('8'); UT_RUN( test_parser_lenfuzz( &p ) );
-  
- putchar('\n'); putchar('\n');
+ fputs("\n", stdout);
+ fputs("w1", stdout); UT_RUN( test_writer_boolean( &w ) );
+ fputs("w2", stdout); UT_RUN( test_writer_integer( &w ) );
+ fputs("w3", stdout); UT_RUN( test_writer_double( &w ) );
+ fputs("w4", stdout); UT_RUN( test_writer_string( &w ) );
+ fputs("w5", stdout); UT_RUN( test_writer_bytes( &w ) );
+ fputs("w6", stdout); UT_RUN( test_writer_structure( &w ) );
+ fputs("\n", stdout);
+ fputs("p1", stdout); UT_RUN( test_parser_1( &p ) ); 
+ fputs("p11", stdout); UT_RUN( test_parser_basic( &p ) );
+ fputs("p12", stdout); UT_RUN( test_parser_lenfuzz( &p ) );  
+ fputs("\n\n", stdout);
 
  return failures;
 }

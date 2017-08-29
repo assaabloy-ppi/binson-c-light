@@ -54,7 +54,6 @@ void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size
 /*======================== binson_parser private / forward decl ==============*/
 
 /* internal parser states definition and same time separate bits to combine into bitmasks */
-#define BINSON_PARSER_STATE_INIT		    0x00   /* no input data processed yet */
 #define BINSON_PARSER_STATE_ITEM		    0x01   /* item means non-container: not ARRAY nor OBJECT */
 #define BINSON_PARSER_STATE_OBJECT      0x02
 #define BINSON_PARSER_STATE_OBJECT_END  0x04
@@ -358,12 +357,15 @@ void binson_parser_reset( binson_parser *pp )
 {
   _binson_io_reset( &(pp->io) );
   pp->error_flags	 = BINSON_ID_OK;
-  pp->state		     = BINSON_PARSER_STATE_INIT;
+  pp->state		     = BINSON_PARSER_STATE_UNDEFINED;
   pp->depth        = 0;
-  pp->ret_stack[0] = BINSON_PARSER_STATE_INIT;
+  pp->ret_stack[0] = BINSON_PARSER_STATE_UNDEFINED;
   pp->val_type		 = BINSON_ID_UNKNOWN;
 
   binson_util_set_bbuf( &pp->name, NULL, 0 );
+
+  /* automatically go into topmost block on start */
+  binson_parser_advance( pp, BINSON_PARSER_ADVANCE_ONCE, NULL );
 }
 
 /* Scanning loop, which stops when 'scan_flag' condition met */
@@ -373,9 +375,11 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, const char *sc
    uint8_t raw_byte;
 
    /* check for consistency */
-   if (scan_flag == BINSON_PARSER_ADVANCE_TILL_UP && orig_depth == 0)
+   if (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_END_THEN_UP) && orig_depth == 0)
+   {
       pp->error_flags = BINSON_ID_INVALID_ARG;
       return false;
+   }
   
    /* scanning loop, replaces recursion */      
    while (true)
