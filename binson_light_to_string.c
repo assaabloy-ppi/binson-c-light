@@ -90,7 +90,7 @@ static char * binson_to_string_(char *str, int *max_str_size,
     {
     case BINSON_ID_INTEGER:
       val = binson_parser_get_integer(parser);
-      sprintf(tmp_str, "%ld", val);
+      sprintf(tmp_str, "%lld", (long long int)val);
       str = append_str(str, tmp_str, max_str_size);
       break;
     case BINSON_ID_STRING:
