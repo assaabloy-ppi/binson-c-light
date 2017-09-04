@@ -49,14 +49,14 @@ class PyFuzz():
             self.byteslen = 10
         elif level == 3:
             self.alphanum = True
-            self.maxdepth = 4
-            self.maxfields = 3
-            self.namelen = 3
-            self.strlen = 3
-            self.byteslen = 3
+            self.maxdepth = 10
+            self.maxfields = 12
+            self.namelen = 8
+            self.strlen = 8
+            self.byteslen = 8
         else:
             self.alphanum = False
-            self.maxdepth = 4
+            self.maxdepth = 6
             self.maxfields = 12
             self.namelen = 10
             self.strlen = 10
@@ -137,7 +137,9 @@ class PyFuzz():
         if btype == BinsonType.BINSON_TYPE_OBJECT:
             print('binson_write_object_begin( &w ); CHECK(&w);', file=self.binson_writer_txt)
 
-            if depth > 0:  # parser is implemented to go into top object automatically
+            # v2 parser is implemented to go into top object and
+            # into field value OBJECT/ARRAY blocks automatically
+            if depth > 0 and array_context:
                 print('binson_parser_go_into_object( &p ); CHECK(&p);', file=self.binson_parser_txt)
             res = {}
             for _ in range(random.randint(0, self.maxfields)):
@@ -152,7 +154,9 @@ class PyFuzz():
         elif btype == BinsonType.BINSON_TYPE_ARRAY:
             print('binson_write_array_begin( &w ); CHECK(&w);', file=self.binson_writer_txt)
 
-            if depth > 0:  # parser is implemented to go into top object automatically
+            # v2 parser is implemented to go into top object and
+            # into field value OBJECT/ARRAY blocks automatically
+            if depth > 0 and array_context:  # parser is implemented to go into top object automatically
                 print('binson_parser_go_into_array( &p ); CHECK(&p);', file=self.binson_parser_txt)
 
             res = [self.binson_gen(depth=depth+1, btype=BinsonType.BINSON_TYPE_RANDOM, array_context=True)
