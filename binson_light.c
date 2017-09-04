@@ -61,8 +61,7 @@ void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size
 #define BINSON_PARSER_STATE_ARRAY_END		0x10
 #define BINSON_PARSER_STATE_UNDEFINED   0xff
 
-uint8_t _binson_parser_process( binson_parser *pp, uint8_t type_byte, uint8_t after_value_state );
-uint8_t _binson_parser_process_field_name( binson_parser *pp, uint8_t type_before_name );
+uint8_t _binson_parser_process_chunk( binson_parser *pp, uint8_t type_byte, uint8_t maybe_fieldname );
 uint8_t _binson_parser_process_lenval( binson_parser *pp, bbuf *pbb, uint8_t len_sizeof );
 
 /*================== binson_io private / forward declaration =================*/
@@ -368,11 +367,15 @@ void binson_parser_reset( binson_parser *pp )
   binson_parser_advance( pp, BINSON_PARSER_ADVANCE_ONCE, NULL );
 }
 
-/* Scanning loop, which stops when 'scan_flag' condition met */
+/* Scanning loop, which stops when 'scan_flag' condition met 
+Returns "true", if advance request was satisfied according to 'scan_flag',
+"false" means no more items to scan for requested "scan_flag" */
 bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, const char *scan_name )
 {
    uint8_t orig_depth = pp->depth;
    uint8_t raw_byte;
+   int     maybe_fieldname = 1;
+   int     cmp_res;
 
    /* check for consistency */
    if (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_END_THEN_UP) && orig_depth == 0)
@@ -380,31 +383,40 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, const char *sc
       pp->error_flags = BINSON_ID_INVALID_ARG;
       return false;
    }
-  
-   /* scanning loop, replaces recursion */      
+
+   /* field name checks must start from current one, since prev ADVANCE_CMP_NAME scan may be stopped here */
+   if (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_CMP_NAME) && pp->state == BINSON_PARSER_STATE_ITEM &&
+                        pp->depth == orig_depth && binson_parser_name_equals(pp, scan_name))
+     return true;
+
+   /* === scanning loop, instead of recursion === */      
    while (true)
    {
-      /* reading and parsing of next byte if available */
+      /* reading and parsing of next chunk if available */
       raw_byte = _binson_io_read_byte( &pp->io, &pp->error_flags );
       if (pp->error_flags != BINSON_ID_OK) return false;
-      _binson_parser_process( pp, raw_byte, BINSON_PARSER_STATE_UNDEFINED);
+
+      if (_binson_parser_process_chunk( pp, raw_byte, maybe_fieldname ))
+      {
+        maybe_fieldname = 0;
+        continue;   /* additional processing required for value part of name:val OBJECT item */
+      }
       if (pp->error_flags != BINSON_ID_OK) return false;
+
+      /* validation steps if requested via 'scan_flag' */
+      if ( (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_ENSURE_OBJECT) && pp->val_type != BINSON_ID_OBJECT)  ||
+           (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_ENSURE_ARRAY) && pp->val_type != BINSON_ID_ARRAY) ||
+           (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_ENSURE_OBJARRAY) && 
+                                    pp->val_type != BINSON_ID_ARRAY && pp->val_type != BINSON_ID_OBJECT) )
+      {
+        pp->error_flags = BINSON_ID_PARSE_WRONG_STATE;
+        return false;
+      }
 
       /* parser logic */
       switch (pp->state)
       {
         case BINSON_PARSER_STATE_ITEM:
-          /* detect current block type */
-          if (pp->ret_stack[pp->depth] == BINSON_PARSER_STATE_OBJECT)  /* we are in OBJECT, so item with field name expected */
-          {
-            if (_binson_parser_process_field_name( pp, raw_byte ) != BINSON_ID_OK) return false;          
-            /* read more to parse value below */
-            raw_byte = _binson_io_read_byte( &pp->io, &pp->error_flags );
-            if (pp->error_flags != BINSON_ID_OK) return false;
-          }
-
-          /* value item expected (array value or part of OBJECT item) */
-          _binson_parser_process( pp, raw_byte, BINSON_PARSER_STATE_ITEM );          
           break;
 
         case BINSON_PARSER_STATE_OBJECT:
@@ -439,42 +451,62 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, const char *sc
       if (pp->error_flags != BINSON_ID_OK)
         return false; 
 
-      /* scan more or stop? */
-      if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_ONCE) ||
-          (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_ONCE_SAME_DEPTH) && pp->depth == orig_depth) || 
-          (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_END_SAME_DEPTH) && pp->depth == orig_depth &&
-                         CHECKBITMASK(pp->state, BINSON_PARSER_STATE_OBJECT_END | BINSON_PARSER_STATE_ARRAY_END)) || 
-          (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_END_THEN_UP) && pp->depth == orig_depth-1) ||
-          (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_CMP_NAME) && pp->state == BINSON_PARSER_STATE_ITEM &&
-                        pp->depth == orig_depth && binson_parser_cmp_name(pp, scan_name) >= 0 )
-         )
-         break;
+      /* === scan more or stop? === */
+     if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_CMP_NAME) && pp->state == BINSON_PARSER_STATE_ITEM &&
+                        pp->depth == orig_depth )
+      {         
+         cmp_res = binson_parser_cmp_name(pp, scan_name);
+         if (cmp_res == 0)  /* field name found */  
+           return false;
+
+         if (cmp_res > 0)  /* requested field name don't exists since current one is lexicographically greater */
+         {  
+           pp->error_flags = BINSON_ID_PARSE_NO_FIELD_NAME;
+           return false;
+         }
+         /* don't break, check more 'scan_flag' options */
+      } 
+
+      if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_ONCE) )
+        break;
+
+      if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_ONCE_SAME_DEPTH) && pp->depth == orig_depth )
+        break;
+
+      if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_END_SAME_DEPTH) && pp->depth == orig_depth &&
+                         CHECKBITMASK(pp->state, BINSON_PARSER_STATE_OBJECT_END | BINSON_PARSER_STATE_ARRAY_END) )
+        break;
+
+      if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_END_THEN_UP) && pp->depth == orig_depth-1) 
+        break;
    }
 
    /* return value is also used for end-of-object detection with BINSON_PARSER_ADVANCE_ONCE_SAME_DEPTH scanning */
-   return CHECKBITMASK(pp->state, BINSON_PARSER_STATE_OBJECT_END | BINSON_PARSER_STATE_ARRAY_END)? true : false; 
+   return CHECKBITMASK(pp->state, BINSON_PARSER_STATE_OBJECT_END | BINSON_PARSER_STATE_ARRAY_END)? false : true; 
 }
 
 /* Unified function for parsing value of expected type, specified by type_byte */
-uint8_t _binson_parser_process( binson_parser *pp, uint8_t type_byte, uint8_t after_value_state )
+uint8_t _binson_parser_process_chunk( binson_parser *pp, uint8_t type_byte, uint8_t maybe_fieldname )
 {
+  uint8_t is_fieldname;
+
   switch ( type_byte ) {
     case BINSON_ID_OBJ_BEGIN:
         pp->val_type = BINSON_ID_OBJECT;
         pp->state = BINSON_PARSER_STATE_OBJECT;
-        return BINSON_ID_OK;
+        break;
     case BINSON_ID_OBJ_END:
         pp->val_type = BINSON_ID_OBJECT;
         pp->state = BINSON_PARSER_STATE_OBJECT_END;
-        return BINSON_ID_OK;        
+        break;      
     case BINSON_ID_ARRAY_BEGIN:
         pp->val_type = BINSON_ID_ARRAY;
         pp->state = BINSON_PARSER_STATE_ARRAY;
-        return BINSON_ID_OK;
+        break;
     case BINSON_ID_ARRAY_END:
         pp->val_type = BINSON_ID_ARRAY;
         pp->state = BINSON_PARSER_STATE_ARRAY_END;
-        return BINSON_ID_OK;        
+        break;       
     case BINSON_ID_FALSE:
     case BINSON_ID_TRUE:
         pp->val_type = BINSON_ID_BOOLEAN;
@@ -496,13 +528,17 @@ uint8_t _binson_parser_process( binson_parser *pp, uint8_t type_byte, uint8_t af
         pp->error_flags = _binson_io_advance ( &pp->io, (binson_size)(1 << (type_byte - BINSON_ID_INTEGER - 1)) );
         pp->state = BINSON_PARSER_STATE_ITEM;
         break;
+    /* string and field names processing */
     case BINSON_ID_STRING_8:
     case BINSON_ID_STRING_16:
     case BINSON_ID_STRING_32:
-        pp->error_flags = _binson_parser_process_lenval( pp, &pp->val.bbuf_val, (uint8_t)(1 << (type_byte - BINSON_ID_STRING_LEN - 1)) );
+        is_fieldname = (maybe_fieldname && pp->ret_stack[pp->depth] == BINSON_PARSER_STATE_OBJECT)? 1 : 0;
+        pp->error_flags = _binson_parser_process_lenval( pp,
+                                is_fieldname? &pp->name : &pp->val.bbuf_val,
+                                (uint8_t)(1 << (type_byte - BINSON_ID_STRING_LEN - 1)) );    
         pp->val_type = BINSON_ID_STRING;
         pp->state = BINSON_PARSER_STATE_ITEM;
-        break;
+        return is_fieldname; /* returns 1 after field name is filled to pp->name */
     case BINSON_ID_BYTES_8:
     case BINSON_ID_BYTES_16:
     case BINSON_ID_BYTES_32:
@@ -513,22 +549,8 @@ uint8_t _binson_parser_process( binson_parser *pp, uint8_t type_byte, uint8_t af
     default:
         return pp->error_flags = BINSON_ID_PARSE_WRONG_TYPE;
   }
-  pp->state = after_value_state;
-  return pp->error_flags;
-}
 
-/* Parse expected field name */
-uint8_t _binson_parser_process_field_name( binson_parser *pp, uint8_t type_before_name )
-{
-    switch ( type_before_name ) {
-      case BINSON_ID_STRING_8:
-      case BINSON_ID_STRING_16:
-      case BINSON_ID_STRING_32:
-        return pp->error_flags = _binson_parser_process_lenval( pp, &pp->name, (uint8_t)(1 << (type_before_name - BINSON_ID_STRING_LEN - 1)) );
-
-      default:
-        return pp->error_flags = BINSON_ID_PARSE_WRONG_TYPE;
-    }
+  return 0; /* no more processing needed for current item */
 }
 
 /* Parsing helper: process variable length tokens: len+data */

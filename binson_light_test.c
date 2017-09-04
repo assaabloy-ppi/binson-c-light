@@ -296,10 +296,10 @@ int8_t test_parser_1( binson_parser *p )
   assert_flags(p);
 
   /* testing begin here */
-  res = binson_parser_field( p, "a" );  assert(res == 1); assert_flags(p);
+  res = binson_parser_field( p, "a" );  assert(res == 0); assert_flags(p);
   t_int = binson_parser_get_integer( p );  assert_flags(p); assert(t_int == 123);
       
-  res = binson_parser_field( p, "bcd" );   assert(res == 1); assert_flags(p);
+  res = binson_parser_field( p, "bcd" );   assert(res == 0); assert_flags(p);
   binson_parser_get_string_copy( p, strbuf ); 
   assert_flags(p);
   assert( !strcmp(strbuf, "Hello world!") );

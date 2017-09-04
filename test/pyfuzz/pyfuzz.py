@@ -136,7 +136,9 @@ class PyFuzz():
 
         if btype == BinsonType.BINSON_TYPE_OBJECT:
             print('binson_write_object_begin( &w ); CHECK(&w);', file=self.binson_writer_txt)
-            print('binson_parser_go_into_object( &p ); CHECK(&p);', file=self.binson_parser_txt)
+
+            if depth > 0:  # parser is implemented to go into top object automatically
+                print('binson_parser_go_into_object( &p ); CHECK(&p);', file=self.binson_parser_txt)
             res = {}
             for _ in range(random.randint(0, self.maxfields)):
                 k = self.gen_binson_item(BinsonType.BINSON_TYPE_NAME, array_context=False)
@@ -149,7 +151,10 @@ class PyFuzz():
 
         elif btype == BinsonType.BINSON_TYPE_ARRAY:
             print('binson_write_array_begin( &w ); CHECK(&w);', file=self.binson_writer_txt)
-            print('binson_parser_go_into_array( &p ); CHECK(&p);', file=self.binson_parser_txt)
+
+            if depth > 0:  # parser is implemented to go into top object automatically
+                print('binson_parser_go_into_array( &p ); CHECK(&p);', file=self.binson_parser_txt)
+
             res = [self.binson_gen(depth=depth+1, btype=BinsonType.BINSON_TYPE_RANDOM, array_context=True)
                     for _ in range(random.randint(0, self.maxfields))]
             print('binson_write_array_end( &w ); CHECK(&w);', file=self.binson_writer_txt)
@@ -209,14 +214,13 @@ class PyFuzz():
     binson_parser p;
     
     int main() {
-     
-    binson_writer_init( &w, buf, sizeof(buf) );
-    binson_parser_init( &p, buf, sizeof(buf) );
-    
+         
     '''
         out.write(src_header)
+        print("\nbinson_writer_init( &w, buf, sizeof(buf) );", file=out)
         print("\n//writing", file=out)
         out.write(self.binson_writer_txt.getvalue())
+        print("\nbinson_parser_init( &p, buf, sizeof(buf) );", file=out)
         print("\n//parsing", file=out)
         out.write(self.binson_parser_txt.getvalue())
         print("\nreturn 0;\n}", file=out)
