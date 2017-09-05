@@ -345,9 +345,11 @@ void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size
 
 /* Initialize parser object and associate it with buffer specified */
 void binson_parser_init( binson_parser *pp, uint8_t *pbuf, binson_size buf_size )
+//void binson_parser_init_cfg( binson_parser *pp, uint8_t *pbuf, binson_size buf_size, uint8_t cfg_flags )
 {
   memset( pp, 0, sizeof(binson_parser) );
   _binson_io_init( &(pp->io), pbuf, buf_size );
+  //pp->cfg = (cfg_flags == BINSON_PARSER_CFG_NONE)? BINSON_PARSER_CFG_INIT_AUTO_ADVANCE : cfg_flags;
   binson_parser_reset( pp );
 }
 
@@ -364,22 +366,26 @@ void binson_parser_reset( binson_parser *pp )
   binson_util_set_bbuf( &pp->name, NULL, 0 );
 
   /* automatically go into topmost block on start */
-  binson_parser_advance( pp, BINSON_PARSER_ADVANCE_ONCE, NULL );
+  //if (CHECKBITMASK( pp->cfg, BINSON_PARSER_CFG_INIT_AUTO_ADVANCE) )
+  //binson_parser_advance( pp, BINSON_PARSER_ADVANCE_N, 1, NULL );
 }
 
 /* Scanning loop, which stops when 'scan_flag' condition met
 Returns "true", if advance request was satisfied according to 'scan_flag',
 "false" means no more items to scan for requested "scan_flag" */
-bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, const char *scan_name )
+bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_steps, const char *scan_name )
 {
+   //uint8_t orig_state = pp->state;
    uint8_t orig_depth = pp->depth;
+   int16_t orig_steps = n_steps;
    uint8_t raw_byte;
    int     maybe_fieldname = 1;
    int     name_just_processed = 0;
    int     cmp_res;
 
+
    /* check for consistency */
-   if (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_END_THEN_UP) && orig_depth == 0)
+   if (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_N_UP) && orig_depth+1 < orig_steps)
    {
       pp->error_flags = BINSON_ID_INVALID_ARG;
       return false;
@@ -404,7 +410,7 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, const char *sc
       if (_binson_parser_process_chunk( pp, raw_byte, maybe_fieldname ))
       {
         maybe_fieldname = 0;
-        name_just_processed = 1;
+        name_just_processed = 1; //???
         continue;   /* additional processing required for value part of name:val OBJECT item */
       }
       if (pp->error_flags != BINSON_ID_OK) return false;
@@ -434,6 +440,8 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, const char *sc
             return false;
           }
           pp->ret_stack[pp->depth] = pp->state;
+          if (pp->depth == 1)  /* looks like it's auto advance step */
+            continue;
           break;
 
         case BINSON_PARSER_STATE_OBJECT_END:
@@ -457,10 +465,16 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, const char *sc
       if (pp->error_flags != BINSON_ID_OK)
         return false;
 
+      /* one step done */
+      if (n_steps > 0)  /* negative value means "till the current block's end" */
+        n_steps--;
+
+
       /* === scan more or stop? === */
+
      //if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_CMP_NAME) && pp->state == BINSON_PARSER_STATE_ITEM &&
      //                   pp->depth == orig_depth )
-      if (name_just_processed)
+      if (name_just_processed) // ???  && pp->depth == orig_depth
       {
          cmp_res = binson_parser_cmp_name(pp, scan_name);
 
@@ -472,21 +486,25 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, const char *sc
          /* ??? don't break, check more 'scan_flag' options */
       }
 
-      if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_ONCE) )
+      if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_N) && n_steps == 0 )
         break;
 
-      if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_ONCE_SAME_DEPTH) && pp->depth == orig_depth )
+      if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_N_SAME_DEPTH) &&
+                           n_steps == 0 && pp->depth == orig_depth )
         break;
 
-      if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_END_SAME_DEPTH) && pp->depth == orig_depth &&
+      if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_N_SAME_DEPTH) &&
+                         n_steps < 0 && pp->depth == orig_depth &&
                          CHECKBITMASK(pp->state, BINSON_PARSER_STATE_OBJECT_END | BINSON_PARSER_STATE_ARRAY_END) )
         break;
 
-      if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_END_THEN_UP) && pp->depth == orig_depth-1)
+      if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_N_UP) &&
+                         ( pp->depth == orig_depth-orig_steps ||
+                           pp->depth == 0) )
         break;
    }
 
-   /* return value is also used for end-of-object detection with BINSON_PARSER_ADVANCE_ONCE_SAME_DEPTH scanning */
+   /* return value is also used for end-of-object detection with BINSON_PARSER_ADVANCE_N_SAME_DEPTH scanning */
    return CHECKBITMASK(pp->state, BINSON_PARSER_STATE_OBJECT_END | BINSON_PARSER_STATE_ARRAY_END)? false : true;
 }
 
@@ -571,6 +589,18 @@ uint8_t _binson_parser_process_lenval( binson_parser *pp, bbuf *pbb, uint8_t len
 
   binson_util_set_bbuf ( pbb, _binson_io_get_ptr ( &pp->io ) + len_sizeof, len );
   return _binson_io_advance ( &pp->io, len_sizeof + len );
+}
+
+/* Go to 'idx' item in current block. */
+bool binson_parser_at( binson_parser *pp, uint8_t idx )
+{
+  if (!CHECKBITMASK(pp->state, BINSON_PARSER_STATE_OBJECT | BINSON_PARSER_STATE_ARRAY))
+  {
+    pp->error_flags = BINSON_ID_PARSE_WRONG_STATE;
+    return false;
+  }
+
+  return binson_parser_advance( pp, BINSON_PARSER_ADVANCE_N_SAME_DEPTH, idx+1, NULL);
 }
 
 /* Copy current token name to dst saving it as normal C-string */

@@ -1,7 +1,7 @@
 #!/bin/bash
 mkdir ./build
 
-CFLAGS="-g -Os -std=c99 -Wall"
+CFLAGS="-g -O0 -std=c99 -Wall"
 
 # use next for release builds
 #CFLAGS="-Os -std=c99 -flto -fpack-struct -ffreestanding -ffunction-sections -fdata-sections -funsigned-char -funsigned-bitfields -Wl,--gc-sections  -Wall -W -Wextra -pedantic"  

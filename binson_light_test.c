@@ -286,7 +286,6 @@ int8_t test_parser_1( binson_parser *p )
 
   char  strbuf[128];   // buffer used to convert bbuf strings to asciiz
   int64_t  t_int;
-  bool   res;
   
   // { "a":123, "bcd":"Hello world!" }
   const uint8_t b1[] = "\x40\x14\x01\x61\x10\x7b\x14\x03\x62\x63\x64\x14\x0c\x48\x65\x6c\x6c\x6f\x20\x77\x6f\x72\x6c\x64\x21\x41";  
@@ -296,15 +295,68 @@ int8_t test_parser_1( binson_parser *p )
   assert_flags(p);
 
   /* testing begin here */
-  res = binson_parser_field( p, "a" );  assert(res == 0); assert_flags(p);
+  assert(binson_parser_field( p, "a" )); assert_flags(p);
   t_int = binson_parser_get_integer( p );  assert_flags(p); assert(t_int == 123);
       
-  res = binson_parser_field( p, "bcd" );   assert(res == 0); assert_flags(p);
+  assert(binson_parser_field( p, "bcd" ));  assert_flags(p);
   binson_parser_get_string_copy( p, strbuf ); 
   assert_flags(p);
   assert( !strcmp(strbuf, "Hello world!") );
   
   return -1;  
+}
+
+/*=====================*/
+int8_t test_parser_array1(binson_parser *p)
+{
+  int8_t test_no = -1;  
+  UNUSED(test_no);
+
+  // {"a":[{"d":false},{"e":true},9223372036854775807]}
+  const uint8_t b1[]  =
+    "\x40\x14\x01\x61"
+        "\x42"
+           "\x40"
+                "\x14\x01\x64\x45"
+            "\x41"
+            "\x40"
+                "\x14\x01\x65\x44"
+            "\x41"
+            "\x13\xff\xff\xff\xff\xff\xff\xff\x7f"
+       "\x43"
+    "\x41";
+
+  int64_t fff = 0;
+
+  binson_parser_init(p, (uint8_t*)&b1, sizeof(b1));
+  //binson_parser_reset( p );
+  binson_parser_field( p, "a" );
+  //binson_parser_go_into_array( p );
+
+  //assert(binson_parser_next_array_value( p ));
+
+  binson_parser_go_into_object( p );
+  binson_parser_field( p, "d" );
+  assert(binson_parser_get_boolean(p) == false);
+  binson_parser_go_upto_object( p );
+
+  //p->state = 0x02;
+  //assert(binson_parser_next_array_value( p ));
+  binson_parser_go_into_object( p );
+
+  binson_parser_field( p, "e" );
+  assert(binson_parser_get_boolean(p) == true);
+  binson_parser_go_upto_object( p );
+
+  //p->state = 0x02;
+  assert(binson_parser_next_array_value( p ));
+
+  fff = binson_parser_get_integer( p );
+  assert(fff == 9223372036854775807);
+
+  binson_parser_go_upto_array( p );
+
+  return -1;
 }
 
 /*=====================*/
@@ -386,10 +438,15 @@ int main(void)
  fputs("w5", stdout); UT_RUN( test_writer_bytes( &w ) );
  fputs("w6", stdout); UT_RUN( test_writer_structure( &w ) );
  fputs("\n", stdout);
+
  fputs("p1", stdout); UT_RUN( test_parser_1( &p ) ); 
+ fputs("p2", stdout); UT_RUN( test_parser_array1( &p ) ); 
+
+
  fputs("p11", stdout); UT_RUN( test_parser_basic( &p ) );
  fputs("p12", stdout); UT_RUN( test_parser_lenfuzz( &p ) );  
  fputs("\n\n", stdout);
+ fflush(stdout);
 
  return failures;
 }

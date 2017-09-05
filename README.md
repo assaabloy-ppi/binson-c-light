@@ -5,22 +5,22 @@ A light-weight C implementation of the Binson serialization format
 > Binson is like JSON, but faster, binary and even simpler. See [binson.org](http://binson.org/)
 
 What's new in v2
----------
+---------------
 
-* Bug fixes of v1
+* Fixes v1 bugs
 * No recursion
 * Simplified state machine
-* Single-function parser helps compiler with optimizations
 * Unified support for OBJECT and ARRAY blocks
-* Both OBJECT and ARRAY top blocks now are supported automatically
+* Positioning by index supported for both OBJECT and ARRAY blocks  ( see binson_parser_at() )
+* Unified, optimization frandly single-function traversals
+* Both OBJECT and ARRAY top blocks now are supported automatically with zero care
 * Less lines, smaller binary size
 
 Status of v2
 ---------
 
-**Warning: untested code in branch!**
-Current stage is heavy testing, bugfixing of new parser.
-
+Writer is same as v1.
+Parser works fine but still needs some API clarification and unit test coverage
 
 Features
 ---------

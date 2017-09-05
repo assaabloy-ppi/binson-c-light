@@ -63,7 +63,7 @@ static char *append_bbuf_str(char *dest, bbuf *buf, int *max_dest_dize)
 
 bool next_wrapper( binson_parser *pp )
 {
-  return binson_parser_advance( pp, BINSON_PARSER_ADVANCE_ONCE_SAME_DEPTH, NULL );
+  return binson_parser_advance( pp, BINSON_PARSER_ADVANCE_N_SAME_DEPTH, 1, NULL );
 }
 
 static char * binson_to_string_(char *str, int *max_str_size,
@@ -95,7 +95,7 @@ static char * binson_to_string_(char *str, int *max_str_size,
     {
     case BINSON_ID_INTEGER:
       val = binson_parser_get_integer(parser);
-      sprintf(tmp_str, "%ld", val);
+      sprintf(tmp_str, "%lld", (long long int)val);
       str = append_str(str, tmp_str, max_str_size);
       break;
     case BINSON_ID_STRING:

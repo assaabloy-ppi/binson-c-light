@@ -49,8 +49,8 @@ class PyFuzz():
             self.byteslen = 10
         elif level == 3:
             self.alphanum = True
-            self.maxdepth = 10
-            self.maxfields = 12
+            self.maxdepth = 5
+            self.maxfields = 8
             self.namelen = 8
             self.strlen = 8
             self.byteslen = 8
