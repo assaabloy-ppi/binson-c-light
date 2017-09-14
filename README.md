@@ -9,12 +9,16 @@ What's new in v2
 
 * Fixes v1 bugs
 * No recursion
-* Simplified state machine
+* Simpler state machine
+* Parser callback support
+* Built-in binson-to-string convertion function
 * Unified support for OBJECT and ARRAY blocks
 * Positioning by index supported for both OBJECT and ARRAY blocks  ( see binson_parser_at() )
 * Unified, optimization frandly single-function traversals
 * Both OBJECT and ARRAY top blocks now are supported automatically with zero care
 * Less lines, smaller binary size
+* Better unit test coverage, 
+* Pyfuzz fuzz testing tool for random binson tree and corresponding writer/parser source code generation, build and run.
 
 Status of v2
 ---------
@@ -22,14 +26,20 @@ Status of v2
 Writer is same as v1.
 Parser works fine but still needs some API clarification and unit test coverage
 
+API changes in v2:
+---------------
+
+[TODO]
+
+
 Features
 ---------
 
 * Written in ANSI C (C99 standard)
 * Portable code. Tested at:
   * x86_64 Linux
-  * ARM Cortex-M3 (with QEMU)
-  * ARM Cortex-M4 baremetal (nRF52832 SoC)
+  * ~~ARM Cortex-M3 (with QEMU)~~
+  * ~~ARM Cortex-M4 baremetal (nRF52832 SoC)~~
 * Compatible with: 
   * [binson-java](https://github.com/franslundberg/binson-java)
   * [binson-java-light](https://github.com/franslundberg/binson-java-light)

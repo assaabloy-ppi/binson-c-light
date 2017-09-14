@@ -1,58 +1,15 @@
 /*
- *  Copyright (c) 2015 ASSA ABLOY AB
+ *  Copyright (c) 2017 APTUS AB
  *
  *  This file is part of binson-c-light, BINSON serialization format library in C.
  *
- *  binson-c-light is free software; you can redistribute it and/or modify it under
- *  the terms of the GNU Lesser General Public License (LGPL) as published
- *  by the Free Software Foundation; either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  As a special exception, the Contributors give you permission to link
- *  this library with independent modules to produce an executable,
- *  regardless of the license terms of these independent modules, and to
- *  copy and distribute the resulting executable under terms of your choice,
- *  provided that you also meet, for each linked independent module, the
- *  terms and conditions of the license of that module. An independent
- *  module is a module which is not derived from or based on this library.
- *  If you modify this library, you must extend this exception to your
- *  version of the library.
- *
- *  binson-c-light is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
- *  License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *  License: MIT, Please see the file LICENSE for mor information
  */
 #include "binson_light_to_string.h"
 
 #include <stdint.h>
 #include <stdio.h>
 
-
-bool to_string_cb( binson_parser *pp, void *param )
-{
-  bbuf *dst = (bbuf*)param;
-
-}
-
-void binson_to_string(binson_parser *parser, char *str, int max_str_size)
-{
-  /* store current callback & param */
-  binson_parser_cb   stored_cb = pp->cb;
-  void*              stored_cb_param = pp->cb_param;
-  bbuf               dst;
-
-  /* set own callback */
-  binson_util_set_bbuf( &dst, (uint8_t *)str, (binson_size)max_str_size );
-  binson_parser_set_callback(pp, to_string_cb, &dst);
-
-
-}
-
-/*
 //#define USE_SPACES_FOR_INDENT
 
 #define MAX(x,y) (x) > (y) ? (x) : (y)
@@ -213,4 +170,3 @@ void binson_to_string(binson_parser *parser, char *str, int max_str_size)
   str = binson_to_string_(str, &size, 1, parser, next_wrapper, false);
   str = append_str(str, "\n}\n", &size);
 }
-*/
