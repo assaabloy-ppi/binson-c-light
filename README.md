@@ -14,12 +14,12 @@ What's new in v2
 * Parser callback support
 * Built-in binson-to-string convertion function
 * Positioning by index supported for both OBJECT and ARRAY blocks  ( see binson_parser_at() )
-* Unified, optimization frandly single-function traversals
+* Compiler optimization frandly single-function traversal code
 * Both OBJECT and ARRAY top blocks now are supported automatically with zero care
 * Less lines, smaller binary size
 * Better unit test coverage.
 * Well-commended parsing algorithm code
-* Pyfuzz fuzz testing tool for random binson tree and corresponding writer/parser source code generation, build and run.
+* Pyfuzz fuzz testing tool for random binson tree and corresponding writer/parser source code automated generation, build and run loop.
 
 Status of v2
 ---------

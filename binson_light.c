@@ -681,6 +681,7 @@ bool _to_string_meta_cb( binson_parser *pp, uint8_t new_state, bool nice, void *
 
   /* when to add commas */
   if ((pp->state == BINSON_PARSER_STATE_VAL && new_state != BINSON_PARSER_STATE_IN_BLOCK_END) ||
+      (pp->state == BINSON_PARSER_STATE_BLOCK_END && new_state == BINSON_PARSER_STATE_NAME) ||
       (pp->state == BINSON_PARSER_STATE_BLOCK_END && new_state == BINSON_PARSER_STATE_VAL) ||
       (pp->state == BINSON_PARSER_STATE_BLOCK_END && new_state == BINSON_PARSER_STATE_BLOCK) )
     _binson_io_write_byte( io, ',' );

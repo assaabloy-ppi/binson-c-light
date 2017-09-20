@@ -39,7 +39,7 @@
 *.kate-swp
 *.cbp
 *.depend
-
+*.idea
 
 CMakeLists.txt
 
