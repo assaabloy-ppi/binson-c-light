@@ -33,9 +33,9 @@ static void example2(void)
   binson_parser_init(&p, src, sizeof(src));
 
   printf("%s: \n", __FUNCTION__);
-  char buf[100]; // Use a buffer that is too small, output will be truncated
+  char buf[1000]; // Use a buffer that is too small, output will be truncated
   //binson_to_string(&p, buf, sizeof(buf));
-  binson_parser_to_string( &p, (uint8_t*)buf, sizeof(buf), false );
+  binson_parser_to_string( &p, (uint8_t*)buf, sizeof(buf), true );
 
   printf("%s\n", buf);
 }

@@ -8,28 +8,33 @@ void parse_data(uint8_t *buffer, uint32_t size)
 
    bbuf *string;
    binson_parser p;
+   bool found = false;
 
    binson_parser_init(&p, buffer, size);
 
    binson_parser_go_into(&p);
-   binson_parser_field(&p, "i");
+   found = binson_parser_field(&p, "i");
+   assert(found);
    assert(p.error_flags == BINSON_ID_OK);
    assert(binson_parser_get_type(&p) == BINSON_ID_INTEGER);
    assert(binson_parser_get_integer(&p) == 123);
 
-   binson_parser_field(&p, "x");
-   if (p.error_flags == BINSON_ID_OK)
+   found = binson_parser_field(&p, "x");   
+   if (p.error_flags == BINSON_ID_OK)    
    {
+      assert(found);
       assert(binson_parser_get_type(&p) == BINSON_ID_STRING);
       string = binson_parser_get_string_bbuf(&p);
       printf("x-field contains: %*.*s\r\n", 0, string->bsize, string->bptr);
    }
    else
    {
+      assert(!found);
       printf("No x-field found\r\n");
    }
 
-   binson_parser_field(&p, "z");
+   found = binson_parser_field(&p, "z");
+   assert(found);
    assert(p.error_flags == BINSON_ID_OK);
    assert(binson_parser_get_type(&p) == BINSON_ID_STRING);
    string = binson_parser_get_string_bbuf(&p);

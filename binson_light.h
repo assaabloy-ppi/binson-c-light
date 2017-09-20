@@ -72,6 +72,7 @@ typedef uint16_t binson_size;       /* type to keep raw data block sizes and off
 #define BINSON_ID_UNKNOWN        0x00
 #define BINSON_ID_OBJECT         0x01
 #define BINSON_ID_ARRAY 	       0x02
+#define BINSON_ID_BLOCK          0x03  /* Meta ID. BINSON_ID_OBJECT or BINSON_ID_ARRAY */
 
 #define BINSON_ID_OBJ_BEGIN      0x40
 #define BINSON_ID_OBJ_END        0x41
@@ -123,9 +124,7 @@ typedef uint16_t binson_size;       /* type to keep raw data block sizes and off
 #define BINSON_PARSER_ADVANCE_N_SAME_DEPTH         0x02  /* advance n items, skipping nested */
 #define BINSON_PARSER_ADVANCE_N_DEPTH              0x04  /* advance from current depth to depth+n */
 #define BINSON_PARSER_ADVANCE_CMP_NAME             0x08
-#define BINSON_PARSER_ADVANCE_ENSURE_OBJECT        0x10
-#define BINSON_PARSER_ADVANCE_ENSURE_ARRAY         0x20
-#define BINSON_PARSER_ADVANCE_ENSURE_BLOCK         0x40  /* OBJECT or ARRAY */
+#define BINSON_PARSER_ADVANCE_ENSURE_TYPE          0x10
 
 /* buffer pointer + size aggregation, also used for string references */
 typedef struct _bbuf
@@ -222,28 +221,30 @@ void binson_parser_reset( binson_parser *pp );
 void binson_parser_set_callback( binson_parser *pp, binson_parser_cb cb, void *cb_param );
 
 /* main parser traversal call. returns true, if advance request was satisfied according to 'scan_flag' */
-bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_steps, const char *scan_name );
-bool binson_parser_at( binson_parser *pp, uint8_t idx );
+bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_steps,
+                            const char *scan_name, uint8_t ensure_type );
 
-/* next calls are now shortcuts to 'binson_parser_advance()' */
-#define binson_parser_field(x, y)          binson_parser_advance(x, BINSON_PARSER_ADVANCE_N_SAME_DEPTH | \
-                                                                    BINSON_PARSER_ADVANCE_CMP_NAME, -1, y)   
-#define binson_parser_next(x)              binson_parser_advance(x, BINSON_PARSER_ADVANCE_N_SAME_DEPTH, 1, NULL)
-#define binson_parser_go_into(x)           binson_parser_advance(x, BINSON_PARSER_ADVANCE_N_DEPTH | \
-                                                                    BINSON_PARSER_ADVANCE_ENSURE_BLOCK, 1, NULL)
-#define binson_parser_go_into_object(x)    binson_parser_advance(x, BINSON_PARSER_ADVANCE_N_DEPTH | \
-                                                                    BINSON_PARSER_ADVANCE_ENSURE_OBJECT, 1, NULL)
-#define binson_parser_go_into_array(x)     binson_parser_advance(x, BINSON_PARSER_ADVANCE_N_DEPTH | \
-                                                                    BINSON_PARSER_ADVANCE_ENSURE_ARRAY, 1, NULL)
-#define binson_parser_go_up(x)             binson_parser_advance(x, BINSON_PARSER_ADVANCE_N_DEPTH, -1, NULL)      
+/* next calls are now just shortcuts to 'binson_parser_advance()' */
+bool binson_parser_at_ensure( binson_parser *pp, uint8_t idx, uint8_t ensure_type );
+bool binson_parser_field_ensure( binson_parser *pp, const char *scan_name, uint8_t ensure_type);
+bool binson_parser_next_ensure( binson_parser *pp, uint8_t ensure_type);
+bool binson_parser_go_into( binson_parser *pp );
+bool binson_parser_go_into_object( binson_parser *pp );
+bool binson_parser_go_into_array( binson_parser *pp );
+bool binson_parser_go_up( binson_parser *pp );
+
+/* looped "_go_up()" version, moving up till required block type */
+bool binson_parser_go_upto_object( binson_parser *pp );
+bool binson_parser_go_upto_array( binson_parser *pp );
+
+/* wrappers usefull to ignore value type checks */
+#define binson_parser_at(x, idx)  binson_parser_at_ensure(x, idx, BINSON_ID_UNKNOWN)
+#define binson_parser_field(x, y)  binson_parser_field_ensure(x, y, BINSON_ID_UNKNOWN)
+#define binson_parser_next(x)  binson_parser_next_ensure(x, BINSON_ID_UNKNOWN)
 
 /* obsolete, do not use in v2 */
-#define binson_parser_next_field(x)        binson_parser_advance(x, BINSON_PARSER_ADVANCE_N_SAME_DEPTH, 1, NULL)   
-#define binson_parser_next_array_value(x)  binson_parser_advance(x, BINSON_PARSER_ADVANCE_N_SAME_DEPTH, 1, NULL)
-#define binson_parser_go_upto_object(x)    binson_parser_advance(x, BINSON_PARSER_ADVANCE_N_DEPTH | \
-                                                                    BINSON_PARSER_ADVANCE_ENSURE_OBJECT, -1, NULL)
-#define binson_parser_go_upto_array(x)     binson_parser_advance(x, BINSON_PARSER_ADVANCE_N_DEPTH | \
-                                                                    BINSON_PARSER_ADVANCE_ENSURE_ARRAY, -1, NULL)
+#define binson_parser_next_field(x)        binson_parser_next_ensure(x, BINSON_ID_UNKNOWN)
+#define binson_parser_next_array_value(x)  binson_parser_next_ensure(x, BINSON_ID_UNKNOWN)
 
 #ifdef WITH_TO_STRING
 bool binson_parser_to_string( binson_parser *pp, uint8_t *pbuf, binson_size buf_size, bool nice );
