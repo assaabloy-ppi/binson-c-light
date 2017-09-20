@@ -73,7 +73,13 @@ void print_hex_byte(uint8_t src_byte)
 
 #define ASSERT_FLAGS(x) \
       if (x->error_flags != BINSON_ID_OK ) \
-         { fputs("error_flags=", stdout); print_hex_byte(x->error_flags); fputs(" state=", stdout); print_hex_byte(x->state); }
+         { fputs("error_flags=", stdout); print_hex_byte(x->error_flags); fputs(" state=", stdout); print_hex_byte(x->state); \
+           assert(x->error_flags == BINSON_ID_OK); }
+
+#define ASSERT_STR(x, y) \
+      if (strcmp(x, y)) \
+         { fputs("\r\n\"", stdout); fputs(x, stdout); fputs("\" != \"", stdout); fputs(y, stdout); fputs("\"\r\n", stdout); \
+           assert(strcmp(x, y) == 0); }
 
 /*=====================*/
 int8_t  test_writer_boolean( binson_writer *w )
@@ -289,13 +295,16 @@ int8_t test_parser_1(binson_parser *p)
 
   binson_parser_init(p, (uint8_t*)&b1, sizeof(b1));
   assert(binson_parser_get_depth(p) == 0);
-
+ 
   binson_parser_go_into(p);  ASSERT_FLAGS(p);
   assert(binson_parser_get_depth(p) == 1);
   assert(binson_parser_get_type(p) == BINSON_ID_OBJECT);
 
   binson_parser_go_up( p );  ASSERT_FLAGS(p);
-  assert(binson_parser_get_depth(p) == 0);
+  // current position is last byte
+  assert(binson_parser_get_depth(p) == 0); 
+  assert(binson_parser_get_type(p) == BINSON_ID_UNKNOWN);
+  assert(p->state == 0x08);  /*#define BINSON_PARSER_STATE_BLOCK_END     0x08 */
 
   // read beyond top block
   binson_parser_next(p);
@@ -305,7 +314,7 @@ int8_t test_parser_1(binson_parser *p)
   // also check binson-to-string conversion
   binson_parser_reset(p);
   binson_parser_to_string(p, (uint8_t*)&strbuf, sizeof(strbuf), false);
-  assert(strcmp(strbuf, b1s) == 0);
+  ASSERT_STR(strbuf, b1s);
 #endif
 
   return -1;
@@ -372,7 +381,7 @@ int8_t test_parser_2(binson_parser *p)
   assert(binson_parser_get_type(p) == BINSON_ID_ARRAY); 
   binson_parser_go_up(p);  ASSERT_FLAGS(p);
   assert(binson_parser_get_depth(p) == 0);
-  assert(binson_parser_get_type(p) == BINSON_ID_ARRAY);   
+  assert(binson_parser_get_type(p) == BINSON_ID_UNKNOWN);   
 
   // read beyond top block
   binson_parser_next(p);
@@ -382,11 +391,85 @@ int8_t test_parser_2(binson_parser *p)
   // also check binson-to-string conversion
   binson_parser_reset(p);
   binson_parser_to_string(p, (uint8_t*)&strbuf, sizeof(strbuf), false);
-  assert(strcmp(strbuf, b1s) == 0);
+  ASSERT_STR(strbuf, b1s);
 #endif
 
   return -1;
 }
+
+/*=====================*/
+int8_t test_parser_3(binson_parser *p)
+{
+  int8_t test_no = -1;  UNUSED(test_no);
+
+  // {"d":{"c":{"b":{"a":{}}}}}
+  const char b1s[]  = "{\"d\":{\"c\":{\"b\":{\"a\":{}}}}}";
+  const uint8_t b1[]  = "\x40\x14\x01\x64\x40\x14\x01\x63\x40\x14\x01\x62\x40\x14\x01\x61\x40\x41\x41\x41\x41\x41";
+  char strbuf[sizeof(b1s)];
+
+  binson_parser_init(p, (uint8_t*)&b1, sizeof(b1));
+  assert(binson_parser_get_depth(p) == 0);
+
+  binson_parser_go_into(p);  ASSERT_FLAGS(p);
+  assert(binson_parser_get_depth(p) == 1);
+  assert(binson_parser_get_type(p) == BINSON_ID_OBJECT);
+  
+  assert(binson_parser_field(p, "d")); ASSERT_FLAGS(p);
+
+  binson_parser_go_into(p);  ASSERT_FLAGS(p);
+  assert(binson_parser_get_depth(p) == 2);
+  assert(binson_parser_get_type(p) == BINSON_ID_OBJECT);
+
+  assert(binson_parser_field(p, "c")); ASSERT_FLAGS(p);
+
+  binson_parser_go_into(p);  ASSERT_FLAGS(p);
+  assert(binson_parser_get_depth(p) == 3);
+  assert(binson_parser_get_type(p) == BINSON_ID_OBJECT);
+
+  assert(binson_parser_field(p, "b")); ASSERT_FLAGS(p);
+
+  binson_parser_go_into(p);  ASSERT_FLAGS(p);
+  assert(binson_parser_get_depth(p) == 4);
+  assert(binson_parser_get_type(p) == BINSON_ID_OBJECT);
+
+  assert(binson_parser_field(p, "a")); ASSERT_FLAGS(p);
+
+  binson_parser_go_into(p);  ASSERT_FLAGS(p);
+  assert(binson_parser_get_depth(p) == 5);
+  assert(binson_parser_get_type(p) == BINSON_ID_OBJECT);
+
+  binson_parser_go_up(p);  ASSERT_FLAGS(p);
+  assert(binson_parser_get_depth(p) == 4);
+  assert(binson_parser_get_type(p) == BINSON_ID_OBJECT);  
+  binson_parser_go_up(p);  ASSERT_FLAGS(p);
+  assert(binson_parser_get_depth(p) == 3);
+  assert(binson_parser_get_type(p) == BINSON_ID_OBJECT);  
+  binson_parser_go_up(p);  ASSERT_FLAGS(p);
+  assert(binson_parser_get_depth(p) == 2);
+  assert(binson_parser_get_type(p) == BINSON_ID_OBJECT);  
+  binson_parser_go_up(p);  ASSERT_FLAGS(p);
+  assert(binson_parser_get_depth(p) == 1);
+  assert(binson_parser_get_type(p) == BINSON_ID_OBJECT);  
+
+  binson_parser_go_up(p);  ASSERT_FLAGS(p);
+  assert(binson_parser_get_depth(p) == 0);
+  assert(binson_parser_get_type(p) == BINSON_ID_UNKNOWN);   
+
+  // read beyond top block
+  binson_parser_next(p);
+  assert(p->error_flags == BINSON_ID_PARSE_BLOCK_ENDED);  
+
+#ifdef WITH_TO_STRING
+  // also check binson-to-string conversion
+  binson_parser_reset(p);
+  binson_parser_to_string(p, (uint8_t*)&strbuf, sizeof(strbuf), false);
+  ASSERT_STR(strbuf, b1s);
+#endif
+
+  return -1;
+}
+
+/*=====================*/
 
 /*=====================*/
 int8_t test_parser_13( binson_parser *p )
@@ -554,6 +637,7 @@ int main(void)
 
  fputs("p1", stdout); UT_RUN( test_parser_1( &p ) ); 
  fputs("p2", stdout); UT_RUN( test_parser_2( &p ) ); 
+ fputs("p3", stdout); UT_RUN( test_parser_3( &p ) ); 
  fputs("p13", stdout); UT_RUN( test_parser_13( &p ) ); 
  fputs("p14", stdout); UT_RUN( test_parser_14( &p ) ); 
   
