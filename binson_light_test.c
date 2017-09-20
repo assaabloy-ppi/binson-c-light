@@ -637,6 +637,7 @@ int8_t test_parser_basic( binson_parser *p )
   // { "a":123, "bcd":"Hello world!" }
   memcpy( p->io.pbuf, b1, sizeof(b1) );
   
+  binson_parser_go_into(p);  
   binson_parser_field( p, "a" );  assert( p->error_flags == BINSON_ID_OK );  
   assert( p->error_flags == BINSON_ID_OK );
   assert( binson_parser_get_integer( p ) == 123 );

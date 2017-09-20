@@ -12,6 +12,7 @@ What's new in v2
 * Simpler state machine
 * Unified support for OBJECT and ARRAY blocks
 * Parser callback support
+* Removed type checks in getters (it's up to app now)
 * Built-in binson-to-string convertion function
 * Positioning by index supported for both OBJECT and ARRAY blocks  ( see binson_parser_at() )
 * Compiler optimization frandly single-function traversal code

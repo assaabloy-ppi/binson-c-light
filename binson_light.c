@@ -107,7 +107,7 @@ void binson_writer_reset( binson_writer *pw )
   binson_writer_purge( pw );
   _binson_io_reset( &(pw->io) );
 
-  pw->error_flags = 0;
+  pw->error_flags = BINSON_ID_OK;
 }
 
 /* Purge all stored bytes, preserving counters. May be helpful in streaming scenarios */
@@ -827,50 +827,43 @@ bool binson_parser_bytes_equals( binson_parser *pp, bbuf *pbb )
 /* Getter for BOOLEAN value */
 uint8_t binson_parser_get_boolean( binson_parser *pp )
 {
-  //return pp->val.bool_val;
-  return (pp->val_type == BINSON_ID_BOOLEAN)? pp->val.bool_val : (pp->error_flags = BINSON_ID_PARSE_WRONG_TYPE, 0);
+  return pp->val.bool_val;
 }
 
 /* Getter for INTEGER value */
 int64_t binson_parser_get_integer( binson_parser *pp )
 {
-  //return pp->val.int_val;
-  return (pp->val_type == BINSON_ID_INTEGER)? pp->val.int_val : (pp->error_flags = BINSON_ID_PARSE_WRONG_TYPE, 0);
+  return pp->val.int_val;
 }
 
 /* Getter for DOUBLE value */
 double binson_parser_get_double( binson_parser *pp )
 {
-  //return pp->val.double_val;
-  return (pp->val_type == BINSON_ID_DOUBLE)? pp->val.double_val : (pp->error_flags = BINSON_ID_PARSE_WRONG_TYPE, 0);
+  return pp->val.double_val;
 }
 
 /* Getter for STRING value */
 bbuf*  binson_parser_get_string_bbuf( binson_parser *pp )
 {
-  //  return  &pp->val.bbuf_val;
-  return (pp->val_type == BINSON_ID_STRING)? &pp->val.bbuf_val : (pp->error_flags = BINSON_ID_PARSE_WRONG_TYPE, NULL);
+  return  &pp->val.bbuf_val;
 }
 
 /* Getter for length of the STRING value */
 binson_tok_size   binson_parser_get_string_len( binson_parser *pp )
 {
-  //  return pp->val.bbuf_val.bsize;
-  return (pp->val_type == BINSON_ID_STRING)? pp->val.bbuf_val.bsize : (pp->error_flags = BINSON_ID_PARSE_WRONG_TYPE, 0);
+  return pp->val.bbuf_val.bsize;
 }
 
 /* Getter for BYTES value */
 bbuf* binson_parser_get_bytes_bbuf( binson_parser *pp )
 {
-  return &pp->val.bbuf_val; // [use next line instead of this one to find current function misuses]
-  //return (pp->val_type == BINSON_ID_BYTES)? &pp->val.bbuf_val : (pp->error_flags = BINSON_ID_PARSE_WRONG_TYPE, NULL);
+  return &pp->val.bbuf_val;
 }
 
 /* Getter for length of the BYTES value */
 binson_tok_size binson_parser_get_bytes_len( binson_parser *pp )
 {
-  //  return pp->val.bbuf_val.bsize;
-  return (pp->val_type == BINSON_ID_BYTES)? pp->val.bbuf_val.bsize : (pp->error_flags = BINSON_ID_PARSE_WRONG_TYPE, 0);
+  return pp->val.bbuf_val.bsize;
 }
 
 /*======================== UTIL ===============================*/
