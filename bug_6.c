@@ -11,6 +11,7 @@ void parse_data(uint8_t *buffer, uint32_t size)
 
    binson_parser_init(&p, buffer, size);
 
+   binson_parser_go_into(&p);
    binson_parser_field(&p, "i");
    assert(p.error_flags == BINSON_ID_OK);
    assert(binson_parser_get_type(&p) == BINSON_ID_INTEGER);

@@ -394,6 +394,10 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
    uint8_t orig_depth = pp->depth;
    uint8_t req_state = BINSON_PARSER_STATE_UNDEFINED;  /* state update request */
 
+   /* subsequent field name lookups must clear previous BINSON_ID_PARSE_NO_FIELD_NAME error explicitely */
+   if (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_CMP_NAME) && pp->error_flags == BINSON_ID_PARSE_NO_FIELD_NAME)
+      pp->error_flags = BINSON_ID_OK;
+
    /* check for consistency */
    if (pp->error_flags != BINSON_ID_OK) return false;
    if (!pp->depth && pp->state != BINSON_PARSER_STATE_UNDEFINED)  /* advance attempt beyond the top block */
@@ -407,10 +411,6 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
       pp->error_flags = BINSON_ID_INVALID_ARG;
       return false;
    }
-
-   /* subsequent field name lookups must clear previous BINSON_ID_PARSE_NO_FIELD_NAME error explicitely */
-   if (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_CMP_NAME) && pp->error_flags == BINSON_ID_PARSE_NO_FIELD_NAME)
-      pp->error_flags = BINSON_ID_OK;
 
    /* field name checks must start from current one, since prev ADVANCE_CMP_NAME scan may be stopped here */
    if (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_CMP_NAME) && IS_OBJECT(pp) &&
