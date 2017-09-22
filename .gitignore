@@ -58,3 +58,7 @@ bin/
 .project
 .settings
 
+# Quickcheck tests leftovers
+*.beam
+.eqc-info
+current_counterexample.eqc
