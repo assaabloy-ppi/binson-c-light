@@ -184,9 +184,12 @@ void binson_write_string_with_len( binson_writer *pw, const char* pstr, binson_t
 void binson_write_string_bbuf( binson_writer *pw, bbuf* pbbuf );
 void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size len );
 
+/* write binson-encoded block */
+uint8_t binson_write_raw( binson_writer *pw, const uint8_t *psrc, binson_size sz );
+
 /* status getters */
 static inline binson_size binson_writer_get_counter( binson_writer *pw ) { return pw->io.counter; }
-static inline uint8_t binson_writer_geterror( binson_writer *pw, uint8_t bitmask ) { return CHECKBITMASK(pw->error_flags, bitmask ); }
+static inline uint8_t binson_writer_geterror( binson_writer *pw, uint8_t bitmask ) { return CHECKBITMASK(pw->error_flags, bitmask); }
 
 /*======================== PARSER ===============================*/
 
@@ -245,6 +248,12 @@ bool binson_parser_go_upto_array( binson_parser *pp );
 /* obsolete, do not use in v2 */
 #define binson_parser_next_field(x)        binson_parser_next_ensure(x, BINSON_ID_UNKNOWN)
 #define binson_parser_next_array_value(x)  binson_parser_next_ensure(x, BINSON_ID_UNKNOWN)
+
+/* get location and size of buffer part which reflects whole current block being parsed */
+bool binson_parser_get_raw( binson_parser *pp, bbuf *pbb );
+
+/* copy current block to specified writer */
+bool binson_parser_to_writer( binson_parser *pp, binson_writer *pw );
 
 #ifdef WITH_TO_STRING
 bool binson_parser_to_string( binson_parser *pp, uint8_t *pbuf, binson_size buf_size, bool nice );

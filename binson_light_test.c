@@ -81,6 +81,9 @@ void print_hex_byte(uint8_t src_byte)
          { fputs("\r\n\"", stdout); fputs(x, stdout); fputs("\" != \"", stdout); fputs(y, stdout); fputs("\"\r\n", stdout); \
            assert(strcmp(x, y) == 0); }
 
+#define ASSERT_BYTES(x, y, s) { assert(memcmp(x, y, s) == 0); }
+
+
 /*=====================*/
 int8_t  test_writer_boolean( binson_writer *w )
 {
@@ -622,6 +625,39 @@ int8_t test_parser_14(binson_parser *p)
 }
 
 /*=====================*/
+int8_t test_parser_2w(binson_parser *p, binson_writer *w)  
+{
+  int8_t test_no = -1;  UNUSED(test_no);
+
+  // {"a":[true,123,"b",5],"b":false,"c":7} =>  {"a2":[true,123,"b",5]}
+  const uint8_t b1[]  = "\x40\x14\x01\x61\x42\x44\x10\x7b\x14\x01\x62\x10\x05\x43\x14\x01\x62\x45\x14\x01\x63\x10\x07\x41";
+  const uint8_t b2[]  = "\x40\x14\x02\x61\x32\x42\x44\x10\x7b\x14\x01\x62\x10\x05\x43\x41";
+
+  binson_parser_init(p, (uint8_t*)&b1, sizeof(b1));
+  assert(binson_parser_get_depth(p) == 0);
+
+  binson_parser_go_into(p);  ASSERT_FLAGS(p);
+  assert(binson_parser_get_depth(p) == 1);
+  assert(binson_parser_get_type(p) == BINSON_ID_OBJECT);
+  
+  assert(binson_parser_field(p, "a")); ASSERT_FLAGS(p);
+
+  // writing 
+  binson_writer_reset( w );
+  
+  binson_write_object_begin( w );
+  binson_write_name( w, "a2" );
+  assert(binson_parser_to_writer( p, w ));  // direct extraction and writing 
+  binson_write_object_end( w );
+
+  ASSERT_BYTES(b2, w->io.pbuf, w->io.buf_used);
+
+  return -1;
+}
+
+/*=====================*/
+
+/*=====================*/
 int8_t test_parser_basic( binson_parser *p )
 {
   int8_t test_no = -1;  
@@ -708,7 +744,7 @@ int main(void)
  fputs("p4", stdout); UT_RUN( test_parser_4( &p ) ); 
  fputs("p13", stdout); UT_RUN( test_parser_13( &p ) ); 
  fputs("p14", stdout); UT_RUN( test_parser_14( &p ) ); 
-  
+ fputs("p2w", stdout); UT_RUN( test_parser_2w( &p, &w ) ); 
 
  fputs("p21", stdout); UT_RUN( test_parser_basic( &p ) );
  fputs("p22", stdout); UT_RUN( test_parser_lenfuzz( &p ) );  

@@ -7,11 +7,12 @@ A light-weight C implementation of the Binson serialization format
 What's new in v2
 ---------------
 
-* Fixed v1 bugs
+* Claimed fixed v1 bugs
 * No recursion
 * Simpler state machine
 * Unified support for OBJECT and ARRAY blocks
 * Parser callback support
+* Raw binson encoded block extraction and output support (see #8)
 * Removed type checks in getters (it's up to app now)
 * Built-in binson-to-string convertion function
 * Positioning by index supported for both OBJECT and ARRAY blocks  ( see binson_parser_at() )
@@ -30,6 +31,8 @@ Parser works fine but still needs some API clarification and unit test coverage
 
 API changes in v2:
 ---------------
+
+* No implicit block level entering: for top-level nor for OBJECT items (e.g. "a":{})
 
 [TODO]
 

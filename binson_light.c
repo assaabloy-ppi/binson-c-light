@@ -62,9 +62,13 @@ void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size
 #define BINSON_PARSER_STATE_VAL           0x20  /* simple type value detected (standalone or part of name:val) */
 #define BINSON_PARSER_STATE_UNDEFINED     0x40
 
+/* common utility macros */
+#define RET_BOOL(x) (x->error_flags == BINSON_ID_OK ? 1:0)
+
 /* parser utility macros */
 #define IS_OBJECT(x)  (x->block_stack[x->depth] == BINSON_ID_OBJECT)
 #define IS_BLOCK_TYPE(t)  ((t) == BINSON_ID_OBJECT || (t) == BINSON_ID_ARRAY)
+
 
 uint8_t _binson_parser_process_one( binson_parser *pp );
 uint8_t _binson_parser_process_lenval( binson_parser *pp, bbuf *pbb, uint8_t len_sizeof );
@@ -352,6 +356,12 @@ void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size
   pw->tmp_val.bbuf_val.bptr = (uint8_t *)pbuf;
   pw->tmp_val.bbuf_val.bsize = len;
  _binson_writer_write_token( pw, BINSON_ID_BYTES, &pw->tmp_val );
+}
+ 
+/* write binson-encoded block */
+uint8_t binson_write_raw( binson_writer *pw, const uint8_t *psrc, binson_size sz )
+{
+  return _binson_io_write( &(pw->io), psrc, sz );
 }
 
 /*=================================== PARSER =================================*/
@@ -719,6 +729,49 @@ bool binson_parser_go_upto_object( binson_parser *pp )
 bool binson_parser_go_upto_array( binson_parser *pp )
 {
   return binson_parser_advance(pp, BINSON_PARSER_ADVANCE_N_DEPTH | BINSON_PARSER_ADVANCE_ENSURE_TYPE, -1, NULL, BINSON_ID_ARRAY);
+}
+
+/* get location and size of buffer part which reflects whole current block being parsed */
+bool binson_parser_get_raw( binson_parser *pp, bbuf *pbb )
+{
+  bbuf bb;
+  bool res;
+
+  //if (pp->state != BINSON_PARSER_STATE_IN_BLOCK)  /* current position must be "block begin" */
+  //{
+  //  pp->error_flags = BINSON_ID_PARSE_WRONG_STATE;
+  //  return false;
+ // }
+
+  //binson_util_set_bbuf( &bb, _binson_io_get_ptr ( &pp->io ), pp->io.buf_used );  /* temporary storage */
+  //res = binson_parser_advance( pp, BINSON_PARSER_ADVANCE_N_DEPTH, -1, NULL, BINSON_ID_UNKNOWN );  
+  //if (res)
+  //  binson_util_set_bbuf( pbb, bb.bptr, pp->io.buf_used - bb.bsize );
+
+  if (pp->state != BINSON_PARSER_STATE_BLOCK)  /* current position must be "block begin" */
+  {
+    pp->error_flags = BINSON_ID_PARSE_WRONG_STATE;
+    return false;
+  }
+
+  binson_util_set_bbuf( &bb, _binson_io_get_ptr ( &pp->io )-1, pp->io.buf_used-1 );  /* temporary storage */
+  res =  binson_parser_next_ensure( pp, BINSON_ID_UNKNOWN );
+  if (res)
+    binson_util_set_bbuf( pbb, bb.bptr, pp->io.buf_used - bb.bsize );
+
+  return res;
+}
+
+/* copy current block to specified writer */
+bool binson_parser_to_writer( binson_parser *pp, binson_writer *pw )
+{
+  bbuf bb;
+
+  if ( !binson_parser_get_raw( pp, &bb ) )
+    return false;
+
+  binson_write_raw( pw, bb.bptr, bb.bsize );
+  return RET_BOOL(pw);
 }
 
 #ifdef WITH_TO_STRING
