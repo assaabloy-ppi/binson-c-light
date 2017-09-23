@@ -63,7 +63,8 @@ void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size
 #define BINSON_PARSER_STATE_UNDEFINED     0x40
 
 /* common utility macros */
-#define RET_BOOL(x) (x->error_flags == BINSON_ID_OK ? 1:0)
+#define IS_CLEAN(x) (x->error_flags == BINSON_ID_OK ? 1:0)
+//#define CHECK_EXCEPTION(x) if (x->error_flags != BINSON_ID_OK) return false; /* continue if error-free state only */
 
 /* parser utility macros */
 #define IS_OBJECT(x)  (x->block_stack[x->depth] == BINSON_ID_OBJECT)
@@ -85,6 +86,7 @@ static inline uint8_t	  _binson_io_write_byte( binson_io *io, const uint8_t src_
 static inline uint8_t   _binson_io_read( binson_io *io, uint8_t *pdst, binson_size sz );
 static inline uint8_t   _binson_io_read_byte( binson_io *io, uint8_t *perr );
 static inline uint8_t   _binson_io_advance( binson_io *io, binson_size offset );
+static inline uint8_t   _binson_io_rollback( binson_io *io, binson_size buf_used_prev );
 static inline uint8_t*	_binson_io_get_ptr( binson_io *io );
 
 /*=================== utility private / forward declaration ==================*/
@@ -207,6 +209,15 @@ static inline uint8_t _binson_io_advance( binson_io *io, binson_size offset )
   return _binson_io_read( io, NULL, offset );
 }
 
+/* Truncate last written bytes, returning to the "buf_used_prev" state */
+static inline uint8_t  _binson_io_rollback( binson_io *io, binson_size buf_used_prev )
+{
+  io->counter -= io->buf_used - buf_used_prev;
+  io->buf_used = buf_used_prev;
+
+  return BINSON_ID_OK;
+}
+
 /* Get pointer to memory location at current read position */
 static inline uint8_t*	_binson_io_get_ptr( binson_io *io )
 {
@@ -241,12 +252,19 @@ void  _binson_writer_write_token( binson_writer *pwriter, const uint8_t token_ty
     case BINSON_ID_STRING:
     case BINSON_ID_BYTES:
     {
-      binson_tok_size 	tok_size = val->bbuf_val.bsize;
-      binson_value 	tval;
+      binson_tok_size  tok_size = val->bbuf_val.bsize;
+      binson_value 	   tval;
+      binson_size      pos0 = pwriter->io.buf_used;
 
       tval.int_val = tok_size;
 
       _binson_writer_write_token( pwriter, (uint8_t)(token_type+1), &tval ); /* writes type+len*/
+      if (pwriter->error_flags != BINSON_ID_OK)
+      {
+        _binson_io_rollback( &(pwriter->io), pos0 );  /* revoke buffer updates for current token */
+        return;        
+      } 
+      
       res = _binson_io_write( &(pwriter->io), val->bbuf_val.bptr, tok_size );  /* writes payload: string (without \0) or bytearray */
       isize += tok_size;
       break;
@@ -768,7 +786,7 @@ bool binson_parser_to_writer( binson_parser *pp, binson_writer *pw )
     return false;
 
   binson_write_raw( pw, bb.bptr, bb.bsize );
-  return RET_BOOL(pw);
+  return IS_CLEAN( pw );
 }
 
 #ifdef WITH_TO_STRING
