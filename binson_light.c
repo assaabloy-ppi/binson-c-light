@@ -147,14 +147,13 @@ static inline void _binson_io_purge( binson_io *io )
 /* Write sz bytes from buffer pointed with psrc to internal buffer, with overflow checks */
 static inline uint8_t	_binson_io_write( binson_io *io, const uint8_t *psrc, binson_size sz )
 {
-  io->counter += sz;
-
   if (io->buf_used + sz > io->buf_size)
     return BINSON_ID_BUF_FULL;
 
   if (io->pbuf && (psrc != io->pbuf + io->buf_used))
       memcpy( io->pbuf + io->buf_used, psrc, sz );
 
+  io->counter += sz;
   io->buf_used += sz;
 
   return BINSON_ID_OK;
@@ -270,9 +269,7 @@ void  _binson_writer_write_token( binson_writer *pwriter, const uint8_t token_ty
     return;
   }
 
-  if (res)
-    pwriter->error_flags = res;
-
+  pwriter->error_flags = res;
   return;
 }
 
