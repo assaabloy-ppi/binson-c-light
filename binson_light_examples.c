@@ -53,6 +53,7 @@ void parser_demo1( binson_parser *p )
   binson_parser_init( p, src, sizeof(src) );
   memcpy( src, b1, sizeof(b1) );  
   
+  binson_parser_go_into( p );
   binson_parser_field( p, "a" );
   binson_parser_go_into_array( p );
   binson_parser_next_array_value( p );
@@ -82,7 +83,7 @@ void parser_demo1( binson_parser *p )
   binson_parser_get_string_copy( p, strbuf ); 
   printf( "\n`%s`\n", strbuf );        
     
-  binson_parser_go_upto_array( p );
+  binson_parser_go_up( p );
   binson_parser_next_array_value( p );
   //printf( "%"PRId64"\n", binson_parser_get_integer( p )  );   
   fff = binson_parser_get_integer( p );
