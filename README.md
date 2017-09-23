@@ -33,7 +33,7 @@ API changes in v2:
 ---------------
 
 * No implicit block level entering: for top-level nor for OBJECT items (e.g. "a":{})
-
+* User level API returns bool (succes/failure), app may check later "error_flags" if needed.
 [TODO]
 
 

@@ -592,28 +592,25 @@ int8_t test_parser_14(binson_parser *p)
   int64_t fff = 0;
 
   binson_parser_init(p, (uint8_t*)&b1, sizeof(b1));
-  //binson_parser_reset( p );
 
   binson_parser_go_into(p);  
   binson_parser_field( p, "a" );
+
   binson_parser_go_into(p); 
+  binson_parser_go_into( p );
 
-  //assert(binson_parser_next_array_value( p ));
-
-  binson_parser_go_into_object( p );
   binson_parser_field( p, "d" );
   assert(binson_parser_get_boolean(p) == false);
+  
   binson_parser_go_up( p );
 
-  //p->state = 0x02;
   assert(binson_parser_next_array_value( p ));
-  binson_parser_go_into_object( p );
+  binson_parser_go_into( p );
 
   binson_parser_field( p, "e" );
   assert(binson_parser_get_boolean(p) == true);
   binson_parser_go_up( p );
 
-  //p->state = 0x02;
   assert(binson_parser_next_array_value( p ));
 
   fff = binson_parser_get_integer( p );
