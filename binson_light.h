@@ -123,8 +123,8 @@ typedef uint16_t binson_size;       /* type to keep raw data block sizes and off
 #define BINSON_PARSER_ADVANCE_N                    0x01  /* advance n items */
 #define BINSON_PARSER_ADVANCE_N_SAME_DEPTH         0x02  /* advance n items, skipping nested */
 #define BINSON_PARSER_ADVANCE_N_DEPTH              0x04  /* advance from current depth to depth+n */
-#define BINSON_PARSER_ADVANCE_CMP_NAME             0x08
-#define BINSON_PARSER_ADVANCE_ENSURE_TYPE          0x10
+#define BINSON_PARSER_ADVANCE_CMP_NAME             0x08  /* field search */
+#define BINSON_PARSER_ADVANCE_ENSURE_TYPE          0x10  /* additional check of binson type when other requirements met */
 
 /* buffer pointer + size aggregation, also used for string references */
 typedef struct _bbuf
@@ -159,9 +159,9 @@ typedef struct _binson_io
 /* main writer "object" structure */
 typedef struct _binson_writer
 {
-  uint8_t	    error_flags;
+  uint8_t	      error_flags;
   binson_io     io;  	      /* smart buffer */
-  binson_value  tmp_val;      /* used to simplify passing simple types to/from meta functions */
+  binson_value  tmp_val;    /* used to simplify passing simple types to/from meta functions */
 
 } binson_writer;
 

@@ -29,9 +29,13 @@
 
 #include "binson_light.h"
 
+/* common utility macros */
+#define IS_CLEAN(x) (x->error_flags == BINSON_ID_OK ? 1:0)
+
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif
+
 #ifndef MAX
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #endif
@@ -62,14 +66,9 @@ void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size
 #define BINSON_PARSER_STATE_VAL           0x20  /* simple type value detected (standalone or part of name:val) */
 #define BINSON_PARSER_STATE_UNDEFINED     0x40
 
-/* common utility macros */
-#define IS_CLEAN(x) (x->error_flags == BINSON_ID_OK ? 1:0)
-//#define CHECK_EXCEPTION(x) if (x->error_flags != BINSON_ID_OK) return false; /* continue if error-free state only */
-
 /* parser utility macros */
-#define IS_OBJECT(x)  (x->block_stack[x->depth] == BINSON_ID_OBJECT)
+#define IS_OBJECT(x)      (x->block_stack[x->depth] == BINSON_ID_OBJECT)
 #define IS_BLOCK_TYPE(t)  ((t) == BINSON_ID_OBJECT || (t) == BINSON_ID_ARRAY)
-
 
 uint8_t _binson_parser_process_one( binson_parser *pp );
 uint8_t _binson_parser_process_lenval( binson_parser *pp, bbuf *pbb, uint8_t len_sizeof );
@@ -80,7 +79,6 @@ static inline void	    _binson_io_reset( binson_io *io );
 static inline void      _binson_io_init( binson_io *io, uint8_t *pbuf, binson_size size );
 static inline void	    _binson_io_purge( binson_io *io );
 static inline uint8_t	  _binson_io_write( binson_io *io, const uint8_t *psrc, binson_size sz );
-//static inline uint8_t   _binson_io_write_str( binson_io *io, char *pstr );
 #define _binson_io_write_str(x, y)  _binson_io_write(x, (const uint8_t *)y, sizeof(y)-1)
 static inline uint8_t	  _binson_io_write_byte( binson_io *io, const uint8_t src_byte );
 static inline uint8_t   _binson_io_read( binson_io *io, uint8_t *pdst, binson_size sz );
@@ -150,7 +148,7 @@ static inline void _binson_io_purge( binson_io *io )
 static inline uint8_t	_binson_io_write( binson_io *io, const uint8_t *psrc, binson_size sz )
 {
   io->counter += sz;
-  
+
   if (io->buf_used + sz > io->buf_size)
     return BINSON_ID_BUF_FULL;
 
@@ -161,12 +159,6 @@ static inline uint8_t	_binson_io_write( binson_io *io, const uint8_t *psrc, bins
 
   return BINSON_ID_OK;
 }
-
-/* Write C-string to internal buffer, with overflow checks */
-/*static inline uint8_t  _binson_io_write_str( binson_io *io, const char *pstr )
-{
-  return _binson_io_write( io, pstr, strlen(pstr) );
-}*/
 
 /* Write single byte to internal buffer, with overflow checks */
 static inline uint8_t	_binson_io_write_byte( binson_io *io, const uint8_t src_byte )
@@ -569,7 +561,7 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
          if (cmp_res >= 0)
            return cmp_res == 0? true:false;
          
-         /* if cmp_res < 0 don't return but check more 'scan_flag' options */
+         /* case: cmp_res < 0 => don't return, check more 'scan_flag' options instead */
       }
 
       if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_N) && n_steps == 0 )
@@ -753,17 +745,6 @@ bool binson_parser_get_raw( binson_parser *pp, bbuf *pbb )
   bbuf bb;
   bool res;
 
-  //if (pp->state != BINSON_PARSER_STATE_IN_BLOCK)  /* current position must be "block begin" */
-  //{
-  //  pp->error_flags = BINSON_ID_PARSE_WRONG_STATE;
-  //  return false;
- // }
-
-  //binson_util_set_bbuf( &bb, _binson_io_get_ptr ( &pp->io ), pp->io.buf_used );  /* temporary storage */
-  //res = binson_parser_advance( pp, BINSON_PARSER_ADVANCE_N_DEPTH, -1, NULL, BINSON_ID_UNKNOWN );  
-  //if (res)
-  //  binson_util_set_bbuf( pbb, bb.bptr, pp->io.buf_used - bb.bsize );
-
   if (pp->state != BINSON_PARSER_STATE_BLOCK)  /* current position must be "block begin" */
   {
     pp->error_flags = BINSON_ID_PARSE_WRONG_STATE;
@@ -804,7 +785,7 @@ bool _to_string_meta_cb( binson_parser *pp, uint8_t new_state, bool nice, void *
    _binson_io_write_byte( io, ',' ); 
 
   /* write indentation spaces */
-  if (nice && 0 ) // unsupported now
+  if (nice && 0 ) // indented 'nice' mode is unsupported now
   {
     _binson_io_write_byte( io, '\n' );
     for (int i = 0; i < pp->depth*INDENT_WIDTH; i++)

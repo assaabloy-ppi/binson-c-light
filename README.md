@@ -7,17 +7,17 @@ A light-weight C implementation of the Binson serialization format
 What's new in v2
 ---------------
 
-* Claimed fixed all v1 bugs
+* Bugs of v1 claimed fixed
 * No recursion
 * Simpler state machine
-* Unified support for OBJECT and ARRAY blocks (is true for both API and the code)
 * Parser callback support (ready to be used as low-level API for "binson-c" project)
+* Unified support for OBJECT and ARRAY blocks (is true for both API and the code)
+* Both OBJECT and ARRAY top blocks now are supported automatically with zero care
+* Positioning by index supported for both OBJECT and ARRAY blocks  ( see binson_parser_at() )
 * Raw binson encoded block extraction and output supported now (see #8)
 * Removed type checks in getters (it's up to user app now)
 * Built-in binson-to-string convertion function
-* Positioning by index supported for both OBJECT and ARRAY blocks  ( see binson_parser_at() )
 * Optimization frendly single-function traversal code.
-* Both OBJECT and ARRAY top blocks now are supported automatically with zero care
 * Less lines, smaller binary size
 * Better unit test coverage.
 * Well-commended parsing algorithm code
@@ -26,7 +26,7 @@ What's new in v2
 Status of v2
 ---------
 
-Looks stable with good unit test coverage, need more eyes for review.
+Looks stable with good unit test coverage, need more eyes for review, API is still a subject of discussion.
 
 API changes in v2:
 ---------------
@@ -35,6 +35,16 @@ API changes in v2:
 * User level API returns bool (succes/failure), it's up to app to check later "error_flags" if needed.
 * All parsing functions are just shortcuts to binson_parser_advance(), controlled with wide range of parameters.
 * *_ensure() functions are designed to additionaly check item type (see #8)
+
+TODO in v2:
+-----------
+
+* More code review & cleanup
+* Add more unit test cases (after code coverage checks)
+* Standartized API doc comments in the header/source files
+* Configure AFL fuzz suite for more advanced fuzzing (see bitmap generation example(-s) in off.docs)
+* Try to make quick integration of this project to act as low-level API of binson-c, to proof APIs are valid and flexible enough.
+* [TBD]
 
 
 Features
