@@ -280,7 +280,8 @@ void  _binson_writer_write_token( binson_writer *pwriter, const uint8_t token_ty
     return;
   }
 
-  pwriter->error_flags = res;
+  if (res)
+    pwriter->error_flags = res;
   return;
 }
 
