@@ -1,3 +1,7 @@
+-define(BOUND8,  (1 bsl 7)).
+-define(BOUND16, (1 bsl 15)).
+-define(BOUND32, (1 bsl 31)).
+
 -define(BEGIN_OBJ,  16#40). %%64
 -define(END_OBJ,    16#41). %%65
 -define(BEGIN_ARR,  16#42). %%66
