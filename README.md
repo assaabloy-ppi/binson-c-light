@@ -1,3 +1,5 @@
+[<img src="http://quickcheck-ci.com/p/assaabloy-ppi/binson-c-light.svg" alt="Build Status" width="100px">](http://quickcheck-ci.com/p/assaabloy-ppi/binson-c-light)
+
 # binson-c-light
 
 A light-weight C implementation of the Binson serialization format
@@ -22,6 +24,7 @@ What's new in v2
 * Better unit test coverage.
 * Well-commended parsing algorithm code
 * Pyfuzz fuzz testing tool for random binson tree and corresponding writer/parser source code automated generation, build and run loop.
+* Quickcheck models for property based testing. Integration with Quviq Quickcheck Continuous Integration server 
 
 Status of v2
 ---------
