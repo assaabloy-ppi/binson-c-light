@@ -80,7 +80,7 @@ binson_writer_types() ->
 % Additional QC data generators for binson_write* functions arguments
 integer_gen() -> oneof([int(), largeint()]).
 string_gen()  -> non_empty(list(choose($A, $Z))).
-binary_gen()  -> eqc_gen:binary().
+binary_gen()  -> non_empty(eqc_gen:binary()).
 
 % binson_arg_gen/1 function returns list of arguments for each tested binson_write_* function
 % first (constant) argument "binson_writer *pw" is added just before command execution
@@ -134,8 +134,15 @@ binson_encoder(binson_write_bytes, [Bytes, Len]) ->
       true           -> <<?BYTE_LEN32, Len:32/integer-little, Bytes/binary>>
    end.
 
+
+
 % First QC API callback function: called before start of each test: returning initial state.
 initial_state() -> #state{buf_size = 0, data_counter = 0}.
+
+% QC API callback function which specifies the distribution with which commands are generated.
+weight(_S, binson_writer_reset) -> 1;
+weight(_S, binson_writer_get_counter) -> 5;
+weight(_S, _) -> 10.
 
 % QC model command "binson_alloc_buf" for allocating binson buffer of random length.
 % It is not testing yet binson_writer but it was convenient to separate this stage.
