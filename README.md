@@ -1,4 +1,4 @@
-[<img src="http://quickcheck-ci.com/p/assaabloy-ppi/binson-c-light.svg" alt="Build Status" width="100px">](http://quickcheck-ci.com/p/assaabloy-ppi/binson-c-light)
+[<img src="http://quickcheck-ci.com/p/assaabloy-ppi/binson-c-light.png" alt="Build Status" width="120px">](http://quickcheck-ci.com/p/assaabloy-ppi/binson-c-light)
 
 # binson-c-light
 
