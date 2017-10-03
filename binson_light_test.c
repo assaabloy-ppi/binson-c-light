@@ -653,6 +653,23 @@ int8_t test_parser_2w(binson_parser *p, binson_writer *w)
 }
 
 /*=====================*/
+int8_t test_parser_afl_1_1(binson_parser *p )  
+{
+  int8_t test_no = -1;  UNUSED(test_no);
+
+  /* afl detected hang on this sample */
+  const uint8_t b1[]  = "\x40\x19\xd3\x03\x41";
+  char  str[2048];
+
+#ifdef WITH_TO_STRING
+  binson_parser_reset( p );
+  memcpy( p->io.pbuf, b1, sizeof(b1) );
+
+  binson_parser_to_string( p, (uint8_t*)str, sizeof(str), false );
+#endif
+
+  return -1;
+}
 
 /*=====================*/
 int8_t test_parser_basic( binson_parser *p )
@@ -742,6 +759,9 @@ int main(void)
  fputs("p13", stdout); UT_RUN( test_parser_13( &p ) ); 
  fputs("p14", stdout); UT_RUN( test_parser_14( &p ) ); 
  fputs("p2w", stdout); UT_RUN( test_parser_2w( &p, &w ) ); 
+ 
+ /* afl related testing */
+ fputs("pa1_1", stdout); UT_RUN( test_parser_afl_1_1( &p ) ); 
 
  fputs("p21", stdout); UT_RUN( test_parser_basic( &p ) );
  fputs("p22", stdout); UT_RUN( test_parser_lenfuzz( &p ) );  

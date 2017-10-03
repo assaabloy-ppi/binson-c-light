@@ -35,11 +35,11 @@ class PyFuzz():
 
         if level <= 1:
             self.alphanum = True
-            self.maxdepth = 3
-            self.maxfields = 6
-            self.namelen = 6
-            self.strlen = 6
-            self.byteslen = 6
+            self.maxdepth = 8
+            self.maxfields = 3
+            self.namelen = 1
+            self.strlen = 1
+            self.byteslen = 1
         elif level == 2:
             self.alphanum = True
             self.maxdepth = 8
@@ -179,6 +179,7 @@ class PyFuzz():
 
         try:
             os.mkdir('./build', 0o777)
+            os.mkdir('./build/bin', 0o777)
         except:
             pass
 
@@ -251,12 +252,17 @@ void print_hex_byte(uint8_t src_byte)
         print("\nbinson_writer_init( &w, buf, sizeof(buf) );", file=out)
         print("\n//writing", file=out)
         out.write(self.binson_writer_txt.getvalue())
+
+  #      print("\nsetmode(fileno(stdout), O_BINARY); ", file=out)
+        print("\nfwrite( buf, 1, binson_writer_get_counter(&w), stdout); ", file=out)
+
+
         print("\nbinson_parser_init( &p, buf, sizeof(buf) );", file=out)
         print("\n//parsing", file=out)
         out.write(self.binson_parser_txt.getvalue())
 
-        print("\n//_to_str", file=out)
-        out.write(str_footer);
+        #print("\n//_to_str", file=out)
+        #out.write(str_footer);
         print("\nreturn 0;\n}", file=out)
 
         out.close()
@@ -271,7 +277,12 @@ void print_hex_byte(uint8_t src_byte)
         self.binson_writer_txt.close()
         self.binson_parser_txt.close()
 
-        p = subprocess.Popen(["./build/{}.o".format(fileno)])
+        out = "./build/bin/{}.bin".format(fileno)
+        #p = subprocess.Popen("./build/{}.o".format(fileno), stdout=out)
+
+        with open(out, 'w+') as f:
+            subprocess.Popen(["./build/{}.o".format(fileno), 'R'], stdout=f, stderr=f)
+
         p.wait()
         if p.returncode == 0:
             print("\r\n=========================")
