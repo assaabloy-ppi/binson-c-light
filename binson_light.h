@@ -37,8 +37,9 @@
 #include <stdint.h>
 #include <string.h>
 
-typedef uint16_t binson_tok_size;   /* type to keep token length (key and value are separate tokens). */
-typedef uint16_t binson_size;       /* type to keep raw data block sizes and offsets */
+typedef uint16_t binson_tok_size;    /* type to keep token length (key and value are separate tokens). */
+typedef uint16_t binson_size;        /* type to keep raw data block sizes and offsets */
+typedef uint32_t binson_large_size;  /* type to keep counters etc, when 'binson_size' isn't enough */
 
 #ifndef bool
 #define bool        int   /* for 8-bit platforms better to use int8_t instead */
@@ -132,7 +133,7 @@ typedef uint16_t binson_size;       /* type to keep raw data block sizes and off
 /* buffer pointer + size aggregation, also used for string references */
 typedef struct _bbuf
 {
-  binson_tok_size	bsize;
+  binson_tok_size	  bsize;
   uint8_t          *bptr;
 
 } bbuf;
@@ -152,8 +153,9 @@ typedef struct _binson_io
 {
   binson_size  	buf_size;
   binson_size   buf_used;
-  binson_size   counter;
-  uint8_t       *pbuf;
+  uint8_t      *pbuf;
+
+  binson_large_size  counter;
 
 } binson_io;
 
