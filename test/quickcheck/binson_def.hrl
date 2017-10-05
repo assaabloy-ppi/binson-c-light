@@ -1,3 +1,5 @@
+-define(MAX_BINSON_SIZE, 16#FFFF).
+
 -define(BOUND8,  (1 bsl 7)).
 -define(BOUND16, (1 bsl 15)).
 -define(BOUND32, (1 bsl 31)).

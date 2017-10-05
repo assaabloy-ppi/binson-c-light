@@ -78,9 +78,15 @@ binson_writer_types() ->
    ].
 
 % Additional QC data generators for binson_write* functions arguments
-integer_gen() -> oneof([int(), largeint()]).
-string_gen()  -> non_empty(list(choose($A, $Z))).
-binary_gen()  -> non_empty(eqc_gen:binary()).
+
+integer_gen() -> oneof([choose(-?BOUND8, ?BOUND8),
+                        choose(-?BOUND16, ?BOUND16),
+                        choose(-?BOUND32, ?BOUND32),
+                        largeint()]).
+size_gen() -> oneof([nat(), choose(1, ?MAX_BINSON_SIZE)]).
+
+string_gen()  -> ?LET(S, size_gen(), noshrink(vector(S, choose($A, $Z)))).
+binary_gen()  -> ?LET(S, size_gen(), noshrink(binary(S))).
 
 % binson_arg_gen/1 function returns list of arguments for each tested binson_write_* function
 % first (constant) argument "binson_writer *pw" is added just before command execution
@@ -119,8 +125,8 @@ binson_encoder(binson_write_string, [String]) ->
    Binary = list_to_binary(String),
    Len = byte_size(Binary),
    if
-      Len < 16#100   -> <<?STR_LEN8,  Len:8/integer-little,  Binary/binary>>;
-      Len < 16#10000 -> <<?STR_LEN16, Len:16/integer-little, Binary/binary>>;
+      Len < 16#80   -> <<?STR_LEN8,  Len:8/integer-little,  Binary/binary>>;
+      Len < 16#8000 -> <<?STR_LEN16, Len:16/integer-little, Binary/binary>>;
       true           -> <<?STR_LEN32, Len:32/integer-little, Binary/binary>>
    end;
 binson_encoder(binson_write_name, [String]) ->
@@ -129,8 +135,8 @@ binson_encoder(binson_write_string_with_len, [String, Len]) ->
    binson_encoder(binson_write_string, [lists:sublist(String, Len)]);
 binson_encoder(binson_write_bytes, [Bytes, Len]) ->
    if
-      Len < 16#100   -> <<?BYTE_LEN8,  Len:8/integer-little,  Bytes/binary>>;
-      Len < 16#10000 -> <<?BYTE_LEN16, Len:16/integer-little, Bytes/binary>>;
+      Len < 16#80   -> <<?BYTE_LEN8,  Len:8/integer-little,  Bytes/binary>>;
+      Len < 16#8000 -> <<?BYTE_LEN16, Len:16/integer-little, Bytes/binary>>;
       true           -> <<?BYTE_LEN32, Len:32/integer-little, Bytes/binary>>
    end.
 
@@ -148,8 +154,8 @@ weight(_S, _) -> 10.
 % It is not testing yet binson_writer but it was convenient to separate this stage.
 % precondition: buffer size = 0 (initial state)
 binson_alloc_buf_pre(State) -> State#state.buf_size == 0.
-% argument: random small integer number > 0
-binson_alloc_buf_args(_State) -> [eqc_gen:nat()].
+% argument: size_gen()
+binson_alloc_buf_args(_State) -> [size_gen()].
 % command execution: allocating buffer of given length
 binson_alloc_buf(Buf_size) -> eqc_c:alloc({array, Buf_size, unsigned_char}).
 % post condition: success if eqc_c:alloc returns pointer to buffer, false otherwise
