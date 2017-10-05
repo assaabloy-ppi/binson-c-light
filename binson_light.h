@@ -196,7 +196,7 @@ void binson_write_bytes_bbuf( binson_writer *pw, bbuf* pbbuf );
 uint8_t binson_write_raw( binson_writer *pw, const uint8_t *psrc, binson_size sz );
 
 /* status getters */
-static inline binson_size binson_writer_get_counter( binson_writer *pw ) { return pw->io.counter; }
+static inline binson_large_size binson_writer_get_counter( binson_writer *pw ) { return pw->io.counter; }
 static inline uint8_t binson_writer_geterror( binson_writer *pw, uint8_t bitmask ) { return CHECKBITMASK(pw->error_flags, bitmask); }
 
 /*======================== PARSER ===============================*/
