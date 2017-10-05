@@ -26,191 +26,105 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "binson_light_to_string.h"
-
-#include <stdint.h>
+#include <unistd.h>
 #include <stdio.h>
+#include "binson_light_test_stream.h"
 
+char str_buf[2048];
 
-bool to_string_cb( binson_parser *pp, void *param )
+/* binson-to-binson parser callback, used for testing */
+bool _to_binson_cb( binson_parser *pp, uint8_t new_state, void *param )
 {
-  bbuf *dst = (bbuf*)param;
+  binson_writer *w = (binson_writer*) param;
 
-}
+  switch (new_state)
+  {
+    case 0x01: /*BINSON_PARSER_STATE_BLOCK:*/
+      binson_write( w, pp->val_type == BINSON_ID_OBJECT? BINSON_ID_OBJ_BEGIN : BINSON_ID_ARRAY_BEGIN );
+      return true;
 
-void binson_to_string(binson_parser *parser, char *str, int max_str_size)
-{
-  /* store current callback & param */
-  binson_parser_cb   stored_cb = pp->cb;
-  void*              stored_cb_param = pp->cb_param;
-  bbuf               dst;
+    case 0x08: /* BINSON_PARSER_STATE_BLOCK_END:*/
+      binson_write( w, pp->val_type == BINSON_ID_OBJECT? BINSON_ID_OBJ_END : BINSON_ID_ARRAY_END );
+      return true;
 
-  /* set own callback */
-  binson_util_set_bbuf( &dst, (uint8_t *)str, (binson_size)max_str_size );
-  binson_parser_set_callback(pp, to_string_cb, &dst);
+    case 0x10: /* BINSON_PARSER_STATE_NAME: */
+        binson_write_name_bbuf( w, &pp->name );
+        return true;
 
+    case 0x20: /* BINSON_PARSER_STATE_VAL: */
+      switch (pp->val_type)
+      {
+        case BINSON_ID_BOOLEAN:
+          binson_write_boolean( w, pp->val.bool_val );
+          break;
+        case BINSON_ID_DOUBLE:
+          binson_write_double( w, pp->val.double_val );        
+          break;
+        case BINSON_ID_INTEGER:
+          binson_write_integer( w, pp->val.int_val );        
+          break;
+        case BINSON_ID_STRING:
+          binson_write_string_bbuf( w, &pp->val.bbuf_val );
+          break;
+        case BINSON_ID_BYTES:
+          binson_write_bytes_bbuf( w, &pp->val.bbuf_val );
+          break;
 
+        default:  /* we should not get here */
+          return true;
+      }
+      break;
+
+    default:
+      return true;  /* do nothing */
+  }
+
+  return true;
 }
 
 /*
-//#define USE_SPACES_FOR_INDENT
-
-#define MAX(x,y) (x) > (y) ? (x) : (y)
-#define MIN(x,y) (x) < (y) ? (x) : (y)
-
-static char tmp_str[50];
-
-static char *append_str(char *dest, char *src, int *max_dest_size);
-static char *indent(int level, char *str, int *max_dest_size);
-static char *append_bbuf_str(char *dest, bbuf *buf, int *max_dest_size);
-
-static char *append_str(char *dest, char *src, int *max_dest_size)
-{
-  if (*max_dest_size <= 1)
-    return dest;
-  int size = MIN((int)(strlen(src)), *max_dest_size - 1);
-  memcpy(dest, src, size);
-  dest[size] = 0;
-  *max_dest_size -= size;
-  return &dest[size];
-}
-
-static char * indent(int level, char *str, int *max_dest_size)
-{
-#ifdef USE_SPACES_FOR_INDENT
-  const int indentSpaces = 4;
-  for(int i = 0 ; i < level*indentSpaces ; ++i)
-    str = appendStr(str, " ", maxDestSize);
-#else
-  for(int i = 0 ; i < level; ++i)
-    str = append_str(str, "\t", max_dest_size);
-#endif
-  return str;
-}
-
-static char *append_bbuf_str(char *dest, bbuf *buf, int *max_dest_dize)
-{
-  if (*max_dest_dize <= 1 || buf == NULL)
-    return dest;
-
-  int size_to_copy = MIN(*max_dest_dize - 1, buf->bsize);
-  if (size_to_copy <= 0)
-    return dest;
-  memcpy(dest, buf->bptr, size_to_copy);
-
-  dest[size_to_copy] = 0;
-  *max_dest_dize -= size_to_copy;
-
-  return &dest[size_to_copy];
-}
-
-bool next_wrapper( binson_parser *pp )
-{
-  return binson_parser_advance( pp, BINSON_PARSER_ADVANCE_N_SAME_DEPTH, 1, NULL );
-}
-
-static char * binson_to_string_(char *str, int *max_str_size,
-                                int level, binson_parser *parser,
-                                bool (*next)(binson_parser *pp), bool is_array)
-{
-  if (*max_str_size <= 1)
-    return str;
-
-  bool firstLap = true;
-  while (next(parser))
-  {
-    int64_t val;
-    int type = binson_parser_get_type(parser);
-    bbuf *buf = binson_parser_get_name_bbuf(parser);
-
-    if (!firstLap)
-      str = append_str(str, ",", max_str_size);
-    str = append_str(str, "\n", max_str_size);
-    str = indent(level, str, max_str_size);
-
-    if (!is_array)
-    {
-      str = append_str(str, "\"", max_str_size);
-      str = append_bbuf_str(str, buf, max_str_size);
-      str = append_str(str, "\":", max_str_size);
-    }
-    switch(type)
-    {
-    case BINSON_ID_INTEGER:
-      val = binson_parser_get_integer(parser);
-      sprintf(tmp_str, "%lld", (long long int)val);
-      str = append_str(str, tmp_str, max_str_size);
-      break;
-    case BINSON_ID_STRING:
-      buf = binson_parser_get_string_bbuf(parser);
-      str = append_str(str, "\"", max_str_size);
-      str = append_bbuf_str(str, buf, max_str_size);
-      str = append_str(str, "\"", max_str_size);
-      break;
-    case BINSON_ID_BOOLEAN:
-    {
-      uint8_t val = binson_parser_get_boolean(parser);
-      if (val == 0)
-        str = append_str(str, "false", max_str_size);
-      else
-        str = append_str(str, "true", max_str_size);
-    }
-    break;
-    case BINSON_ID_DOUBLE:
-    {
-      double val = binson_parser_get_double(parser);
-      sprintf(tmp_str, "%f", val);
-      str = append_str(str, tmp_str, max_str_size);
-    }
-    break;
-    case BINSON_ID_BYTES:
-      buf = binson_parser_get_bytes_bbuf(parser);
-      if (buf)
-        sprintf(tmp_str, " <data> bytes len: %d", buf->bsize);
-      else
-        sprintf(tmp_str, " buf: %p", (void *)buf);
-      str = append_str(str, tmp_str, max_str_size);
-      break;
-    case BINSON_ID_OBJECT:
-      binson_parser_go_into_object(parser);
-      if (!is_array)
-      {
-        str = append_str(str, "\n", max_str_size);
-        str = indent(level, str, max_str_size);
-      }
-      str = append_str(str, "{", max_str_size);
-      str = binson_to_string_(str, max_str_size, level + 1, parser, next_wrapper, false);
-      str = append_str(str, "\n", max_str_size);
-      str = indent(level, str, max_str_size);
-      str = append_str(str, "}", max_str_size);
-      binson_parser_go_upto_object(parser);
-      break;
-    case BINSON_ID_ARRAY:
-      binson_parser_go_into_array(parser);
-      str = append_str(str, "\n", max_str_size);
-      str = indent(level, str, max_str_size);
-      str = append_str(str, "[", max_str_size);
-      str = binson_to_string_(str, max_str_size, level + 1, parser, next_wrapper, true);
-      str = append_str(str, "\n", max_str_size);
-      str = indent(level, str, max_str_size);
-      str = append_str(str, "]", max_str_size);
-      binson_parser_go_upto_array(parser);
-      break;
-    default:
-      str = append_str(str, "PARSE ERROR!!!\n", max_str_size);
-      break;
-    }
-    if (firstLap)
-      firstLap = false;
-  }
-  return str;
-}
-
-void binson_to_string(binson_parser *parser, char *str, int max_str_size)
-{
-  int size = max_str_size;
-  str = append_str(str, "{", &size);
-  str = binson_to_string_(str, &size, 1, parser, next_wrapper, false);
-  str = append_str(str, "\n}\n", &size);
-}
+Parses 'raw_chunk_size' bytes and serialize back to 'binson_writer'.
+Return true, if input is equal to output
 */
+bool binson_stream_test_start(binson_parser *p, binson_writer *w, int raw_chunk_size)
+{
+  binson_parser_cb    stored_cb = p->cb;  /* store current callback & param */
+  void*               stored_cb_param = p->cb_param;
+
+  binson_parser_set_callback(p, _to_binson_cb, w);
+  binson_parser_advance(p, BINSON_PARSER_ADVANCE_N_SAME_DEPTH, -1, NULL, BINSON_ID_UNKNOWN);
+
+  /* restore saved callback & param */
+  p->cb = stored_cb;
+  p->cb_param = stored_cb_param;
+
+  /* compare input vs output */
+  return memcmp(p->io.pbuf, w->io.pbuf, raw_chunk_size) == 0? true:false;
+}
+
+#ifdef TEST_STREAM_MAIN
+int main(void)
+{
+    binson_parser p;
+    binson_writer w;
+    bool res;
+
+    uint8_t src_buf[65535], dst_buf[65535];
+    int raw_len;
+
+    puts("Reading from stdin...");
+    raw_len = read(0, src_buf, sizeof(src_buf));
+
+    binson_parser_init(&p, src_buf, raw_len);
+    binson_writer_init(&w, dst_buf, sizeof(dst_buf));
+
+    res = binson_stream_test_start(&p, &w, raw_len);
+    
+    if (res)
+      puts("input == output");
+    else
+      puts("input != output");
+
+    return 0;
+}
+#endif /* TEST_STREAM_MAIN */

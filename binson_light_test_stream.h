@@ -26,12 +26,20 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef BINSONLIGHTTOSTRING_H
-#define BINSONLIGHTTOSTRING_H
+#ifndef BINSONLIGHTTESTSTREAM_H
+#define BINSONLIGHTTESTSTREAM_H
+
 #include "binson_light.h"
 
-/* Use a binson parser to output a human reable string describing the
-	 binson stream. This is useful for debugging */
-void binson_to_string(binson_parser *parser, char *str, int max_str_size);
+/*
+Parses 'raw_chunk_size' bytes and serialize back to 'binson_writer'.
+Return true, if input is equal to output
+*/
+bool binson_stream_test_start(binson_parser *p, binson_writer *w, int raw_chunk_size);
 
-#endif // BINSONLIGHTTOSTRING_H
+/*
+Not implemented, always return false
+*/
+bool binson_stream_test_more(binson_parser *p, binson_writer *w, int raw_chunk_size);
+
+#endif // BINSONLIGHTTESTSTREAM_H

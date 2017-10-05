@@ -1,15 +1,21 @@
-.PHONY: dry-run
+.PHONY: dry-run build build-test-stream
 
 build:
-	AFL_HARDEN=1 afl-gcc -std=c99 -DWITH_TO_STRING binson.c ../../../binson_light.c -o binson_fuzz.out
+	AFL_HARDEN=1 afl-gcc -fstack-protector-strong -O3 -std=c99 -DWITH_TO_STRING binson.c ../../../binson_light.c -o binson_fuzz.out
 
-fuzz: build
-	sudo bash -c 'for governor in $(ls /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor); do \
-  		echo"performance" > $governor; \
+build-test-stream:
+	AFL_HARDEN=1 afl-gcc -fstack-protector-strong -O3 -std=c99 -DTEST_STREAM_MAIN ../../../binson_light_test_stream.c ../../../binson_light.c -o binson_fuzz.out
+
+fuzz:
+	sudo bash -c 'for governor in $$(ls /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor); do \
+  		echo "performance" > $$governor; \
 	done'; \
 	AFL_HARDEN=1 afl-fuzz -i input -o output ./binson_fuzz.out
 
-dry-run: build
+fuzz-resume:
+	AFL_HARDEN=1 afl-fuzz -i - -o output ./binson_fuzz.out	
+
+dry-run:
 	crash_cnt=0; \
 	for i in ./input/* ./cases/fixed/*; do \
 	  echo "\n=====================\ntesting: $${i##*/}";  \

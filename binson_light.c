@@ -30,8 +30,6 @@
 #include "binson_light.h"
 
 /* common utility macros */
-#define IS_CLEAN(x) (x->error_flags == BINSON_ID_OK ? 1:0)
-
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif
@@ -47,6 +45,7 @@ void binson_write_object_begin( binson_writer *pw );
 void binson_write_object_end( binson_writer *pw );
 void binson_write_array_begin( binson_writer *pw );
 void binson_write_array_end( binson_writer *pw );
+void binson_write( binson_writer *pw, const uint8_t token_type );
 void binson_write_boolean( binson_writer *pw, bool bval );
 void binson_write_integer( binson_writer *pw, int64_t ival );
 void binson_write_double( binson_writer *pw, double dval );
@@ -268,6 +267,12 @@ void  _binson_writer_write_token( binson_writer *pwriter, const uint8_t token_ty
   return;
 }
 
+/* write token, specified by token_type */
+void binson_write( binson_writer *pw, const uint8_t token_type )
+{
+  _binson_writer_write_token( pw, token_type, NULL );
+}
+
 /* Write OBJECT_BEGIN token */
 void binson_write_object_begin( binson_writer *pw )
 {
@@ -327,6 +332,13 @@ void binson_write_name( binson_writer *pw, const char* pstr )
   _binson_writer_write_token( pw, BINSON_ID_STRING, &pw->tmp_val );
 }
 
+/* Write name part of composite token specified by bbuf */
+void binson_write_name_bbuf( binson_writer *pw, bbuf* pbbuf )
+{
+  binson_util_cpy_bbuf( &pw->tmp_val.bbuf_val, pbbuf );
+  _binson_writer_write_token( pw, BINSON_ID_STRING, &pw->tmp_val );
+}
+
 /* Write STRING token specified by pointer pstr and number of bytes len */
 void binson_write_string_with_len( binson_writer *pw, const char* pstr, binson_tok_size len )
 {
@@ -340,6 +352,13 @@ void binson_write_string_bbuf( binson_writer *pw, bbuf* pbbuf )
 {
   binson_util_cpy_bbuf( &pw->tmp_val.bbuf_val, pbbuf );
   _binson_writer_write_token( pw, BINSON_ID_STRING, &pw->tmp_val );
+}
+
+/* Write BYTES token specified by bbuf */
+void binson_write_bytes_bbuf( binson_writer *pw, bbuf* pbbuf )
+{
+  binson_util_cpy_bbuf( &pw->tmp_val.bbuf_val, pbbuf );
+  _binson_writer_write_token( pw, BINSON_ID_BYTES, &pw->tmp_val );
 }
 
 /* Write BYTES token specified by pointer pbuf and number of bytes len */

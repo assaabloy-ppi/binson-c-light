@@ -62,3 +62,6 @@ bin/
 *.beam
 .eqc-info
 current_counterexample.eqc
+
+# project specific
+test/binson/output
