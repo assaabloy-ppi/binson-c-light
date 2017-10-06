@@ -1,0 +1,46 @@
+#
+# AFL dictionary for BINSON
+# -----------------------
+#
+# Created according to specs: http://binson.org/
+# by Alexander Reshniuk (alex.reshniuk@gmail.com)
+# 
+#
+
+# basic
+obj_begin="\x40"
+obj_end="\x41"
+arr_begin="\x42"
+arr_end="\x43"
+true="\x44"
+false="\x45"
+double="\x46"
+integer8="\x10"
+integer16="\x11"
+integer32="\x12"
+integer64="\x13"
+string_len8="\x14"
+string_len16="\x15"
+string_len32="\x16"
+bytes_len8="\x18"
+bytes_len16="\x19"
+bytes_len32="\x1a"
+
+# derived
+empty_obj="\x40\x41"
+empty_arr="\x42\x43"
+obj_in_arr="\x42\x40\x41\x43"
+empty_str="\x14\x00"
+empty_str_empty_str="\x14\x00\x14\x00"
+empty_bytes="\x18\x00"
+
+
+# double
+double_0="\x46\x00\x00\x00\x00\x00\x00\x00\x00"
+double_minus0="\x46\x80\x00\x00\x00\x00\x00\x00\x00"
+double_1="\x46\x3F\xF0\x00\x00\x00\x00\x00\x00"
+double_minus1="\x46\xBF\xF0\x00\x00\x00\x00\x00\x00"
+double_INF="\x46\x7F\xF0\x00\x00\x00\x00\x00\x00"
+double_minusINF="\x46\xFF\xF0\x00\x00\x00\x00\x00\x00"
+double_NAN="\x46\x7F\xF8\x00\x20\x00\x00\x00\x00"
+

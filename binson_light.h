@@ -127,6 +127,7 @@ typedef uint32_t binson_large_size;  /* type to keep counters etc, when 'binson_
 
 #define UNUSED(x) (void)(x)   /* for unused variable warning suppression */
 
+#define OK(res) (res == BINSON_ID_OK)
 #define IS_CLEAN(x) (x->error_flags == BINSON_ID_OK ? 1:0)
 /*********************************************/
 
@@ -202,13 +203,15 @@ static inline uint8_t binson_writer_geterror( binson_writer *pw, uint8_t bitmask
 /*======================== PARSER ===============================*/
 
  /* forward declarations */
-typedef struct binson_parser  binson_parser;
+
+struct binson_parser;
+typedef struct binson_parser binson_parser;
 
 /* parser callback declaration */
 typedef bool (*binson_parser_cb)( binson_parser *pp, uint8_t new_state, void *param );
 
 /* main parser "object" structure */
-typedef struct binson_parser
+struct binson_parser
 {
   binson_io    	    io;
   uint8_t   	      state;
@@ -224,7 +227,7 @@ typedef struct binson_parser
   binson_parser_cb  cb;
   void*             cb_param;  
 
-} binson_parser;
+};
 
 /* parser object initialization / reset */
 void binson_parser_init( binson_parser *pp, uint8_t *pbuf, binson_size buf_size );

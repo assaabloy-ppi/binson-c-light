@@ -25,6 +25,9 @@ What's new in v2
 * Well-commended parsing algorithm code
 * Pyfuzz fuzz testing tool for random binson tree and corresponding writer/parser source code automated generation, build and run loop.
 * Quickcheck models for property based testing. Integration with Quviq Quickcheck Continuous Integration server 
+* Code fixed to be compatible with Clang (std=c99)
+* Pass AFL fuzzing tests. (includes custom dict for binson format).
+* Pass libFuzzer tests. (includes custom dict for binson format).
 
 Status of v2
 ---------
@@ -44,18 +47,19 @@ TODO in v2:
 
 * More code review & cleanup
 * Add more unit test cases (after code coverage checks)
-* Standartized API doc comments in the header/source files
-* Configure AFL fuzz suite for more advanced fuzzing (see bitmap generation example(-s) in off.docs)
+* Standartized API doc comments in the header/source files (doxygen)
 * Try to make quick integration of this project to act as low-level API of binson-c, to proof APIs are valid and flexible enough.
-* [TBD]
 
+TODO in v3:
+-----------
+* Streaming mode (parsing partial binson data while reading next chunk of input)
 
 Features
 ---------
 
 * Written in ANSI C (C99 standard)
 * Portable code. Tested at:
-  * x86_64 Linux
+  * x86_64 Linux (gcc, clang)
   * ~~ARM Cortex-M3 (with QEMU)~~
   * ~~ARM Cortex-M4 baremetal (nRF52832 SoC)~~
 * Compatible with: 

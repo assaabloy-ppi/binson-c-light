@@ -57,6 +57,7 @@ bin/
 .cproject
 .project
 .settings
+*.layout
 
 # Quickcheck tests leftovers
 *.beam

@@ -81,14 +81,14 @@ static inline uint8_t	  _binson_io_write( binson_io *io, const uint8_t *psrc, bi
 #define _binson_io_write_str(x, y)  _binson_io_write(x, (const uint8_t *)y, sizeof(y)-1)
 static inline uint8_t	  _binson_io_write_byte( binson_io *io, const uint8_t src_byte );
 static inline uint8_t   _binson_io_read( binson_io *io, uint8_t *pdst, binson_size sz );
-static inline uint8_t   _binson_io_read_byte( binson_io *io, uint8_t *perr );
+ uint8_t   _binson_io_read_byte( binson_io *io, uint8_t *perr );
 static inline uint8_t   _binson_io_advance( binson_io *io, binson_size offset );
 static inline uint8_t*	_binson_io_get_ptr( binson_io *io );
 
 /*=================== utility private / forward declaration ==================*/
 
 static uint8_t		_binson_util_pack_integer( int64_t val, uint8_t *pbuf, uint8_t force_64bit );
-static int64_t		_binson_util_unpack_integer( uint8_t *pbuf, uint8_t bsize );
+static int64_t		_binson_util_unpack_integer( const uint8_t *pbuf, uint8_t bsize );
 static inline uint8_t	_binson_util_sizeof_idx( uint8_t n );
 
 /*============================================================================*/
@@ -187,7 +187,7 @@ static inline uint8_t _binson_io_read( binson_io *io, uint8_t *pdst, binson_size
 }
 
 /* Read and return single byte from internal buffer, advancing internal read position to next byte */
-static inline uint8_t _binson_io_read_byte( binson_io *io, uint8_t *perr )
+ uint8_t _binson_io_read_byte( binson_io *io, uint8_t *perr )
 {
   uint8_t b;
   *perr = _binson_io_read( io, &b, 1 );
@@ -626,19 +626,28 @@ uint8_t _binson_parser_process_one( binson_parser *pp )
         return BINSON_PARSER_STATE_VAL;
 
     case BINSON_ID_DOUBLE:
+      {
+        const uint8_t* ptr = _binson_io_get_ptr( &pp->io );
         pp->val_type = BINSON_ID_DOUBLE;
-        pp->val.int_val = _binson_util_unpack_integer ( _binson_io_get_ptr( &pp->io ), 8 );  /* automatic uint64_t -> double translation magic via pp->val union */
         pp->error_flags = _binson_io_advance ( &pp->io, 8 );
+        if (IS_CLEAN(pp))
+          pp->val.int_val = _binson_util_unpack_integer ( ptr, 8 );  /* automatic uint64_t -> double translation magic via pp->val union */
         return BINSON_PARSER_STATE_VAL;
+      }
 
     case BINSON_ID_INTEGER_8:
     case BINSON_ID_INTEGER_16:
     case BINSON_ID_INTEGER_32:
     case BINSON_ID_INTEGER_64:
+      {        
+        const uint8_t* ptr = _binson_io_get_ptr( &pp->io ); 
+        uint8_t size = 1 << (raw_byte - BINSON_ID_INTEGER - 1);       
         pp->val_type = BINSON_ID_INTEGER;
-        pp->val.int_val = _binson_util_unpack_integer ( _binson_io_get_ptr( &pp->io ), (uint8_t)(1 << (raw_byte - BINSON_ID_INTEGER - 1)) );
-        pp->error_flags = _binson_io_advance ( &pp->io, (binson_size)(1 << (raw_byte - BINSON_ID_INTEGER - 1)) );
+        pp->error_flags = _binson_io_advance ( &pp->io, size );  
+        if (IS_CLEAN(pp))      
+          pp->val.int_val = _binson_util_unpack_integer ( ptr, size );
         return BINSON_PARSER_STATE_VAL;
+      }
 
     /* string and field names processing */
     case BINSON_ID_STRING_8:
@@ -670,16 +679,20 @@ uint8_t _binson_parser_process_one( binson_parser *pp )
 /* Parsing helper: process variable length tokens: len+data */
 uint8_t _binson_parser_process_lenval( binson_parser *pp, bbuf *pbb, uint8_t len_sizeof )
 {
-  binson_size len;
-  int64_t     len64 = _binson_util_unpack_integer ( _binson_io_get_ptr ( &pp->io ), len_sizeof );
+  const uint8_t *ptr = _binson_io_get_ptr( &pp->io );  
+  uint8_t res = _binson_io_advance ( &pp->io, len_sizeof );
+  int64_t len64;
 
-  if (len64 < 0 || len64 > pp->io.buf_size - pp->io.buf_used - len_sizeof)  /* abnormal length */
-      return pp->error_flags = BINSON_ID_PARSE_BAD_LEN;
-  else
-      len = (binson_size)len64;
+  if (!OK(res))
+    return res;
 
-  binson_util_set_bbuf ( pbb, _binson_io_get_ptr ( &pp->io ) + len_sizeof, len );
-  return _binson_io_advance ( &pp->io, len_sizeof + len );
+  len64 = _binson_util_unpack_integer ( ptr, len_sizeof );
+
+  if (len64 < 0)
+      return BINSON_ID_PARSE_BAD_LEN;
+
+  binson_util_set_bbuf ( pbb, (uint8_t*)ptr + len_sizeof, (binson_size)len64 );
+  return _binson_io_advance ( &pp->io, (binson_size)len64 );
 }
 
 /* Go to 'idx' item in current block. */
@@ -975,17 +988,17 @@ binson_tok_size binson_parser_get_bytes_len( binson_parser *pp )
 /*======================== UTIL ===============================*/
 
 /* Convert LE bytearray representation of its int64_t equivalent */
-static int64_t	_binson_util_unpack_integer( uint8_t *pbuf, uint8_t bsize )
+static int64_t _binson_util_unpack_integer( const uint8_t *pbuf, uint8_t bsize )
 {
-  int64_t i64 = pbuf[bsize-1] & 0x80 ? -1LL:0;  /* prefill with ones or zeroes depending of sign presence */
+  uint64_t ui64 = pbuf[bsize-1] & 0x80 ? ~0ULL:0;  /* prefill with ones or zeroes depending of sign presence */
   int i;
 
   for (i=bsize-1; i>=0; i--)
   {
-    i64 <<= 8;
-    i64 |= pbuf[i];
+    ui64 <<= 8;
+    ui64 |= pbuf[i];
   }
-  return i64;
+  return (int64_t)ui64;
 }
 
 /* Convert int64_t argument to its LE bytearray representation and return number of bytes occupied */
