@@ -37,6 +37,9 @@
 # IDE
 *.kdev4
 *.kate-swp
+*.cbp
+*.depend
+*.idea
 
 CMakeLists.txt
 
@@ -49,9 +52,17 @@ run_cmake.sh
 output
 
 build/
+bin/
 
 .cproject
 .project
 .settings
+*.layout
 
-bug*
+# Quickcheck tests leftovers
+*.beam
+.eqc-info
+current_counterexample.eqc
+
+# project specific
+test/binson/output
