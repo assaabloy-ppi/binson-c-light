@@ -7,10 +7,12 @@ libfuzzer:
 				-o test_fuzzer.out
 
 libfuzzer-msan:
-	clang-6.0 -g -O1 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=fuzzer,memory \
-	             -fPIE -pie -fsanitize-memory-track-origins=2 -DWITH_TO_STRING -std=c99 \
+	clang-6.0 -g -Og -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=fuzzer,memory \
+				  -stdlib=libc++ -L/home/kotomysha/__1/libcxx_msan/lib -lc++ -lc++abi \
+				 -I/home/kotomysha/__1/libcxx_msan/include -I/home/kotomysha/__1/libcxx_msan/include/c++/v1	\
+	             -fsanitize-memory-track-origins=2 -DWITH_TO_STRING -std=c99 \
 				 ../../../binson_light.c test_fuzzer.c \
-				 -Wl,-rpath,/home/kotomysha/__1/libcxx_msan/lib \
+				 -Wl,-rpath,/home/kotomysha/__1/libcxx_msan/lib  \
 				-o test_fuzzer.out
 
 libfuzz:
