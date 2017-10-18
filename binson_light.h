@@ -41,7 +41,7 @@ typedef uint16_t binson_tok_size;    /* type to keep token length (key and value
 typedef uint16_t binson_size;        /* type to keep raw data block sizes and offsets */
 typedef uint32_t binson_large_size;  /* type to keep counters etc, when 'binson_size' isn't enough */
 
-#ifndef bool
+#if !defined(bool) && !defined(__cplusplus)
 #define bool        int   /* for 8-bit platforms better to use int8_t instead */
 #define true        1
 #define false       0
