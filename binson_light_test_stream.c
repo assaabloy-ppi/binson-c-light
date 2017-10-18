@@ -28,6 +28,7 @@
  */
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "binson_light_test_stream.h"
 
 char str_buf[2048];
@@ -123,7 +124,12 @@ int main(void)
     if (res)
       puts("input == output");
     else
+    {
       puts("input != output");
+#ifdef ABORT_ON_DIFF
+      abort();
+#endif            
+    }
 
     return 0;
 }

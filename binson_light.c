@@ -66,7 +66,7 @@ void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size
 #define BINSON_PARSER_STATE_UNDEFINED     0x40
 
 /* parser utility macros */
-#define IS_OBJECT(x)      (x->block_stack[x->depth] == BINSON_ID_OBJECT)
+#define IS_OBJECT(x)      (x->block_stack[x->depth].val_type == BINSON_ID_OBJECT)
 #define IS_BLOCK_TYPE(t)  ((t) == BINSON_ID_OBJECT || (t) == BINSON_ID_ARRAY)
 
 uint8_t _binson_parser_process_one( binson_parser *pp );
@@ -393,7 +393,8 @@ void binson_parser_reset( binson_parser *pp )
   pp->state		     = BINSON_PARSER_STATE_UNDEFINED;
   pp->depth        = 0;
   pp->val_type     = BINSON_ID_UNKNOWN;
-  pp->block_stack[0] = BINSON_ID_UNKNOWN;
+  pp->block_stack[0] = (bs_item){ .val_type = BINSON_ID_UNKNOWN,
+                                  .name = { .bptr = NULL, .bsize = 0 } };
   pp->cb           = NULL;
   pp->cb_param     = NULL;
 
@@ -405,7 +406,6 @@ void binson_parser_set_callback( binson_parser *pp, binson_parser_cb cb, void *c
   pp->cb = cb;
   pp->cb_param = cb_param;
 }
-
 
 /* Scanning loop, which stops when 'scan_flag' condition met
 Returns "true", if advance request was satisfied according to 'scan_flag',
@@ -522,7 +522,9 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
                 return false;
               }
               pp->depth++;
-              pp->block_stack[pp->depth] = pp->val_type; /* BINSON_ID_OBJECT vs BINSON_ID_ARRAY */
+              pp->block_stack[pp->depth].val_type = pp->val_type; /* BINSON_ID_OBJECT vs BINSON_ID_ARRAY */
+              pp->block_stack[pp->depth].name = pp->name;  /* copy bbuf via assignment */
+              binson_util_set_bbuf( &pp->name, NULL, 0 );  /* need to reset stored name at new block begin */
               break;
 
          case BINSON_PARSER_STATE_BLOCK_END:  /*  => BINSON_PARSER_STATE_BLOCK_END */
@@ -532,7 +534,8 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
                 return false;
               }
               pp->depth--;
-              pp->val_type = pp->block_stack[pp->depth]; /* restore BINSON_ID_OBJECT vs BINSON_ID_ARRAY */
+              pp->val_type = pp->block_stack[pp->depth].val_type; /* restore BINSON_ID_OBJECT vs BINSON_ID_ARRAY */
+              pp->name = pp->block_stack[pp->depth].name;  /* copy bbuf via assignment */
               break;
 
          default:

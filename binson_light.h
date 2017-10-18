@@ -210,6 +210,14 @@ typedef struct binson_parser binson_parser;
 /* parser callback declaration */
 typedef bool (*binson_parser_cb)( binson_parser *pp, uint8_t new_state, void *param );
 
+/* block stack item structure */
+typedef struct bs_item
+{
+  uint8_t  val_type;  /* used to store binson_parser's filed with same name */
+  bbuf     name;      /* used to store binson_parser's filed with same name */
+
+} bs_item;
+
 /* main parser "object" structure */
 struct binson_parser
 {
@@ -222,7 +230,7 @@ struct binson_parser
   binson_value      val;
 
   uint8_t           depth;
-  uint8_t           block_stack[MAX_DEPTH];  
+  bs_item           block_stack[MAX_DEPTH];  
 
   binson_parser_cb  cb;
   void*             cb_param;  
