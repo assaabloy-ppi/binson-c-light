@@ -42,6 +42,7 @@ API changes in v2:
 * All parsing functions are just shortcuts to binson_parser_advance(), controlled with wide range of parameters.
 * *_ensure() functions are designed to additionaly check item type (see #8)
 
+
 TODO in v2:
 -----------
 
@@ -66,7 +67,8 @@ Features
   * [binson-java](https://github.com/franslundberg/binson-java)
   * [binson-java-light](https://github.com/franslundberg/binson-java-light)
 * Has no 3rd party dependencies. (libc only)
-* Partial destination buffer allow to stream objects even larger than RAM available
+* No dynamic memory allocation.
+* ~~Partial destination buffer allow to stream objects even larger than RAM available~~
 
 Writer API usage
 ---------
