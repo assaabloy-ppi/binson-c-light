@@ -16,9 +16,14 @@ gcc -I. $CFLAGS -DTEST_STREAM_MAIN -DABORT_ON_DIFF binson_light.c binson_light_t
 
 gcc -I. $CFLAGS  binson_light.c bug_6.c  -o build/bug_6
 gcc -I. $CFLAGS  binson_light.c bug_14.c  -o build/bug_14
+gcc -I. $CFLAGS  binson_light.c bug_14_2.c  -o build/bug_14_2
 
+ARM_CFLAGS="-std=c99 -Wall -fpack-struct -ffreestanding -funsigned-char"
+ARM_CMDARGS="-c -I. -I/usr/include/newlib \
+             -target arm-none-eabi  -mfloat-abi=hard -mcpu=cortex-m4 -mthumb $ARM_CFLAGS  \
+             binson_light.c"
 
-#gcc -I. $CFLAGS  binson_light.c bug_2.c  -o build/bug_2
-#gcc -I. $CFLAGS  binson_light.c bug_2.c  -o build/bug_2
-#gcc -I. $CFLAGS  binson_light.c bug_2.c  -o build/bug_2
+mkdir -p build/clang/arm
+clang -Os $ARM_CMDARGS -o ./build/clang/arm/binson_light-`date '+%Y-%m-%d-%H:%M:%S'`_Os.o
+clang -O2 $ARM_CMDARGS -o ./build/clang/arm/binson_light-`date '+%Y-%m-%d-%H:%M:%S'`_O2.o
 

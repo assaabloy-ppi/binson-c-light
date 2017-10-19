@@ -6,10 +6,28 @@ A light-weight C implementation of the Binson serialization format
 
 > Binson is like JSON, but faster, binary and even simpler. See [binson.org](http://binson.org/)
 
+Features
+---------
+
+* Written in ANSI C (C99 standard)
+* Portable MCU-friendly code.
+* Tiny binary size (~9K object file, clang -Os -target arm-none-eabi)
+* Tested at:
+  * x86_64 Linux (gcc, clang)
+  * ~~ARM Cortex-M3 (with QEMU)~~
+  * ~~ARM Cortex-M4 baremetal (nRF52832 SoC)~~
+* Compatible with: 
+  * [binson-java](https://github.com/franslundberg/binson-java)
+  * [binson-java-light](https://github.com/franslundberg/binson-java-light)
+* Has no 3rd party dependencies. (libc only)
+* No dynamic memory allocation (in-place parsing)
+* ~~Partial destination buffer allow to stream objects even larger than RAM available~~
+
+
 What's new in v2
 ---------------
 
-* Bugs of v1 claimed fixed
+* v1 bugs fixed
 * No recursion
 * Simpler state machine
 * Parser callback support (ready to be used as low-level API for "binson-c" project)
@@ -55,20 +73,6 @@ TODO in v3:
 -----------
 * Streaming mode (parsing partial binson data while reading next chunk of input)
 
-Features
----------
-
-* Written in ANSI C (C99 standard)
-* Portable code. Tested at:
-  * x86_64 Linux (gcc, clang)
-  * ~~ARM Cortex-M3 (with QEMU)~~
-  * ~~ARM Cortex-M4 baremetal (nRF52832 SoC)~~
-* Compatible with: 
-  * [binson-java](https://github.com/franslundberg/binson-java)
-  * [binson-java-light](https://github.com/franslundberg/binson-java-light)
-* Has no 3rd party dependencies. (libc only)
-* No dynamic memory allocation.
-* ~~Partial destination buffer allow to stream objects even larger than RAM available~~
 
 Writer API usage
 ---------
