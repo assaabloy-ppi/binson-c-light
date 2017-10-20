@@ -521,10 +521,10 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
                 pp->error_flags = BINSON_ID_PARSE_MAX_DEPTH_REACHED;
                 return false;
               }
-              pp->depth++;
-              pp->block_stack[pp->depth].val_type = pp->val_type; /* BINSON_ID_OBJECT vs BINSON_ID_ARRAY */
               pp->block_stack[pp->depth].name = pp->name;  /* copy bbuf via assignment */
               binson_util_set_bbuf( &pp->name, NULL, 0 );  /* need to reset stored name at new block begin */
+              pp->depth++;
+              pp->block_stack[pp->depth].val_type = pp->val_type; /* BINSON_ID_OBJECT vs BINSON_ID_ARRAY */
               break;
 
          case BINSON_PARSER_STATE_BLOCK_END:  /*  => BINSON_PARSER_STATE_BLOCK_END */
