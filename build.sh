@@ -17,6 +17,7 @@ gcc -I. $CFLAGS -DTEST_STREAM_MAIN -DABORT_ON_DIFF binson_light.c binson_light_t
 gcc -I. $CFLAGS  binson_light.c bug_6.c  -o build/bug_6
 gcc -I. $CFLAGS  binson_light.c bug_14.c  -o build/bug_14
 gcc -I. $CFLAGS  binson_light.c bug_14_2.c  -o build/bug_14_2
+gcc -I. $CFLAGS  binson_light.c bug_15.c  -o build/bug_15
 
 ARM_CFLAGS="-std=c99 -Wall -fpack-struct -ffreestanding -funsigned-char"
 ARM_CMDARGS="-c -I. -I/usr/include/newlib \

@@ -69,6 +69,7 @@ void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size
 #define IS_OBJECT(x)      (x->block_stack[x->depth].val_type == BINSON_ID_OBJECT)
 #define IS_BLOCK_TYPE(t)  ((t) == BINSON_ID_OBJECT || (t) == BINSON_ID_ARRAY)
 
+bool    _binson_parser_ensure_filter( binson_parser *pp, uint8_t scan_flag, uint8_t ensure_type );
 uint8_t _binson_parser_process_one( binson_parser *pp );
 uint8_t _binson_parser_process_lenval( binson_parser *pp, bbuf *pbb, uint8_t len_sizeof );
 
@@ -438,7 +439,7 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
    /* field name checks must start from current one, since prev ADVANCE_CMP_NAME scan may be stopped here */
    if (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_CMP_NAME) && IS_OBJECT(pp) &&
                         pp->depth == orig_depth && binson_parser_name_equals(pp, scan_name))
-     return true;
+     return _binson_parser_ensure_filter(pp, scan_flag, ensure_type);
 
    /* ------------- scanning loop (no recursion) ------------- */
    while (true)
@@ -542,8 +543,10 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
             break;  /* do nothing here (no special action for current transition) */
       }
 
+
       /* extra validation, when requested via 'scan_flag' */
-      if ( ensure_type != BINSON_ID_UNKNOWN && CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_ENSURE_TYPE) &&
+      _binson_parser_ensure_filter(pp, scan_flag, ensure_type);
+/*      if ( ensure_type != BINSON_ID_UNKNOWN && CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_ENSURE_TYPE) &&
            ( (ensure_type == BINSON_ID_BLOCK && !IS_BLOCK_TYPE(pp->val_type)) ||
              (ensure_type != BINSON_ID_BLOCK && ensure_type != pp->val_type)
            )
@@ -552,7 +555,7 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
         pp->error_flags = BINSON_ID_PARSE_WRONG_TYPE;
         return false;
       }
-
+*/
       /* one step done */
       if (n_steps > 0)  /* negative value means "till the current block's end" */
         n_steps--;
@@ -565,7 +568,7 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
            pp->error_flags = BINSON_ID_PARSE_NO_FIELD_NAME;
 
          if (cmp_res >= 0)
-           return cmp_res == 0? true:false;
+           return cmp_res == 0? _binson_parser_ensure_filter(pp, scan_flag, ensure_type) : false;
 
          /* case: cmp_res < 0 => don't return, check more 'scan_flag' options instead */
       }
@@ -596,7 +599,24 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
    }
 
    /* return code is used for end-of-object detection */
-   return pp->state != BINSON_PARSER_STATE_IN_BLOCK_END? true : false;
+   return pp->state != BINSON_PARSER_STATE_IN_BLOCK_END?
+                      _binson_parser_ensure_filter(pp, scan_flag, ensure_type) : false;
+}
+
+/* Utility function which return false in case of type mismatch */
+bool _binson_parser_ensure_filter( binson_parser *pp, uint8_t scan_flag, uint8_t ensure_type )
+{
+   if ( ensure_type != BINSON_ID_UNKNOWN && CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_ENSURE_TYPE) &&
+           ( (ensure_type == BINSON_ID_BLOCK && !IS_BLOCK_TYPE(pp->val_type)) ||
+             (ensure_type != BINSON_ID_BLOCK && ensure_type != pp->val_type)
+           )
+         )
+      {
+        pp->error_flags = BINSON_ID_PARSE_WRONG_TYPE;
+        return false;
+      }
+    
+    return true;
 }
 
 /* Utility function for reading and processing single binson chunk */
@@ -707,19 +727,26 @@ bool binson_parser_at_ensure( binson_parser *pp, uint8_t idx, uint8_t ensure_typ
     return false;
   }
 
-  return binson_parser_advance( pp, BINSON_PARSER_ADVANCE_N_SAME_DEPTH, idx+1, NULL, ensure_type);
+  return binson_parser_advance( pp, BINSON_PARSER_ADVANCE_N_SAME_DEPTH | 
+                                    BINSON_PARSER_ADVANCE_ENSURE_TYPE,
+                                    idx+1, NULL, ensure_type);
 }
 
 /* */
 bool binson_parser_field_ensure( binson_parser *pp, const char *scan_name, uint8_t ensure_type)
 {
-  return binson_parser_advance(pp, BINSON_PARSER_ADVANCE_N_SAME_DEPTH | BINSON_PARSER_ADVANCE_CMP_NAME, -1, scan_name, ensure_type);
+  return binson_parser_advance(pp, BINSON_PARSER_ADVANCE_N_SAME_DEPTH | 
+                                   BINSON_PARSER_ADVANCE_CMP_NAME | 
+                                   BINSON_PARSER_ADVANCE_ENSURE_TYPE,
+                                   -1, scan_name, ensure_type);
 }
 
 /* */
 bool binson_parser_next_ensure( binson_parser *pp, uint8_t ensure_type)
 {
-  return binson_parser_advance(pp, BINSON_PARSER_ADVANCE_N_SAME_DEPTH, 1, NULL, ensure_type);
+  return binson_parser_advance(pp, BINSON_PARSER_ADVANCE_N_SAME_DEPTH |
+                                   BINSON_PARSER_ADVANCE_ENSURE_TYPE, 
+                                   1, NULL, ensure_type);
 }
 
 /* */

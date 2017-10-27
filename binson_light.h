@@ -128,7 +128,7 @@ typedef uint32_t binson_large_size;  /* type to keep counters etc, when 'binson_
 #define UNUSED(x) (void)(x)   /* for unused variable warning suppression */
 
 #define OK(res) (res == BINSON_ID_OK)
-#define IS_CLEAN(x) (x->error_flags == BINSON_ID_OK ? 1:0)
+#define IS_CLEAN(x) ((x)->error_flags == BINSON_ID_OK ? 1:0)
 /*********************************************/
 
 /* buffer pointer + size aggregation, also used for string references */
