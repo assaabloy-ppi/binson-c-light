@@ -1,5 +1,5 @@
 #!/bin/bash
-mkdir ./build
+mkdir -p ./build
 
 #CFLAGS="-g -O0 -std=c99 -Wall"
 CFLAGS="-std=c99 -Wall"
