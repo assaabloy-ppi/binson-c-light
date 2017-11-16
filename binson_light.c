@@ -436,14 +436,23 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
       return false;
    }
 
-   /* field name checks must start from current one, since prev ADVANCE_CMP_NAME scan may be stopped here */
-   if (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_CMP_NAME) && IS_OBJECT(pp) &&
-                        pp->depth == orig_depth && binson_parser_name_equals(pp, scan_name))
-     return _binson_parser_ensure_filter(pp, scan_flag, ensure_type);
-
    /* ------------- scanning loop (no recursion) ------------- */
    while (true)
    {
+      /* context checks for field name search */
+      if (pp->state != BINSON_PARSER_STATE_NAME && IS_OBJECT(pp) &&
+          CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_CMP_NAME) && pp->depth == orig_depth)
+      {
+         int cmp_res = binson_parser_cmp_name(pp, scan_name);
+         if (cmp_res == 0)
+           return _binson_parser_ensure_filter(pp, scan_flag, ensure_type);
+         else if (cmp_res > 0)  /* current name is lexicographically greater than requested */
+         {
+           pp->error_flags = BINSON_ID_PARSE_NO_FIELD_NAME;
+           return false;
+         }
+      }
+
       /* request state update w/o data read operation if possible */
       switch( pp->state )
       {
@@ -561,18 +570,6 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
         n_steps--;
 
       /* ------------- scan more or stop? ------------- */
-      if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_CMP_NAME) && pp->depth == orig_depth )
-      {
-         int cmp_res = binson_parser_cmp_name(pp, scan_name);
-         if (cmp_res > 0)  /* current name is lexicographically greater than requested*/
-           pp->error_flags = BINSON_ID_PARSE_NO_FIELD_NAME;
-
-         if (cmp_res >= 0)
-           return cmp_res == 0? _binson_parser_ensure_filter(pp, scan_flag, ensure_type) : false;
-
-         /* case: cmp_res < 0 => don't return, check more 'scan_flag' options instead */
-      }
-
       if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_N) && n_steps == 0 )
         break;
 
@@ -615,7 +612,7 @@ bool _binson_parser_ensure_filter( binson_parser *pp, uint8_t scan_flag, uint8_t
         pp->error_flags = BINSON_ID_PARSE_WRONG_TYPE;
         return false;
       }
-    
+
     return true;
 }
 
@@ -662,12 +659,12 @@ uint8_t _binson_parser_process_one( binson_parser *pp )
     case BINSON_ID_INTEGER_16:
     case BINSON_ID_INTEGER_32:
     case BINSON_ID_INTEGER_64:
-      {        
-        const uint8_t* ptr = _binson_io_get_ptr( &pp->io ); 
-        uint8_t size = 1 << (raw_byte - BINSON_ID_INTEGER - 1);       
+      {
+        const uint8_t* ptr = _binson_io_get_ptr( &pp->io );
+        uint8_t size = 1 << (raw_byte - BINSON_ID_INTEGER - 1);
         pp->val_type = BINSON_ID_INTEGER;
-        pp->error_flags = _binson_io_advance ( &pp->io, size );  
-        if (IS_CLEAN(pp))      
+        pp->error_flags = _binson_io_advance ( &pp->io, size );
+        if (IS_CLEAN(pp))
           pp->val.int_val = _binson_util_unpack_integer ( ptr, size );
         return BINSON_PARSER_STATE_VAL;
       }
@@ -702,7 +699,7 @@ uint8_t _binson_parser_process_one( binson_parser *pp )
 /* Parsing helper: process variable length tokens: len+data */
 uint8_t _binson_parser_process_lenval( binson_parser *pp, bbuf *pbb, uint8_t len_sizeof )
 {
-  const uint8_t *ptr = _binson_io_get_ptr( &pp->io );  
+  const uint8_t *ptr = _binson_io_get_ptr( &pp->io );
   uint8_t res = _binson_io_advance ( &pp->io, len_sizeof );
   int64_t len64;
 
@@ -727,7 +724,7 @@ bool binson_parser_at_ensure( binson_parser *pp, uint8_t idx, uint8_t ensure_typ
     return false;
   }
 
-  return binson_parser_advance( pp, BINSON_PARSER_ADVANCE_N_SAME_DEPTH | 
+  return binson_parser_advance( pp, BINSON_PARSER_ADVANCE_N_SAME_DEPTH |
                                     BINSON_PARSER_ADVANCE_ENSURE_TYPE,
                                     idx+1, NULL, ensure_type);
 }
@@ -735,8 +732,8 @@ bool binson_parser_at_ensure( binson_parser *pp, uint8_t idx, uint8_t ensure_typ
 /* */
 bool binson_parser_field_ensure( binson_parser *pp, const char *scan_name, uint8_t ensure_type)
 {
-  return binson_parser_advance(pp, BINSON_PARSER_ADVANCE_N_SAME_DEPTH | 
-                                   BINSON_PARSER_ADVANCE_CMP_NAME | 
+  return binson_parser_advance(pp, BINSON_PARSER_ADVANCE_N_SAME_DEPTH |
+                                   BINSON_PARSER_ADVANCE_CMP_NAME |
                                    BINSON_PARSER_ADVANCE_ENSURE_TYPE,
                                    -1, scan_name, ensure_type);
 }
@@ -745,7 +742,7 @@ bool binson_parser_field_ensure( binson_parser *pp, const char *scan_name, uint8
 bool binson_parser_next_ensure( binson_parser *pp, uint8_t ensure_type)
 {
   return binson_parser_advance(pp, BINSON_PARSER_ADVANCE_N_SAME_DEPTH |
-                                   BINSON_PARSER_ADVANCE_ENSURE_TYPE, 
+                                   BINSON_PARSER_ADVANCE_ENSURE_TYPE,
                                    1, NULL, ensure_type);
 }
 

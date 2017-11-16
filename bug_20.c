@@ -13,11 +13,21 @@ void parse_data(uint8_t *buffer, uint32_t size)
    binson_parser_init(&p, buffer, size);
 
    binson_parser_go_into(&p);
+
    found = binson_parser_field(&p, "i");
-   assert(found);
-   assert(p.error_flags == BINSON_ID_OK);
-   assert(binson_parser_get_type(&p) == BINSON_ID_INTEGER);
-   assert(binson_parser_get_integer(&p) == 123);
+   if (p.error_flags == BINSON_ID_OK)
+   {
+     assert(found);
+     assert(p.error_flags == BINSON_ID_OK);
+     assert(binson_parser_get_type(&p) == BINSON_ID_INTEGER);
+     assert(binson_parser_get_integer(&p) == 123);
+     printf("i-field contains: %li\r\n", binson_parser_get_integer(&p));
+   }
+   else
+   {
+      assert(!found);
+      printf("No i-field found\r\n");
+   }
 
    found = binson_parser_field(&p, "x");   
    if (p.error_flags == BINSON_ID_OK)    
@@ -32,6 +42,7 @@ void parse_data(uint8_t *buffer, uint32_t size)
       assert(!found);
       printf("No x-field found\r\n");
    }
+
 
    found = binson_parser_field(&p, "z");
    assert(found);
@@ -95,6 +106,25 @@ int main(void) {
    binson_write_object_end(&w);
 
    printf("Parsing Binson buffer NOT containing the optional x field\r\n");
+   parse_data(buffer, sizeof(buffer));
+
+
+   /*
+    * Binson object 3, OK, no i and x-field
+    * {
+    *    "z" : "z data"
+    * }
+    *
+    */
+   binson_writer_init(&w, buffer, sizeof(buffer));
+   binson_write_object_begin(&w);
+
+   /* Required string z */
+   binson_write_name(&w, "z");
+   binson_write_string(&w, "z data");
+   binson_write_object_end(&w);
+
+   printf("Parsing Binson buffer containing ONLY the mandatory z field\r\n");
    parse_data(buffer, sizeof(buffer));
 
    return 0;

@@ -18,12 +18,15 @@ gcc -I. $CFLAGS  binson_light.c bug_6.c  -o build/bug_6
 gcc -I. $CFLAGS  binson_light.c bug_14.c  -o build/bug_14
 gcc -I. $CFLAGS  binson_light.c bug_14_2.c  -o build/bug_14_2
 gcc -I. $CFLAGS  binson_light.c bug_15.c  -o build/bug_15
+gcc -I. $CFLAGS  binson_light.c bug_20.c  -o build/bug_20
+
 
 ARM_CFLAGS="-std=c99 -Wall -fpack-struct -ffreestanding -funsigned-char"
 ARM_CMDARGS="-c -I. -I/usr/include/newlib \
              -target arm-none-eabi  -mfloat-abi=hard -mcpu=cortex-m4 -mthumb $ARM_CFLAGS  \
              binson_light.c"
 
+# for binary size monitoring
 mkdir -p build/clang/arm
 clang -Os $ARM_CMDARGS -o ./build/clang/arm/binson_light-`date '+%Y-%m-%d-%H:%M:%S'`_Os.o
 clang -O2 $ARM_CMDARGS -o ./build/clang/arm/binson_light-`date '+%Y-%m-%d-%H:%M:%S'`_O2.o
