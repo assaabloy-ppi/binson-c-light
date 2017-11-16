@@ -37,6 +37,10 @@
 #include <stdint.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef uint16_t binson_tok_size;    /* type to keep token length (key and value are separate tokens). */
 typedef uint16_t binson_size;        /* type to keep raw data block sizes and offsets */
 typedef uint32_t binson_large_size;  /* type to keep counters etc, when 'binson_size' isn't enough */
@@ -314,5 +318,9 @@ binson_tok_size	binson_parser_get_bytes_len( binson_parser *pp );
 void	 		binson_parser_get_bytes_copy( binson_parser *pp, bbuf *pbb );
 int	  		binson_parser_cmp_bytes( binson_parser *pp, bbuf *pbb );
 bool	 		binson_parser_bytes_equals( binson_parser *pp, bbuf *pbb );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BINSON_LIGHT_H_INCLUDED */
