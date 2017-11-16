@@ -40,7 +40,7 @@ fuzz:
 fuzz-resume:
 	AFL_HARDEN=1 afl-fuzz -x ./binson.dict -i - -o output ./binson_fuzz.out	
 
-dry-run:
+dry-run: build
 	crash_cnt=0; \
 	for i in ./input/* ./cases/fixed/*; do \
 	  echo "\n=====================\ntesting: $${i##*/}";  \
