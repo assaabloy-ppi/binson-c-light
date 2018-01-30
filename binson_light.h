@@ -185,7 +185,7 @@ void binson_write_object_begin( binson_writer *pw );
 void binson_write_object_end( binson_writer *pw );
 void binson_write_array_begin( binson_writer *pw );
 void binson_write_array_end( binson_writer *pw );
-void binson_write( binson_writer *pw, const uint8_t token_type );
+void binson_write( binson_writer *pw, uint8_t token_type );
 void binson_write_boolean( binson_writer *pw, bool bval );
 void binson_write_integer( binson_writer *pw, int64_t ival );
 void binson_write_double( binson_writer *pw, double dval );

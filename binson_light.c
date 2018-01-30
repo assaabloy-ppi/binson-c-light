@@ -39,20 +39,20 @@
 #endif
 
 /*====================== binson_writer private / forward decl ================*/
-static void _binson_writer_write_token( binson_writer *pwriter, const uint8_t token_type, binson_value *val );
+static void _binson_writer_write_token( binson_writer *pwriter, uint8_t token_type, binson_value *val );
 
-void binson_write_object_begin( binson_writer *pw );
-void binson_write_object_end( binson_writer *pw );
-void binson_write_array_begin( binson_writer *pw );
-void binson_write_array_end( binson_writer *pw );
-void binson_write( binson_writer *pw, const uint8_t token_type );
-void binson_write_boolean( binson_writer *pw, bool bval );
-void binson_write_integer( binson_writer *pw, int64_t ival );
-void binson_write_double( binson_writer *pw, double dval );
-void binson_write_string( binson_writer *pw, const char* pstr );
-void binson_write_name( binson_writer *pw, const char* pstr );
-void binson_write_string_with_len( binson_writer *pw, const char* pstr, binson_tok_size len );
-void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size len );
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*======================== binson_parser private / forward decl ==============*/
 
@@ -80,7 +80,7 @@ static inline void      _binson_io_init( binson_io *io, uint8_t *pbuf, binson_si
 static inline void	    _binson_io_purge( binson_io *io );
 static inline uint8_t	  _binson_io_write( binson_io *io, const uint8_t *psrc, binson_size sz );
 #define _binson_io_write_str(x, y)  _binson_io_write((x), (const uint8_t *)(y), sizeof(y)-1)
-static inline uint8_t	  _binson_io_write_byte( binson_io *io, const uint8_t src_byte );
+static inline uint8_t	  _binson_io_write_byte( binson_io *io, uint8_t src_byte );
 static inline uint8_t   _binson_io_read( binson_io *io, uint8_t *pdst, binson_size sz );
  uint8_t   _binson_io_read_byte( binson_io *io, uint8_t *perr );
 static inline uint8_t   _binson_io_advance( binson_io *io, binson_size offset );
@@ -148,11 +148,13 @@ static inline uint8_t	_binson_io_write( binson_io *io, const uint8_t *psrc, bins
 {
   io->counter += sz;
 
-  if (io->buf_used + sz > io->buf_size)
+  if (io->buf_used + sz > io->buf_size) {
     return BINSON_ID_BUF_FULL;
+}
 
-  if (io->pbuf && (psrc != io->pbuf + io->buf_used))
+  if (io->pbuf && (psrc != io->pbuf + io->buf_used)) {
       memcpy( io->pbuf + io->buf_used, psrc, sz );
+}
 
   io->buf_used += sz;
 
@@ -168,8 +170,9 @@ static inline uint8_t	_binson_io_write_byte( binson_io *io, const uint8_t src_by
 /* Read sz bytes from internal buffer to memory location pointed with pdst, with bound checks, return error code if any */
 static inline uint8_t _binson_io_read( binson_io *io, uint8_t *pdst, binson_size sz )
 {
-  if (io->buf_used + sz > io->buf_size)
+  if (io->buf_used + sz > io->buf_size) {
       return BINSON_ID_PARSE_END_OF_BUFFER;
+}
 
   io->counter += sz;
 
@@ -179,8 +182,9 @@ static inline uint8_t _binson_io_read( binson_io *io, uint8_t *pdst, binson_size
     io->counter = io->buf_size;
   }
 
-  if (pdst && io->pbuf)
+  if (pdst && io->pbuf) {
       memcpy( pdst, io->pbuf + io->buf_used, sz );
+}
 
   io->buf_used += sz;
 
@@ -268,19 +272,20 @@ void  _binson_writer_write_token( binson_writer *pwriter, const uint8_t token_ty
       break;
 
     case BINSON_ID_BOOLEAN:
-      if (!val)
+      if (!val) {
         res = BINSON_ID_INVALID_ARG;
-      else
+      } else {
         res = _binson_io_write_byte( &(pwriter->io), val->bool_val? BINSON_ID_TRUE : BINSON_ID_FALSE );
+}
       break;
 
     default:
     return;
   }
 
-  if (res)
+  if (res) {
     pwriter->error_flags = res;
-  return;
+}
 }
 
 /* write token, specified by token_type */
@@ -434,11 +439,13 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
    uint8_t req_state = BINSON_PARSER_STATE_UNDEFINED;  /* state update request */
 
    /* subsequent field name lookups must clear previous BINSON_ID_PARSE_NO_FIELD_NAME error explicitely */
-   if (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_CMP_NAME) && pp->error_flags == BINSON_ID_PARSE_NO_FIELD_NAME)
+   if (CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_CMP_NAME) && pp->error_flags == BINSON_ID_PARSE_NO_FIELD_NAME) {
       pp->error_flags = BINSON_ID_OK;
+}
 
    /* check for consistency */
-   if (pp->error_flags != BINSON_ID_OK) return false;
+   if (pp->error_flags != BINSON_ID_OK) { return false;
+}
    if (!pp->depth && pp->state != BINSON_PARSER_STATE_UNDEFINED)  /* advance attempt beyond the top block */
    {
       pp->error_flags = BINSON_ID_PARSE_BLOCK_ENDED;
@@ -459,9 +466,9 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
           CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_CMP_NAME) && pp->depth == orig_depth)
       {
          int cmp_res = binson_parser_cmp_name(pp, scan_name);
-         if (cmp_res == 0)
+         if (cmp_res == 0) {
            return _binson_parser_ensure_filter(pp, scan_flag, ensure_type);
-         else if (cmp_res > 0)  /* current name is lexicographically greater than requested */
+         } if (cmp_res > 0)  /* current name is lexicographically greater than requested */
          {
            pp->error_flags = BINSON_ID_PARSE_NO_FIELD_NAME;
            return false;
@@ -482,7 +489,8 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
         default:
           /* required to know next byte to continue processing */
           req_state = _binson_parser_process_one( pp );
-          if (pp->error_flags != BINSON_ID_OK) return false;
+          if (pp->error_flags != BINSON_ID_OK) { return false;
+}
       }
 
       /* transition validation, MUST meet binson specs */
@@ -491,38 +499,45 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
          case BINSON_PARSER_STATE_NAME:  /* pp->state => BINSON_PARSER_STATE_NAME */
             if (CHECKBITMASK(pp->state, BINSON_PARSER_STATE_IN_BLOCK |  /* CASE: first OBJECT item's name */
                                         BINSON_PARSER_STATE_BLOCK_END |  /* CASE: item's name after nested block-item */
-                                        BINSON_PARSER_STATE_VAL ))  /* CASE: next OBJECT's simple name:val */
+                                        BINSON_PARSER_STATE_VAL )) {  /* CASE: next OBJECT's simple name:val */
               break; /* valid transition */
+}
          case BINSON_PARSER_STATE_BLOCK:  /* pp->state => BINSON_PARSER_STATE_BLOCK */
             if (CHECKBITMASK(pp->state, BINSON_PARSER_STATE_IN_BLOCK |  /* CASE: nested blocks */
                                         BINSON_PARSER_STATE_BLOCK_END |  /* CASE: sequential blocks */
                                         BINSON_PARSER_STATE_VAL | /* CASE: block after simple type */
-                                        BINSON_PARSER_STATE_UNDEFINED )) /* CASE: topmost block */
+                                        BINSON_PARSER_STATE_UNDEFINED )) { /* CASE: topmost block */
 
               break; /* valid transition */
+}
          case BINSON_PARSER_STATE_IN_BLOCK:  /* pp->state => BINSON_PARSER_STATE_IN_BLOCK */
-            if (CHECKBITMASK(pp->state, BINSON_PARSER_STATE_BLOCK))
+            if (CHECKBITMASK(pp->state, BINSON_PARSER_STATE_BLOCK)) {
               break; /* valid transition */
+}
 
          case BINSON_PARSER_STATE_IN_BLOCK_END:  /* pp->state => BINSON_PARSER_STATE_IN_BLOCK_END */
             if (CHECKBITMASK(pp->state, BINSON_PARSER_STATE_IN_BLOCK |  /* CASE: empty block */
                                         BINSON_PARSER_STATE_BLOCK_END |  /* CASE: nested blocks end */
-                                        BINSON_PARSER_STATE_VAL )) /* CASE: usual block end */
+                                        BINSON_PARSER_STATE_VAL )) { /* CASE: usual block end */
 
               break; /* valid transition */
+}
          case BINSON_PARSER_STATE_BLOCK_END:  /* pp->state => BINSON_PARSER_STATE_BLOCK_END */
-            if (CHECKBITMASK(pp->state, BINSON_PARSER_STATE_IN_BLOCK_END))
+            if (CHECKBITMASK(pp->state, BINSON_PARSER_STATE_IN_BLOCK_END)) {
               break; /* valid transition */
+}
 
          case BINSON_PARSER_STATE_VAL:  /* pp->state => BINSON_PARSER_STATE_VAL */
             if (CHECKBITMASK(pp->state, BINSON_PARSER_STATE_IN_BLOCK |  /* CASE: first ARRAY value */
                                         BINSON_PARSER_STATE_BLOCK_END |  /* CASE: ARRAY value after nested OBJECT-value */
                                         BINSON_PARSER_STATE_NAME |  /* CASE: value part of name:val item of OBJECT */
-                                        BINSON_PARSER_STATE_VAL ))  /* CASE: simple value after simple value */
+                                        BINSON_PARSER_STATE_VAL )) {  /* CASE: simple value after simple value */
               break; /* valid transition */
+}
          case BINSON_PARSER_STATE_UNDEFINED:  /* pp->state => BINSON_PARSER_STATE_UNDEFINED */
-            if (CHECKBITMASK(pp->state, BINSON_PARSER_STATE_BLOCK_END))  /* CASE: top block end */
+            if (CHECKBITMASK(pp->state, BINSON_PARSER_STATE_BLOCK_END)) {  /* CASE: top block end */
               pp->state = req_state;
+}
               /* do not break here, exit with error instead */
          default:
             pp->error_flags = BINSON_ID_PARSE_WRONG_STATE;
@@ -530,8 +545,9 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
       }
 
      /* callback invocation */
-      if (pp->cb)
+      if (pp->cb) {
         pp->cb( pp, req_state, pp->cb_param );
+}
 
       /* DO state transition  */
       pp->state = req_state;
@@ -581,33 +597,39 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
       }
 */
       /* one step done */
-      if (n_steps > 0)  /* negative value means "till the current block's end" */
+      if (n_steps > 0) {  /* negative value means "till the current block's end" */
         n_steps--;
+}
 
       /* ------------- scan more or stop? ------------- */
-      if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_N) && n_steps == 0 )
+      if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_N) && n_steps == 0 ) {
         break;
+}
 
       if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_N_SAME_DEPTH) &&
-                           n_steps == 0 && pp->depth == orig_depth )
+                           n_steps == 0 && pp->depth == orig_depth ) {
         break;
+}
 
       if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_N_SAME_DEPTH) &&
                          pp->state == BINSON_PARSER_STATE_IN_BLOCK_END &&
-                         n_steps < 0 && pp->depth == orig_depth )
+                         n_steps < 0 && pp->depth == orig_depth ) {
         break;
+}
 
       /* "go_into" condition */
       if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_N_DEPTH) && orig_steps > 0 &&
                          ( pp->depth == orig_depth+orig_steps /*|| pp->depth == 0*/) &&
-                         pp->state == BINSON_PARSER_STATE_IN_BLOCK)
+                         pp->state == BINSON_PARSER_STATE_IN_BLOCK) {
         break;
+}
 
       /* "go_up" condition */
       if ( CHECKBITMASK(scan_flag, BINSON_PARSER_ADVANCE_N_DEPTH) && orig_steps < 0 &&
                          ( pp->depth == orig_depth+orig_steps /*|| pp->depth == 0*/) &&
-                         pp->state == BINSON_PARSER_STATE_BLOCK_END)
+                         pp->state == BINSON_PARSER_STATE_BLOCK_END) {
         break;
+}
    }
 
    /* return code is used for end-of-object detection */
@@ -635,7 +657,8 @@ bool _binson_parser_ensure_filter( binson_parser *pp, uint8_t scan_flag, uint8_t
 uint8_t _binson_parser_process_one( binson_parser *pp )
 {
   uint8_t  raw_byte = _binson_io_read_byte( &pp->io, &pp->error_flags );
-  if (pp->error_flags != BINSON_ID_OK) return false;
+  if (pp->error_flags != BINSON_ID_OK) { return false;
+}
 
   switch ( raw_byte ) {
     case BINSON_ID_OBJ_BEGIN:
@@ -665,8 +688,9 @@ uint8_t _binson_parser_process_one( binson_parser *pp )
         const uint8_t* ptr = _binson_io_get_ptr( &pp->io );
         pp->val_type = BINSON_ID_DOUBLE;
         pp->error_flags = _binson_io_advance ( &pp->io, 8 );
-        if (IS_CLEAN(pp))
+        if (IS_CLEAN(pp)) {
           pp->val.int_val = _binson_util_unpack_integer ( ptr, 8 );  /* automatic uint64_t -> double translation magic via pp->val union */
+}
         return BINSON_PARSER_STATE_VAL;
       }
 
@@ -679,8 +703,9 @@ uint8_t _binson_parser_process_one( binson_parser *pp )
         uint8_t size = 1 << (raw_byte - BINSON_ID_INTEGER - 1);
         pp->val_type = BINSON_ID_INTEGER;
         pp->error_flags = _binson_io_advance ( &pp->io, size );
-        if (IS_CLEAN(pp))
+        if (IS_CLEAN(pp)) {
           pp->val.int_val = _binson_util_unpack_integer ( ptr, size );
+}
         return BINSON_PARSER_STATE_VAL;
       }
 
@@ -718,13 +743,15 @@ uint8_t _binson_parser_process_lenval( binson_parser *pp, bbuf *pbb, uint8_t len
   uint8_t res = _binson_io_advance ( &pp->io, len_sizeof );
   int64_t len64;
 
-  if (!OK(res))
+  if (!OK(res)) {
     return res;
+}
 
   len64 = _binson_util_unpack_integer ( ptr, len_sizeof );
 
-  if (len64 < 0)
+  if (len64 < 0) {
       return BINSON_ID_PARSE_BAD_LEN;
+}
 
   binson_util_set_bbuf ( pbb, (uint8_t*)ptr + len_sizeof, (binson_size)len64 );
   return _binson_io_advance ( &pp->io, (binson_size)len64 );
@@ -811,8 +838,9 @@ bool binson_parser_get_raw( binson_parser *pp, bbuf *pbb )
 
   binson_util_set_bbuf( &bb, _binson_io_get_ptr ( &pp->io )-1, pp->io.buf_used-1 );  /* temporary storage */
   res =  binson_parser_next_ensure( pp, BINSON_ID_UNKNOWN );
-  if (res)
+  if (res) {
     binson_util_set_bbuf( pbb, bb.bptr, pp->io.buf_used - bb.bsize );
+}
 
   return res;
 }
@@ -822,8 +850,9 @@ bool binson_parser_to_writer( binson_parser *pp, binson_writer *pw )
 {
   bbuf bb;
 
-  if ( !binson_parser_get_raw( pp, &bb ) )
+  if ( !binson_parser_get_raw( pp, &bb ) ) {
     return false;
+}
 
   binson_write_raw( pw, bb.bptr, bb.bsize );
   return IS_CLEAN( pw );
@@ -839,15 +868,17 @@ bool _to_string_meta_cb( binson_parser *pp, uint8_t new_state, bool nice, void *
   if ((pp->state == BINSON_PARSER_STATE_VAL && new_state != BINSON_PARSER_STATE_IN_BLOCK_END) ||
       (pp->state == BINSON_PARSER_STATE_BLOCK_END && new_state == BINSON_PARSER_STATE_NAME) ||
       (pp->state == BINSON_PARSER_STATE_BLOCK_END && new_state == BINSON_PARSER_STATE_VAL) ||
-      (pp->state == BINSON_PARSER_STATE_BLOCK_END && new_state == BINSON_PARSER_STATE_BLOCK) )
-   _binson_io_write_byte( io, ',' );
+      (pp->state == BINSON_PARSER_STATE_BLOCK_END && new_state == BINSON_PARSER_STATE_BLOCK) ) {
+    _binson_io_write_byte( io, ',' );
+  }
 
   /* write indentation spaces */
   if (nice && 0 ) // indented 'nice' mode is unsupported now
   {
     _binson_io_write_byte( io, '\n' );
-    for (int i = 0; i < pp->depth*INDENT_WIDTH; i++)
+    for (int i = 0; i < pp->depth*INDENT_WIDTH; i++) {
       _binson_io_write_byte( io, ' ' );
+    }
   }
 
   switch (new_state)
@@ -1060,14 +1091,15 @@ static uint8_t	_binson_util_pack_integer( int64_t val, uint8_t *pbuf, uint8_t fo
   }
   else
   {
-      if (val >= -bound8 && val < bound8)
+      if (val >= -bound8 && val < bound8) {
           size =  sizeof(uint8_t);
-      else if (val >= -bound16 && val < bound16)
+      } else if (val >= -bound16 && val < bound16) {
           size = sizeof(uint16_t);
-      else if (val >= -bound32 && val < bound32)
+      } else if (val >= -bound32 && val < bound32) {
           size = sizeof(uint32_t);
-      else
+      } else {
           size = sizeof(uint64_t);
+}
   }
 
   for (i=0; i<size; i++)
@@ -1082,12 +1114,16 @@ static uint8_t	_binson_util_pack_integer( int64_t val, uint8_t *pbuf, uint8_t fo
 /* Integer conversion helper: convert sizeof argument to index in constant list */
 static inline uint8_t	_binson_util_sizeof_idx( uint8_t n )
 {
- if (n < 4)
-   return n;
- else if (n == 4)
-   return 3;
- else
-   return 4;
+  uint8_t idx = n;
+
+  if (n == 4) {
+    idx = 3;
+  }
+  else if (n > 4) {
+    idx = 4;
+  }
+
+  return idx;
 }
 
 /* bbuf initialization helper */
