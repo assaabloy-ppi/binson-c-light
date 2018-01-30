@@ -66,7 +66,7 @@ void binson_write_bytes( binson_writer *pw, const uint8_t* pbuf, binson_tok_size
 #define BINSON_PARSER_STATE_UNDEFINED     0x40
 
 /* parser utility macros */
-#define IS_OBJECT(x)      (x->block_stack[x->depth].val_type == BINSON_ID_OBJECT)
+#define IS_OBJECT(x)      ((x)->block_stack[(x)->depth].val_type == BINSON_ID_OBJECT)
 #define IS_BLOCK_TYPE(t)  ((t) == BINSON_ID_OBJECT || (t) == BINSON_ID_ARRAY)
 
 bool    _binson_parser_ensure_filter( binson_parser *pp, uint8_t scan_flag, uint8_t ensure_type );
@@ -79,7 +79,7 @@ static inline void	    _binson_io_reset( binson_io *io );
 static inline void      _binson_io_init( binson_io *io, uint8_t *pbuf, binson_size size );
 static inline void	    _binson_io_purge( binson_io *io );
 static inline uint8_t	  _binson_io_write( binson_io *io, const uint8_t *psrc, binson_size sz );
-#define _binson_io_write_str(x, y)  _binson_io_write(x, (const uint8_t *)y, sizeof(y)-1)
+#define _binson_io_write_str(x, y)  _binson_io_write((x), (const uint8_t *)(y), sizeof(y)-1)
 static inline uint8_t	  _binson_io_write_byte( binson_io *io, const uint8_t src_byte );
 static inline uint8_t   _binson_io_read( binson_io *io, uint8_t *pdst, binson_size sz );
  uint8_t   _binson_io_read_byte( binson_io *io, uint8_t *perr );
@@ -190,7 +190,7 @@ static inline uint8_t _binson_io_read( binson_io *io, uint8_t *pdst, binson_size
 /* Read and return single byte from internal buffer, advancing internal read position to next byte */
  uint8_t _binson_io_read_byte( binson_io *io, uint8_t *perr )
 {
-  uint8_t b;
+  uint8_t b = 0xff; /* make clang-analyzer happy */
   *perr = _binson_io_read( io, &b, 1 );
   return b;
 }
@@ -224,6 +224,12 @@ void  _binson_writer_write_token( binson_writer *pwriter, const uint8_t token_ty
     {
       uint8_t pack_buf[ sizeof(int64_t) + 1 ];
 
+      if (!val)
+      {
+        res = BINSON_ID_INVALID_ARG;
+        break;
+      }
+
       isize = _binson_util_pack_integer( val->int_val, &(pack_buf[1]), (token_type == BINSON_ID_DOUBLE)? 1:0 );
       pack_buf[0] = (uint8_t)(token_type + ((token_type == BINSON_ID_DOUBLE)? 0 : _binson_util_sizeof_idx( (uint8_t)isize )));
       isize++;
@@ -235,6 +241,12 @@ void  _binson_writer_write_token( binson_writer *pwriter, const uint8_t token_ty
     case BINSON_ID_STRING:
     case BINSON_ID_BYTES:
     {
+      if (!val)
+      {
+        res = BINSON_ID_INVALID_ARG;
+        break;
+      }
+
       binson_tok_size   tok_size = val->bbuf_val.bsize;
       binson_value  tval;
 
@@ -242,7 +254,7 @@ void  _binson_writer_write_token( binson_writer *pwriter, const uint8_t token_ty
 
       _binson_writer_write_token( pwriter, (uint8_t)(token_type+1), &tval ); /* writes type+len*/
       res = _binson_io_write( &(pwriter->io), val->bbuf_val.bptr, tok_size );  /* writes payload: string (without \0) or bytearray */
-      isize += tok_size;
+      /*isize += tok_size;*/ /* commented since qualified as unused by clang-analyzer */
       break;
     }
 
@@ -256,7 +268,10 @@ void  _binson_writer_write_token( binson_writer *pwriter, const uint8_t token_ty
       break;
 
     case BINSON_ID_BOOLEAN:
-      res = _binson_io_write_byte( &(pwriter->io), val->bool_val? BINSON_ID_TRUE : BINSON_ID_FALSE );
+      if (!val)
+        res = BINSON_ID_INVALID_ARG;
+      else
+        res = _binson_io_write_byte( &(pwriter->io), val->bool_val? BINSON_ID_TRUE : BINSON_ID_FALSE );
       break;
 
     default:
@@ -1106,7 +1121,7 @@ void binson_util_cpy_bbuf2bbuf( bbuf *dst, bbuf *src )
 int binson_util_cmp_bbuf2bbuf( bbuf *bb1, bbuf *bb2 )
 {
   int r = memcmp( bb1->bptr, bb2->bptr, MIN(bb1->bsize, bb2->bsize) );
-  return (r == 0)? (int)(bb1->bsize - bb2->bsize) : r;
+  return (r == 0)? bb1->bsize - bb2->bsize : r;
 }
 
 /* Compare zero-terminated string with bytearrays in lexicographical sense.  return value same as  strcmp() */

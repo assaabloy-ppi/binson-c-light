@@ -121,17 +121,17 @@ typedef uint32_t binson_large_size;  /* type to keep counters etc, when 'binson_
 #define BINSON_PARSER_ADVANCE_ENSURE_TYPE          0x10  /* additional check of binson type when other requirements met */
 
 /*********** usefull macros ******************/
-#define SETBITMASK(x,y)   (x |= (y))  /* Set bitmask y in byte x*/
-#define CLEARBITMASK(x,y)   (x &= (~y))   /* Clear bitmask y in byte x*/
-#define CHECKBITMASK(x,y)   (x & (y))   /* Check bitmask y in byte x*/
+#define SETBITMASK(x,y)     ((x) |= (y))  /* Set bitmask y in byte x*/
+#define CLEARBITMASK(x,y)   ((x) &= (~(y))   /* Clear bitmask y in byte x*/
+#define CHECKBITMASK(x,y)   ((x) & (y))   /* Check bitmask y in byte x*/
 
-#define SETBIT(x,b)     (x |= (1<<b))
-#define CLEARBIT(x,b)     (x &= ~(1<<b))
-#define CHECKBIT(x,b)     (x & (1<<b))
+#define SETBIT(x,b)       ((x) |= (1 << (b)))
+#define CLEARBIT(x,b)     ((x) &= ~(1 << (b)))
+#define CHECKBIT(x,b)     ((x) & (1 << (b)))
 
 #define UNUSED(x) (void)(x)   /* for unused variable warning suppression */
 
-#define OK(res) (res == BINSON_ID_OK)
+#define OK(res) ((res) == BINSON_ID_OK)
 #define IS_CLEAN(x) ((x)->error_flags == BINSON_ID_OK ? 1:0)
 /*********************************************/
 
