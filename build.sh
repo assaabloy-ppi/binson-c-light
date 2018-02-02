@@ -19,6 +19,7 @@ gcc -I. $CFLAGS  binson_light.c bug_14.c  -o build/bug_14
 gcc -I. $CFLAGS  binson_light.c bug_14_2.c  -o build/bug_14_2
 gcc -I. $CFLAGS  binson_light.c bug_15.c  -o build/bug_15
 gcc -I. $CFLAGS  binson_light.c bug_20.c  -o build/bug_20
+gcc -I. $CFLAGS  -DWITH_TO_STRING binson_light.c bug_22.c  -o build/bug_22
 
 
 ARM_CFLAGS="-std=c99 -Wall -fpack-struct -ffreestanding -funsigned-char"

@@ -29,6 +29,12 @@
 
 #include "binson_light.h"
 
+
+/* ignore attributes if not supported */
+#if !defined(__GNUC__) || __GNUC__ < 7
+#define  __attribute__(x)  /* NOTHING */
+#endif
+
 /* common utility macros */
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
