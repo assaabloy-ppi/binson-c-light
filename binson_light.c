@@ -843,8 +843,9 @@ bool binson_parser_to_writer( binson_parser *pp, binson_writer *pw )
 #ifdef WITH_TO_STRING
 bool _to_string_meta_cb( binson_parser *pp, uint8_t new_state, bool nice, void *param )
 {
-    binson_io *io = (binson_io*) param;
-    int        chunk_len;
+    binson_io   *io = (binson_io*) param;
+    binson_size  io_avail;
+    int          chunk_len;
 
     /* when to add commas */
     if ((pp->state == BINSON_PARSER_STATE_VAL && new_state != BINSON_PARSER_STATE_IN_BLOCK_END) ||
@@ -862,6 +863,8 @@ bool _to_string_meta_cb( binson_parser *pp, uint8_t new_state, bool nice, void *
         }
     }
 
+    io_avail = io->buf_size - io->buf_used;
+
     switch (new_state) {
         case BINSON_PARSER_STATE_BLOCK:
             _binson_io_write_byte( io, pp->val_type == BINSON_ID_OBJECT ? '{' : '[' );
@@ -870,23 +873,22 @@ bool _to_string_meta_cb( binson_parser *pp, uint8_t new_state, bool nice, void *
             _binson_io_write_byte( io, pp->val_type == BINSON_ID_OBJECT ? '}' : ']' );
             return true;
         case BINSON_PARSER_STATE_NAME:
-            chunk_len = sprintf((char*)_binson_io_get_ptr(io), "\"%*.*s\":", 0, pp->name.bsize, pp->name.bptr);
-            _binson_io_write( io, _binson_io_get_ptr(io), (binson_size) chunk_len );
-            return true;
+            chunk_len = snprintf((char*)_binson_io_get_ptr(io), io_avail, "\"%*.*s\":", 0, pp->name.bsize, pp->name.bptr);
+            break;
 
         case BINSON_PARSER_STATE_VAL:
             switch (pp->val_type) {
                 case BINSON_ID_BOOLEAN:
-                    chunk_len = sprintf( (char*)_binson_io_get_ptr(io), "%s", pp->val.bool_val ? "true" : "false" );
+                    chunk_len = snprintf( (char*)_binson_io_get_ptr(io), io_avail, "%s", pp->val.bool_val ? "true" : "false" );
                     break;
                 case BINSON_ID_DOUBLE:
-                    chunk_len = sprintf( (char*)_binson_io_get_ptr(io), "%g", pp->val.double_val );
+                    chunk_len = snprintf( (char*)_binson_io_get_ptr(io), io_avail, "%g", pp->val.double_val );
                     break;
                 case BINSON_ID_INTEGER:
-                    chunk_len = sprintf( (char*)_binson_io_get_ptr(io), "%lld", (long long)pp->val.int_val);
+                    chunk_len = snprintf( (char*)_binson_io_get_ptr(io), io_avail, "%lld", (long long)pp->val.int_val);
                     break;
                 case BINSON_ID_STRING:
-                    chunk_len = sprintf( (char*)_binson_io_get_ptr(io), "\"%*.*s\"", 0, pp->val.bbuf_val.bsize, pp->val.bbuf_val.bptr);
+                    chunk_len = snprintf( (char*)_binson_io_get_ptr(io), io_avail, "\"%*.*s\"", 0, pp->val.bbuf_val.bsize, pp->val.bbuf_val.bptr);
                     break;
                 case BINSON_ID_BYTES:
                     _binson_io_write_str( io, "<data>" );  /* let's make afl happy first */
@@ -907,7 +909,7 @@ bool _to_string_meta_cb( binson_parser *pp, uint8_t new_state, bool nice, void *
             return true;  /* do nothing */
     }
 
-    _binson_io_write( io, _binson_io_get_ptr(io), (binson_size) chunk_len );
+    _binson_io_write( io, _binson_io_get_ptr(io), MIN((binson_size)chunk_len, io_avail) );
     return true;
 }
 
