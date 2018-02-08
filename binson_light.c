@@ -30,11 +30,6 @@
 #include "binson_light.h"
 
 
-/* ignore attributes if not supported */
-#if !defined(__GNUC__) || __GNUC__ < 7
-#define  __attribute__(x)  /* NOTHING */
-#endif
-
 /* common utility macros */
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -487,7 +482,7 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
                                  BINSON_PARSER_STATE_VAL )) {  /* CASE: next OBJECT's simple name:val */
                     break; /* valid transition */
                 }
-                __attribute__ ((fallthrough));
+                /* Falls through. */
 
             case BINSON_PARSER_STATE_BLOCK:  /* pp->state => BINSON_PARSER_STATE_BLOCK */
                 if (CHECKBITMASK(pp->state, BINSON_PARSER_STATE_IN_BLOCK |  /* CASE: nested blocks */
@@ -497,13 +492,13 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
 
                     break; /* valid transition */
                 }
-                __attribute__ ((fallthrough));
+                /* Falls through. */
 
             case BINSON_PARSER_STATE_IN_BLOCK:  /* pp->state => BINSON_PARSER_STATE_IN_BLOCK */
                 if (CHECKBITMASK(pp->state, BINSON_PARSER_STATE_BLOCK)) {
                     break; /* valid transition */
                 }
-                __attribute__ ((fallthrough));
+                /* Falls through. */
 
             case BINSON_PARSER_STATE_IN_BLOCK_END:  /* pp->state => BINSON_PARSER_STATE_IN_BLOCK_END */
                 if (CHECKBITMASK(pp->state, BINSON_PARSER_STATE_IN_BLOCK |  /* CASE: empty block */
@@ -512,13 +507,13 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
 
                     break; /* valid transition */
                 }
-                __attribute__ ((fallthrough));
+                /* Falls through. */
 
             case BINSON_PARSER_STATE_BLOCK_END:  /* pp->state => BINSON_PARSER_STATE_BLOCK_END */
                 if (CHECKBITMASK(pp->state, BINSON_PARSER_STATE_IN_BLOCK_END)) {
                     break; /* valid transition */
                 }
-                __attribute__ ((fallthrough));
+                /* Falls through. */
 
             case BINSON_PARSER_STATE_VAL:  /* pp->state => BINSON_PARSER_STATE_VAL */
                 if (CHECKBITMASK(pp->state, BINSON_PARSER_STATE_IN_BLOCK |  /* CASE: first ARRAY value */
@@ -527,13 +522,13 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
                                  BINSON_PARSER_STATE_VAL )) {  /* CASE: simple value after simple value */
                     break; /* valid transition */
                 }
-                __attribute__ ((fallthrough));
+                /* Falls through. */
 
             case BINSON_PARSER_STATE_UNDEFINED:  /* pp->state => BINSON_PARSER_STATE_UNDEFINED */
                 if (CHECKBITMASK(pp->state, BINSON_PARSER_STATE_BLOCK_END)) {  /* CASE: top block end */
                     pp->state = req_state;
                 }
-                __attribute__ ((fallthrough)); /* do not break here, exit with error instead */
+                /* Falls through. */ /* do not break here, exit with error instead */
 
             default:
                 pp->error_flags = BINSON_ID_PARSE_WRONG_STATE;
