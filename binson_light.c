@@ -39,6 +39,9 @@
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #endif
 
+const uint8_t ZERO = 0;
+#define BBUF_ZERO { .bptr = (uint8_t*)&ZERO, .bsize = 1 }
+
 /*====================== binson_writer private / forward decl ================*/
 static void _binson_writer_write_token( binson_writer *pwriter, uint8_t token_type, binson_value *val );
 
@@ -399,12 +402,12 @@ void binson_parser_reset( binson_parser *pp )
     pp->val_type     = BINSON_ID_UNKNOWN;
     pp->block_stack[0] = (bs_item) {
         .val_type = BINSON_ID_UNKNOWN,
-         .name = { .bptr = NULL, .bsize = 0 }
+        .name = (bbuf)BBUF_ZERO
     };
     pp->cb           = NULL;
     pp->cb_param     = NULL;
 
-    binson_util_set_bbuf( &pp->name, NULL, 0 );
+    pp->name = (bbuf)BBUF_ZERO;
 }
 
 void binson_parser_set_callback( binson_parser *pp, binson_parser_cb cb, void *cb_param )
@@ -552,7 +555,7 @@ bool binson_parser_advance( binson_parser *pp, uint8_t scan_flag, int16_t n_step
                     return false;
                 }
                 pp->block_stack[pp->depth].name = pp->name;  /* copy bbuf via assignment */
-                binson_util_set_bbuf( &pp->name, NULL, 0 );  /* need to reset stored name at new block begin */
+                pp->name = (bbuf)BBUF_ZERO;  /* need to reset stored name at new block begin */
                 pp->depth++;
                 pp->block_stack[pp->depth].val_type = pp->val_type; /* BINSON_ID_OBJECT vs BINSON_ID_ARRAY */
                 break;
