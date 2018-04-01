@@ -135,7 +135,7 @@ extern "C" {
 #define IS_CLEAN(x) ((x)->error_flags == BINSON_ID_OK ? 1 : 0)
 /*********************************************/
 
-typedef uint16_t binson_tok_size;   /* type to keep token length (key and value are separate tokens). */
+typedef uint32_t binson_tok_size;   /* type to keep token length (key and value are separate tokens). */
 typedef uint16_t binson_size;       /* type to keep raw data block sizes and offsets */
 typedef uint32_t binson_large_size; /* type to keep counters etc, when 'binson_size' isn't enough */
 
