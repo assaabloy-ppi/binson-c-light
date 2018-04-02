@@ -141,7 +141,7 @@ static inline uint8_t _binson_io_write(binson_io *io, const uint8_t *psrc, binso
     }
 
     if (io->pbuf && (psrc != io->pbuf + io->buf_used)) {
-        memcpy(io->pbuf + io->buf_used, psrc, sz);
+        memmove(io->pbuf + io->buf_used, psrc, sz);
     }
 
     io->buf_used += sz;
@@ -170,7 +170,7 @@ static inline uint8_t _binson_io_read(binson_io *io, uint8_t *pdst, binson_size 
     }
 
     if (pdst && io->pbuf) {
-        memcpy(pdst, io->pbuf + io->buf_used, sz);
+        memmove(pdst, io->pbuf + io->buf_used, sz);
     }
 
     io->buf_used += sz;
@@ -1145,7 +1145,7 @@ void binson_util_cpy_bbuf(bbuf *dst, bbuf *src)
 
 /* Copy memory blocks described by src to dst location, checking destination block size */
 void binson_util_cpy_bbuf2bbuf(bbuf *dst, bbuf *src) { //
-  memcpy(dst->bptr, src->bptr, MIN(dst->bsize, src->bsize)); }
+  memmove(dst->bptr, src->bptr, MIN(dst->bsize, src->bsize)); }
 
 /* Compare two bytearrays in lexicographical sense.  return value same as  strcmp() */
 int binson_util_cmp_bbuf2bbuf(bbuf *bb1, bbuf *bb2)
@@ -1164,6 +1164,6 @@ int binson_util_cmp_bbuf2asciiz(bbuf *bb1, const char *pstr)
 /* Copy bytearray to zero-terminated string */
 void binson_util_cpy_bbuf2asciiz(char *pstr, bbuf *bb)
 {
-    memcpy(pstr, bb->bptr, bb->bsize);
+    memmove(pstr, bb->bptr, bb->bsize);
     pstr[bb->bsize] = '\0';
 }
