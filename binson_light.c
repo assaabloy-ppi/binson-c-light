@@ -1151,7 +1151,7 @@ void binson_util_cpy_bbuf2bbuf(bbuf *dst, bbuf *src) { //
 int binson_util_cmp_bbuf2bbuf(bbuf *bb1, bbuf *bb2)
 {
     int r = memcmp(bb1->bptr, bb2->bptr, MIN(bb1->bsize, bb2->bsize));
-    return (r == 0) ? bb1->bsize - bb2->bsize : r;
+    return (r == 0) ? ((int) (bb1->bsize - bb2->bsize)) : r;
 }
 
 /* Compare zero-terminated string with bytearrays in lexicographical sense.  return value same as  strcmp() */
