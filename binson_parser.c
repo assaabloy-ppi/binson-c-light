@@ -147,7 +147,7 @@ bool binson_parser_init_array(binson_parser *parser,
     parser->error_flags = BINSON_ERROR_NONE;
 
     parser->type            = BINSON_PTYPE_ARRAY;
-    parser->depth           = 0;
+    parser->depth           = 1;
     parser->buffer_used     = 0;
     parser->state[0].flags  = BINSON_STATE_UNDEFINED;
     parser->current_state = &parser->state[0];
@@ -944,7 +944,7 @@ static bool _advance(binson_parser *parser, uint8_t scan_flags)
 
                     if (state->array_depth == 0) {
                         state->flags = BINSON_STATE_IN_OBJ_EXPECTING_FIELD;
-                        if (parser->type == BINSON_PTYPE_ARRAY) {
+                        if (parser->type == BINSON_PTYPE_ARRAY && parser->depth == 1) {
                             if (parser->buffer_used != parser->buffer_size) {
                                 parser->error_flags = BINSON_ERROR_FORMAT;
                             }
