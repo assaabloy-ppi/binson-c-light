@@ -845,6 +845,48 @@ TEST(get_raw_should_not_work_on_integer)
 
 }
 
+TEST(object_first_element_in_array)
+{
+    /* {"A":[{"A":"A"}]} */
+    uint8_t buffer[] = {
+        0x42,
+            0x40,
+                0x14, 0x01, 0x41,
+                0x42,
+                0x14, 0x01, 0x41,
+                0x43,
+            0x41,
+        0x43,
+    };
+    
+    binson_parser p;
+    bool found = false;
+
+    ASSERT_TRUE(binson_parser_init_array(&p, buffer, sizeof(buffer)));
+    ASSERT_TRUE(binson_parser_verify(&p));
+
+
+    ASSERT_TRUE(binson_parser_go_into_array(&p));
+
+    while (binson_parser_next(&p)) {
+        ASSERT_TRUE(binson_parser_go_into_object(&p));
+        ASSERT_TRUE(binson_parser_field_ensure(&p, "A", BINSON_ID_ARRAY));
+        ASSERT_TRUE(binson_parser_go_into_array(&p));
+        while (binson_parser_next(&p)) {
+            if (binson_parser_string_equals(&p, "A")) {
+                found = true;
+            }
+        }
+        ASSERT_TRUE(binson_parser_leave_array(&p));
+        ASSERT_TRUE(binson_parser_leave_object(&p));
+
+    }
+
+    ASSERT_TRUE(binson_parser_leave_array(&p));
+    ASSERT_TRUE(found);
+
+}
+
 /*======= Main function =====================================================*/
 
 int main(void) {
@@ -872,6 +914,7 @@ int main(void) {
     RUN_TEST(object_after_empty_string_in_array);
     RUN_TEST(null_args);
     RUN_TEST(get_raw_should_not_work_on_integer);
+    RUN_TEST(object_first_element_in_array);
     PRINT_RESULT();
 }
 
