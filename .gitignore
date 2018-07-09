@@ -41,8 +41,6 @@
 *.depend
 *.idea
 
-CMakeLists.txt
-
 CMakeCache.txt
 CMakeFiles/
 CMakeScripts

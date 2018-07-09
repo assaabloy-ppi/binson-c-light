@@ -1,5 +1,0 @@
--record('_bbuf', {bsize = eqc_c_undefined, bptr = eqc_c_undefined}).
--record('_binson_io', {buf_size = eqc_c_undefined, buf_used = eqc_c_undefined, pbuf = eqc_c_undefined, counter = eqc_c_undefined}).
--record('_binson_writer', {error_flags = eqc_c_undefined, io = eqc_c_undefined, tmp_val = eqc_c_undefined}).
--record(binson_parser, {io = eqc_c_undefined, state = eqc_c_undefined, error_flags = eqc_c_undefined, val_type = eqc_c_undefined, name = eqc_c_undefined, val = eqc_c_undefined, depth = eqc_c_undefined, block_stack = eqc_c_undefined, cb = eqc_c_undefined, cb_param = eqc_c_undefined}).
--record('_binson_value', {int_val = eqc_c_undefined, double_val = eqc_c_undefined, bool_val = eqc_c_undefined, bbuf_val = eqc_c_undefined}).
