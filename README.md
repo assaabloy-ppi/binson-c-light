@@ -119,14 +119,3 @@ a: 123
 bcd: Hello world!
 ```
 
-
-Build
----------
-
-`
-$ ./build.sh
-`
-
-Resulting binary files will be placed under ./build
-
-
