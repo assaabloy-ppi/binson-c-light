@@ -463,45 +463,46 @@ bool binson_parser_string_equals(binson_parser *parser, const char *pstr)
 
 static void _binson_print_cb(binson_parser *parser, uint16_t next_state, void *context)
 {
-    bool *print_separator = (bool *) context;
 
     binson_state *state = parser->current_state;
+    uint8_t *pstate = (uint8_t *) context;
 
-    if (CHECKBITMASK(state->flags, BINSON_STATE_IN_ARRAY) &&
-        CHECKBITMASK(next_state, BINSON_STATE_VALUE_FLAG)) {
-        if ((*print_separator)) {
-            printf(",");
-        }
-        else {
-            *print_separator = true;
-        }
-        
+    if (next_state != BINSON_STATE_PARSED_ARRAY_END && *pstate == 0x05) {
+        printf(",");
+    }
+
+    if (*pstate == 0x04) {
+        *pstate = 0x05;
     }
 
     switch (next_state)
     {
         case BINSON_STATE_PARSED_OBJECT_BEGIN:
-            *print_separator = false;
+            *pstate = 0x01;
             printf("{");
             break;
         case BINSON_STATE_PARSED_OBJECT_END:
+            if (state->array_depth > 0) {
+                *pstate = 0x05;
+            }
             printf("}");
             break;
         case BINSON_STATE_PARSED_ARRAY_BEGIN:
-            *print_separator = false;
+            *pstate = 0x04;
             printf("[");
             break;
         case BINSON_STATE_PARSED_ARRAY_END:
+            if (state->array_depth == 0) {
+                *pstate = 0x02;
+            }
             printf("]");
             break;
         case BINSON_STATE_PARSED_FIELD_NAME:
-            if (!(*print_separator)) {
-                *print_separator = true;
-            }
-            else {
+            if (*pstate == 0x02) {
                 printf(",");
             }
-            printf("\"%*.*s\":", 0, (int) parser->current_state->current_name.bsize, (char* ) parser->current_state->current_name.bptr);
+            *pstate = 0x02;
+            printf("\"%*.*s\":", 0, (int) state->current_name.bsize, (char* ) parser->current_state->current_name.bptr);
             break;
         case BINSON_STATE_PARSED_STRING:
             printf("\"%*.*s\"", 0, (int) state->current_value.string_value.bsize, (char* ) state->current_value.string_value.bptr);
@@ -510,7 +511,7 @@ static void _binson_print_cb(binson_parser *parser, uint16_t next_state, void *c
             printf("%s", (state->current_value.bool_value) ? "true" : "false");
             break;
         case BINSON_STATE_PARSED_DOUBLE:
-            printf("%g", state->current_value.double_value);
+            printf("%lf", state->current_value.double_value);
             break;
         case BINSON_STATE_PARSED_INTEGER:
             printf("%" PRId64 "", state->current_value.integer_value);
@@ -532,25 +533,158 @@ bool binson_parser_print(binson_parser *parser)
     if (NULL == parser) {
         return false;
     }
-    bool print_separator = false;
+    uint8_t pstate = 0x00;
+    parser->cb_context = &pstate;
     parser->cb = _binson_print_cb;
-    parser->cb_context = &print_separator;
     bool ret = binson_parser_verify(parser);
-    printf("\r\n");
     parser->cb = NULL;
     parser->cb_context = NULL;
     return ret;
 }
 
+struct _to_string_ctx {
+    char *buffer;
+    size_t buffer_size;
+    size_t buffer_used;
+    uint8_t pstate;
+    bool nice;
+    bool buffer_full;
+};
+
+static void _binson_to_string_cb(binson_parser *parser, uint16_t next_state, void *context)
+{
+
+    binson_state *state = parser->current_state;
+    struct _to_string_ctx *ctx = (struct _to_string_ctx *) context;
+    uint8_t *pstate = &ctx->pstate;
+    char *pbuf = &ctx->buffer[ctx->buffer_used];
+
+    if (ctx->buffer_full || ctx->buffer_used >= ctx->buffer_size) {
+        return;
+    }
+
+    size_t available = ctx->buffer_size - ctx->buffer_used;
+    size_t ret = 0;
+
+    if (next_state != BINSON_STATE_PARSED_ARRAY_END && *pstate == 0x05) {
+        ret = snprintf(pbuf, available, ",");
+        if (!_check_boundary(ctx->buffer_used, ret, ctx->buffer_size)) {
+            ctx->buffer_full = true;
+            return;
+        }
+        ctx->buffer_used += ret;
+        pbuf = &ctx->buffer[ctx->buffer_used];
+    }
+
+    if (*pstate == 0x04) {
+        *pstate = 0x05;
+    }
+
+    switch (next_state)
+    {
+        case BINSON_STATE_PARSED_OBJECT_BEGIN:
+            *pstate = 0x01;
+            ret = snprintf(pbuf, available, "{");
+            break;
+        case BINSON_STATE_PARSED_OBJECT_END:
+            if (state->array_depth > 0) {
+                *pstate = 0x05;
+            }
+            ret = snprintf(pbuf, available, "}");
+            break;
+        case BINSON_STATE_PARSED_ARRAY_BEGIN:
+            *pstate = 0x04;
+            ret = snprintf(pbuf, available, "[");
+            break;
+        case BINSON_STATE_PARSED_ARRAY_END:
+            if (state->array_depth == 0) {
+                *pstate = 0x02;
+            }
+            ret = snprintf(pbuf, available, "]");
+            break;
+        case BINSON_STATE_PARSED_FIELD_NAME:
+            if (*pstate == 0x02) {
+                ret = snprintf(pbuf, available, ",");
+                if (!_check_boundary(ctx->buffer_used, ret, ctx->buffer_size)) {
+                    ctx->buffer_full = true;
+                    return;
+                }
+                ctx->buffer_used += ret;
+                pbuf = &ctx->buffer[ctx->buffer_used];
+            }
+            *pstate = 0x02;
+            ret = snprintf(pbuf, available, "\"%*.*s\":", 0, (int) state->current_name.bsize, (char* ) parser->current_state->current_name.bptr);
+            break;
+        case BINSON_STATE_PARSED_STRING:
+            ret = snprintf(pbuf, available, "\"%*.*s\"", 0, (int) state->current_value.string_value.bsize, (char* ) state->current_value.string_value.bptr);
+            break;
+        case BINSON_STATE_PARSED_BOOLEAN:
+            ret = snprintf(pbuf, available, "%s", (state->current_value.bool_value) ? "true" : "false");
+            break;
+        case BINSON_STATE_PARSED_DOUBLE:
+            ret = snprintf(pbuf, available, "%lf", state->current_value.double_value);
+            break;
+        case BINSON_STATE_PARSED_INTEGER:
+            ret = snprintf(pbuf, available, "%" PRId64 "", state->current_value.integer_value);
+            break;
+        case BINSON_STATE_PARSED_BYTES:
+            ret = snprintf(pbuf, available, "\"0x");
+            if (!_check_boundary(ctx->buffer_used, ret, ctx->buffer_size)) {
+                ctx->buffer_full = true;
+                return;
+            }
+            ctx->buffer_used += ret;
+            pbuf = &ctx->buffer[ctx->buffer_used];
+            if ((state->current_value.bytes_value.bsize > (SIZE_MAX/2)) &&
+                !_check_boundary(ctx->buffer_used, (state->current_value.bytes_value.bsize*2) + 1, ctx->buffer_size)) {
+                ctx->buffer_full = true;
+                return;
+            }
+            ret = 0;
+            for (size_t i = 0; i < state->current_value.bytes_value.bsize; i++) {
+                ret += snprintf(&pbuf[ret], available, "%02x", state->current_value.bytes_value.bptr[i]);
+            }
+            ret += snprintf(&pbuf[ret], available, "\"");
+            break;
+            
+    }
+
+
+    if (!_check_boundary(ctx->buffer_used, ret, ctx->buffer_size)) {
+        ctx->buffer_full = true;
+        return;
+    }
+
+    ctx->buffer_used += ret;
+
+}
+
 bool binson_parser_to_string(binson_parser *parser,
-                             uint8_t *pbuf,
-                             size_t buf_size,
+                             char *pbuf,
+                             size_t *buf_size,
                              bool nice)
 {
-    (void) parser;
-    (void) pbuf;
-    (void) buf_size;
-    (void) nice;
+    if (NULL == parser || NULL == pbuf || NULL == buf_size) {
+        return false;
+    }
+
+    struct _to_string_ctx ctx;
+    ctx.buffer = pbuf;
+    ctx.buffer_size = *buf_size;
+    ctx.buffer_used = 0;
+    ctx.pstate = 0;
+    ctx.nice = nice;
+    ctx.buffer_full = false;
+
+    parser->cb_context = &ctx;
+    parser->cb = _binson_to_string_cb;
+    bool ret = binson_parser_verify(parser);
+    parser->cb = NULL;
+    parser->cb_context = NULL;
+    if (ret && !ctx.buffer_full) {
+        *buf_size = ctx.buffer_used;
+        return true;
+    }
     return false;
 }
 

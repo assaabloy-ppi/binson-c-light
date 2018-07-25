@@ -325,8 +325,8 @@ bbuf *binson_parser_get_bytes_bbuf(binson_parser *parser);
 bool binson_parser_string_equals(binson_parser *pp, const char *pstr);
 bool binson_parser_print(binson_parser *parser);
 bool binson_parser_to_string(binson_parser *parser,
-                             uint8_t *pbuf,
-                             size_t buf_size,
+                             char *pbuf,
+                             size_t *buf_size,
                              bool nice);
 
 #ifdef __cplusplus

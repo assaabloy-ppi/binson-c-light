@@ -16,6 +16,7 @@ do_test(binson_parser_test)
 do_test(binson_parser_bad_test)
 do_test(binson_writer_test)
 do_test(binson_parser_ref_test)
+do_test(binson_parser_print_test)
 do_test(binson_parser_verify_test)
 do_test(binson_parser_array_test)
 
