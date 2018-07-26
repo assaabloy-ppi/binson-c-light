@@ -30,7 +30,7 @@ static int __main(int argc, char **argv)
     ssize_t size;
     uint8_t *buffer_cpy;
     uint8_t buffer[4096];
-    uint8_t str_buffer[8192];
+    char str_buffer[8192];
 
 
     size = read(0, buffer, sizeof(buffer));
@@ -48,11 +48,12 @@ static int __main(int argc, char **argv)
 
     memcpy(buffer_cpy, buffer, size);
     binson_parser p;
+    size_t psize = sizeof(str_buffer);
     binson_parser_init(&p, buffer, size);
-    ret = binson_parser_to_string(&p, str_buffer, sizeof(str_buffer), true);
-    printf("%*.*s\r\n", 0, (int) sizeof(str_buffer), (char*) str_buffer);
-    ret |= binson_parser_to_string(&p, str_buffer, sizeof(str_buffer), false);
-    printf("%*.*s\r\n", 0, (int) sizeof(str_buffer), (char*) str_buffer);
+    ret = binson_parser_to_string(&p, str_buffer, &psize, true);
+    printf("%*.*s\r\n", 0, (int) psize, (char*) str_buffer);
+    ret |= binson_parser_to_string(&p, str_buffer, &psize, false);
+    printf("%*.*s\r\n", 0, (int) psize, (char*) str_buffer);
     if (ret) {
         for (ssize_t i = 0; i < size; i++) {
             printf("%02x", buffer_cpy[i]);
