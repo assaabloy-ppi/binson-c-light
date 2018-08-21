@@ -108,7 +108,7 @@ static bool parse_binson(const uint8_t *buffer, uint32_t size, uint16_t depth)
             printf("\r\n");
         }
 
-        printf("\"%*.*s\":", 0, (int) current_name->bsize, (char *) current_name->bptr);
+        printf("\"%*.*s\":", 0, (int) current_name->bsize, (const char *) current_name->bptr);
         VERIFY(handle_type(&p, type, depth));
 
         prev_name = current_name;
@@ -167,7 +167,7 @@ static bool handle_type(binson_parser *p, binson_type type, uint16_t depth)
         case BINSON_TYPE_STRING:
             ptr_val = binson_parser_get_string_bbuf(p);
             VERIFY(ptr_val->bptr != NULL);
-            printf("\"%*.*s\"", 0, (int) ptr_val->bsize, (char *) ptr_val->bptr);
+            printf("\"%*.*s\"", 0, (int) ptr_val->bsize, (const char *) ptr_val->bptr);
             break;
         case BINSON_TYPE_BYTES:
             ptr_val = binson_parser_get_bytes_bbuf(p);

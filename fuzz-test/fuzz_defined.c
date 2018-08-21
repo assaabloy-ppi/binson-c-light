@@ -97,7 +97,7 @@ static bool parse_binson(uint8_t *buffer, uint32_t size)
     VERIFY(binson_parser_field_ensure(&p, "A", BINSON_ID_STRING));
     buf = binson_parser_get_string_bbuf(&p);
     VERIFY( buf->bptr != NULL);
-    printf("    \"A\": %*.*s,\r\n", 0, (int) buf->bsize, (char *) buf->bptr);
+    printf("    \"A\": %*.*s,\r\n", 0, (int) buf->bsize, (const char *) buf->bptr);
 
 
     VERIFY(binson_parser_field_ensure(&p, "B", BINSON_ID_INTEGER));

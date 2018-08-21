@@ -502,10 +502,10 @@ static void _binson_print_cb(binson_parser *parser, uint16_t next_state, void *c
                 printf(",");
             }
             *pstate = 0x02;
-            printf("\"%*.*s\":", 0, (int) state->current_name.bsize, (char* ) parser->current_state->current_name.bptr);
+            printf("\"%*.*s\":", 0, (int) state->current_name.bsize, (const char* ) parser->current_state->current_name.bptr);
             break;
         case BINSON_STATE_PARSED_STRING:
-            printf("\"%*.*s\"", 0, (int) state->current_value.string_value.bsize, (char* ) state->current_value.string_value.bptr);
+            printf("\"%*.*s\"", 0, (int) state->current_value.string_value.bsize, (const char* ) state->current_value.string_value.bptr);
             break;
         case BINSON_STATE_PARSED_BOOLEAN:
             printf("%s", (state->current_value.bool_value) ? "true" : "false");
@@ -613,10 +613,10 @@ static void _binson_to_string_cb(binson_parser *parser, uint16_t next_state, voi
                 pbuf = &ctx->buffer[ctx->buffer_used];
             }
             *pstate = 0x02;
-            ret = snprintf(pbuf, available, "\"%*.*s\":", 0, (int) state->current_name.bsize, (char* ) parser->current_state->current_name.bptr);
+            ret = snprintf(pbuf, available, "\"%*.*s\":", 0, (int) state->current_name.bsize, (const char* ) parser->current_state->current_name.bptr);
             break;
         case BINSON_STATE_PARSED_STRING:
-            ret = snprintf(pbuf, available, "\"%*.*s\"", 0, (int) state->current_value.string_value.bsize, (char* ) state->current_value.string_value.bptr);
+            ret = snprintf(pbuf, available, "\"%*.*s\"", 0, (int) state->current_value.string_value.bsize, (const char* ) state->current_value.string_value.bptr);
             break;
         case BINSON_STATE_PARSED_BOOLEAN:
             ret = snprintf(pbuf, available, "%s", (state->current_value.bool_value) ? "true" : "false");
