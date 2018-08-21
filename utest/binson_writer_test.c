@@ -111,8 +111,8 @@ TEST(writer_should_give_required_size)
     binson_writer_init(&w, buffer, 4);
     binson_write_object_begin(&w);
     binson_write_name(&w, "A");
-    binson_write_string(&w, "Hello world");
-    binson_write_object_end(&w);
+    ASSERT_FALSE(binson_write_string(&w, "Hello world"));
+    ASSERT_FALSE(binson_write_object_end(&w));
     ASSERT_FALSE(w.error_flags == BINSON_ID_OK);
     size_t required = binson_writer_get_counter(&w);
     uint8_t *new_buffer;

@@ -395,5 +395,5 @@ static bool _write(binson_writer *writer, bbuf *data)
     }
     
     writer->buffer_used += data->bsize;
-    return true;
+    return (writer->error_flags == BINSON_ERROR_NONE);
 }
