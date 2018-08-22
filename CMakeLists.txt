@@ -7,7 +7,7 @@ find_package(Sanitizers)
 
 enable_testing()
 
-set(CMAKE_C_FLAGS "-std=c99 -g -ggdb -Werror -Wall -Wextra -Wpedantic -Wshadow -Wcast-qual -fprofile-arcs -ftest-coverage")
+set(CMAKE_C_FLAGS "-std=c99 -g -ggdb -Werror -Wall -Wextra -Wpedantic -Wshadow -Wcast-qual -fprofile-arcs -ftest-coverage -std=c99")
 set(CMAKE_CXX_FLAGS "-std=c++11 -g -ggdb -Werror -Wall -Wextra -Wpedantic -Wshadow -fprofile-arcs -ftest-coverage")
 
 include_directories(.)
