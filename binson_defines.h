@@ -67,6 +67,9 @@ extern "C" {
 
 /*======= Type Definitions and declarations =================================*/
 
+/* For backwards compatibility */
+typedef size_t binson_size;
+
 typedef enum binson_type_e {
     BINSON_TYPE_NONE,
     BINSON_TYPE_OBJECT,
@@ -77,7 +80,7 @@ typedef enum binson_type_e {
     BINSON_TYPE_INTEGER,
     BINSON_TYPE_DOUBLE,
     BINSON_TYPE_STRING,
-    BINSON_TYPE_BYTES,
+    BINSON_TYPE_BYTES
 } binson_type;
 
 typedef enum binson_err_e {
@@ -89,7 +92,7 @@ typedef enum binson_err_e {
     BINSON_ERROR_NULL,
     BINSON_ERROR_STATE,
     BINSON_ERROR_WRONG_TYPE,
-    BINSON_ERROR_MAX_DEPTH,
+    BINSON_ERROR_MAX_DEPTH
 } binson_err;
 
 /* For backwards compatibility */

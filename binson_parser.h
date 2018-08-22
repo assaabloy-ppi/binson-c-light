@@ -164,7 +164,7 @@ binson_type binson_parser_get_type(binson_parser *parser);
  * 
  * @return [description]
  */
-//bool binson_parser_field(binson_parser *parser, const char *field_name);
+
 #define binson_parser_field(p, f) binson_parser_field_with_length(p, f, sizeof(f)-1)
 
 /**

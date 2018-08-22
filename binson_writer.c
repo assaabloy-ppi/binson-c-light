@@ -298,7 +298,8 @@ static uint8_t _int_pack_size(int64_t length, uint8_t *buffer, bool is_double)
 
     uint64_t uval = (uint64_t) length;
 
-    for (uint8_t i = 0; i < size; i++) {
+    uint8_t i;
+    for (i = 0; i < size; i++) {
         buffer[1 + i] = (uint8_t) (uval & 0xFFU);
         uval >>= 8U;
     }

@@ -518,7 +518,8 @@ static void _binson_print_cb(binson_parser *parser, uint16_t next_state, void *c
             break;
         case BINSON_STATE_PARSED_BYTES:
             printf("\"0x");
-            for (size_t i = 0; i < state->current_value.bytes_value.bsize; i++) {
+            size_t i;
+            for (i = 0; i < state->current_value.bytes_value.bsize; i++) {
                 printf("%02x", state->current_value.bytes_value.bptr[i]);
             }
             printf("\"");
@@ -641,7 +642,8 @@ static void _binson_to_string_cb(binson_parser *parser, uint16_t next_state, voi
                 return;
             }
             ret = 0;
-            for (size_t i = 0; i < state->current_value.bytes_value.bsize; i++) {
+            size_t i;
+            for (i = 0; i < state->current_value.bytes_value.bsize; i++) {
                 ret += snprintf(&pbuf[ret], available, "%02x", state->current_value.bytes_value.bptr[i]);
             }
             ret += snprintf(&pbuf[ret], available, "\"");
