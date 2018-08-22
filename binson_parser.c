@@ -62,7 +62,8 @@
 
 static bool _parse_integer(bbuf *length_data, int64_t *value, bool check_boundaries);
 static int _cmp_name(bbuf *a, bbuf *b);
-static bool _advance(binson_parser *parser, uint8_t scan_flags);
+#define _advance(p, s) _advance_parsing(p, s, NULL)
+static bool _advance_parsing(binson_parser *parser, uint8_t scan_flags, bbuf *scan_name);
 static bool _consume(binson_parser *parser,
                      bbuf *data,
                      size_t size,
@@ -258,10 +259,13 @@ bool binson_parser_field_with_length(binson_parser *parser, const char *field_na
     scan_name.bsize = length;
     int r;
 
-    while (binson_parser_next(parser)) {
+    while (_advance_parsing(parser, BINSON_ADVANCE_VALUE, &scan_name)) {
         r = _cmp_name(&scan_name, &parser->current_state->current_name);
         if (0 == r) {
             return true;
+        }
+        else if (r < 0) {
+            break;
         }
     }
 
@@ -742,16 +746,16 @@ static int _cmp_name(bbuf *a, bbuf *b)
     return (r == 0) ? (int) (a->bsize - b->bsize) : r;
 }
 
-static uint16_t _process_one(binson_parser *parser, bbuf *consumed)
+static uint16_t _process_one(binson_parser *parser, bbuf *consumed, size_t *bytes_consumed)
 {
     size_t to_consume = 1;
     int64_t length_value;
     uint16_t next_state = BINSON_STATE_ERROR;
     uint8_t type;
 
-    /* Prior usage of _consume in _advance hols next data byte */
+    /* Prior usage of _consume in _advance holds next data byte */
     parser->buffer_used += 1;
-
+    *bytes_consumed = 1;
     switch (consumed->bptr[0]) {
         /*
          * Handeled by the peek in _advance
@@ -771,6 +775,7 @@ static uint16_t _process_one(binson_parser *parser, bbuf *consumed)
                 /* Return code set by _consume. */
                 break;
             }
+            *bytes_consumed += 8;
             next_state = BINSON_STATE_PARSED_DOUBLE;
             break;
         case BINSON_DEF_INT8:
@@ -784,6 +789,7 @@ static uint16_t _process_one(binson_parser *parser, bbuf *consumed)
                 /* Return code set by _consume. */
                 break;
             }
+            *bytes_consumed += to_consume;
             next_state = BINSON_STATE_PARSED_INTEGER;
             break;
         case BINSON_DEF_STRINGLEN_INT8:
@@ -802,6 +808,8 @@ static uint16_t _process_one(binson_parser *parser, bbuf *consumed)
                 break;
             }
 
+            *bytes_consumed += to_consume;
+
             if (!(_parse_integer(consumed, &length_value, true))) {
                 parser->error_flags = BINSON_ERROR_FORMAT;
                 break;
@@ -816,10 +824,14 @@ static uint16_t _process_one(binson_parser *parser, bbuf *consumed)
                 break;
             }
 
+
+
             if (!_consume(parser, consumed, (size_t) length_value, false)) {
                 /* Return code set by _consume. */
                 break;
             }
+
+            *bytes_consumed += length_value;
 
             if (type < BINSON_DEF_BYTESLEN_INT8) {
                 /* A string is expected. */
@@ -841,7 +853,7 @@ static uint16_t _process_one(binson_parser *parser, bbuf *consumed)
 
 }
 
-static bool _advance(binson_parser *parser, uint8_t scan_flags)
+static bool _advance_parsing(binson_parser *parser, uint8_t scan_flags, bbuf *scan_name)
 {
 
     if (BINSON_ERROR_NONE != parser->error_flags) {
@@ -850,7 +862,7 @@ static bool _advance(binson_parser *parser, uint8_t scan_flags)
 
     bbuf consumed;
     uint16_t next_state;
-
+    size_t bytes_consumed;
     bool proceed = true;
     binson_state *state = parser->current_state;
     uint_fast8_t orig_array_depth = state->array_depth;
@@ -880,7 +892,7 @@ static bool _advance(binson_parser *parser, uint8_t scan_flags)
                 next_state = BINSON_STATE_PARSED_ARRAY_END;
                 break;
             default:
-                next_state = _process_one(parser, &consumed);
+                next_state = _process_one(parser, &consumed, &bytes_consumed);
                 break;
         }
 
@@ -1018,15 +1030,28 @@ static bool _advance(binson_parser *parser, uint8_t scan_flags)
                         parser->error_flags = BINSON_ERROR_FORMAT;
                         break;
                     }
+
                 }
-                state->current_name.bptr = consumed.bptr;
-                state->current_name.bsize = consumed.bsize;
-                state->flags = BINSON_STATE_IN_OBJ_EXPECTING_VALUE;
 
                 if ((orig_array_depth == state->array_depth) &&
                     (orig_object_depth == parser->depth)) {
+
+                    if ((NULL != scan_name)) {
+                        int r = _cmp_name(&consumed, scan_name);
+                        if (r > 0) {
+                            /* Reverse */
+                            parser->buffer_used -= bytes_consumed;
+                            state->flags = BINSON_STATE_IN_OBJ_EXPECTING_FIELD;
+                            return false;
+                        }
+                    }
+
                     CLEARBITMASK(scan_flags, BINSON_ADVANCE_VALUE);
                 }
+
+                state->current_name.bptr = consumed.bptr;
+                state->current_name.bsize = consumed.bsize;
+                state->flags = BINSON_STATE_IN_OBJ_EXPECTING_VALUE;
 
                 proceed = true;
                 
