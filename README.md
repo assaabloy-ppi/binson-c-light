@@ -9,7 +9,6 @@ Features
 
 * Written in c99 standard.
 * Portable MCU-friendly code.
-* Tiny binary size (~9K object file, clang -Os -target arm-none-eabi)
 * Tested at:
   * x86_64 Linux (gcc, clang)
   * ~~ARM Cortex-M3 (with QEMU)~~
@@ -21,15 +20,17 @@ Features
 * No dynamic memory allocation (in-place parsing)
 
 
-What's new in v2
----------------
+Limitations
+-----------
 
-* v1 bugs fixed
-* No recursion
-* Simpler state machine
+* Due to no dynamic memory allocation, the maximum levels of nested objects must be defined at compile time by modifying the define BINSON_PARSER_MAX_DEPTH in binson_parser.h
+* Maximum array depth limited to 255.
+
+What's new in v3
+----------------
+
+* Issues from security audit on v2 fixed.
 * Parser callback support (ready to be used as low-level API for "binson-c" project)
-* Unified support for OBJECT and ARRAY blocks (is true for both API and the code)
-* Both OBJECT and ARRAY top blocks now are supported automatically with zero care
 * Positioning by index supported for both OBJECT and ARRAY blocks  ( see binson_parser_at() )
 * Raw binson encoded block extraction and output supported now (see #8)
 * Removed type checks in getters (it's up to user app now)
@@ -37,12 +38,16 @@ What's new in v2
 * Optimization frendly single-function traversal code.
 * Less lines, smaller binary size
 * Better unit test coverage.
-* Well-commended parsing algorithm code
 * Code fixed to be compatible with Clang (std=c99)
 * Pass AFL fuzzing tests. (includes custom dict for binson format).
 
-Status of v2
----------
+Changes from v2
+---------------
+
+* binson_parser_at() removed since it was not used by any projects.
+* Verifying of binson object introduced by using binson_parser_verify()
+* Parser callback differs from v2.
+* 
 
 Looks stable with good unit test coverage, need more eyes for review, API is still a subject of discussion.
 
