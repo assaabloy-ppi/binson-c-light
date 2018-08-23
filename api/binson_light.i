@@ -1,7 +1,9 @@
 /*  SWIG interface definitions */
 %module binson
+
 %include "stdint.i"
 %include "typemaps.i"
+%include exception.i
 
 %{
 #include "binson_light.h"
@@ -13,14 +15,27 @@
 %rename (BinsonWriter) _binson_writer;
 
 %typemap(newfree) char * "free($1);";
-%newobject *::toString();
+%newobject *::toBytes();
 
 
-//%inline %{
+%inline %{
+void _checkError(binson_writer* bw) {
+	int res = binson_writer_geterror(bw, 0xff);
+	switch (res) {
+		case BINSON_ID_INVALID_ARG:
+			SWIG_exception(SWIG_RuntimeError, "Invalid argument specified");  break;
+		case BINSON_ID_BUF_FULL:
+			SWIG_exception(SWIG_RuntimeError, "Output buffer is full");  break;
+	}
+	thrown: ;
+}
+%}
+
 
 typedef struct _binson_writer
 {
 };
+
 
 %extend _binson_writer {
 
@@ -55,25 +70,66 @@ typedef struct _binson_writer
 		return $self; /* allows method chaining */
 	}
 
-	binson_writer* boolean(bool bval) {
+	binson_writer* putBoolean(bool bval) {
 		binson_write_boolean($self, bval);
 		return $self; /* allows method chaining */
 	}
 
-	binson_writer* trueValue() {
+	binson_writer* putTrue() {
 		binson_write_boolean($self, true);
 		return $self; /* allows method chaining */
 	}
 
-	binson_writer* falseValue() {
+	binson_writer* putFalse() {
 		binson_write_boolean($self, false);
 		return $self; /* allows method chaining */
 	}
 
-	binson_writer* integer( int64_t ival ) {
+	binson_writer* putInteger( int64_t ival ) {
 		binson_write_integer($self, ival);
 		return $self; /* allows method chaining */
 	}
+
+	binson_writer* putDouble( double dval ) {
+		binson_write_double($self, dval);
+		return $self; /* allows method chaining */
+	}	
+
+	binson_writer* putName(char *STRING, int LENGTH) {
+		bbuf bb;
+		bb.bptr = STRING;
+		bb.bsize = LENGTH;
+
+		binson_write_name_bbuf($self, &bb);
+		return $self; /* allows method chaining */
+	}	
+
+	binson_writer* putString(char *STRING, int LENGTH) {
+		bbuf bb;
+		bb.bptr = STRING;
+		bb.bsize = LENGTH;
+
+		binson_write_string_bbuf($self, &bb);
+		_checkError($self);
+
+		return $self; /* allows method chaining */
+	}	
+
+	binson_writer* putBytes(char *STRING, int LENGTH) {
+		bbuf bb;
+		bb.bptr = STRING;
+		bb.bsize = LENGTH;
+
+		binson_write_bytes_bbuf($self, &bb);
+		return $self; /* allows method chaining */
+	}		
+
+	binson_writer* putInline(binson_writer* sub_writer) {
+
+		binson_write_raw($self, sub_writer->io.pbuf, sub_writer->io.buf_used);
+		return $self; /* allows method chaining */
+	}		
+
 
 	int length() {
 		return $self->io.buf_used;
@@ -83,11 +139,18 @@ typedef struct _binson_writer
 		return binson_writer_get_counter($self);
 	}
 
-	char* toString() {
-		char *newstr = (char *) malloc($self->io.buf_used);
-		strncpy(newstr, $self->io.pbuf, $self->io.buf_used);
+	char* toBytes() {
+		int len = $self->io.buf_used;
+		char *newstr = (char *) malloc(len+1);
+		memcpy(newstr, $self->io.pbuf, len);
+		newstr[len] = 0;
 		return newstr;
 	}
+
+	//void serialize(void* obj) {
+	//	SWIG_exception(SWIG_RuntimeError, "Not implemented");
+	//	thrown:;
+	//}
 
 }
 
