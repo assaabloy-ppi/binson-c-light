@@ -2,6 +2,9 @@
 
 #include <binson_light.h>
 
+#include <string.h>
+#include <stdexcept>
+
 using namespace std;
 
 Binson & Binson::put(const std::string &key, const BinsonValue &v)
@@ -57,7 +60,7 @@ void Binson::seralizeItem(binson_writer *w, BinsonValue &val)
         binson_write_double(w, val.getDouble());
         break;
     case BinsonValue::Types::stringType:
-        binson_write_string(w, val.getString().c_str());
+        binson_write_string_with_len(w, val.getString().data(), val.getString().size());
         break;
     case BinsonValue::Types::binaryType:
         binson_write_bytes(w, val.getBin().data(), val.getBin().size());
@@ -75,6 +78,8 @@ void Binson::seralizeItem(binson_writer *w, BinsonValue &val)
         }
         binson_write_array_end(w);
         break;
+    default:
+        throw runtime_error("Unknown type");
     }
 }
 
@@ -122,8 +127,11 @@ BinsonValue Binson::deseralizeItem(binson_parser *p)
     case BINSON_ID_STRING:
     {
         bbuf *buf;
-        buf = binson_parser_get_bytes_bbuf(p);
-        return BinsonValue(string(reinterpret_cast<const char*>(buf->bptr), buf->bsize));
+        buf = binson_parser_get_string_bbuf(p);
+        if (buf)
+            return BinsonValue(string(reinterpret_cast<const char*>(buf->bptr), buf->bsize));
+        else
+            throw runtime_error("Parse error, missing string");
     }
         break;
     case BINSON_ID_BYTES:
@@ -138,7 +146,7 @@ BinsonValue Binson::deseralizeItem(binson_parser *p)
         binson_parser_go_into_object(p);
         Binson b;
         b.deseralizeItems(p);
-        binson_parser_go_up(p);
+        binson_parser_leave_object(p);
         return BinsonValue(b);
     }
         break;
@@ -150,20 +158,22 @@ BinsonValue Binson::deseralizeItem(binson_parser *p)
         {
             array.push_back(deseralizeItem(p));
         }
-        binson_parser_go_up(p);
+        binson_parser_leave_array(p);
         return array;
     }
         break;
+    default:
+        throw runtime_error("Unknown type");
     }
     return BinsonValue();
 }
 
 void Binson::deseralizeItems(binson_parser *p)
 {
-    while(binson_parser_next_field(p))
+    while(binson_parser_next(p))
     {
         bbuf *buf;
-        buf = binson_parser_get_name_bbuf(p);
+        buf = binson_parser_get_name(p);
         string name(reinterpret_cast<const char*>(buf->bptr), buf->bsize);
         put(name, deseralizeItem(p));
     }
@@ -177,7 +187,7 @@ bool Binson::deserialize(const std::vector<uint8_t> &data)
     binson_parser_init(&p, const_cast<uint8_t*>(data.data()), data.size());
     binson_parser_go_into_object(&p);
     deseralizeItems(&p);
-    binson_parser_go_up(&p);
+    binson_parser_leave_object(&p);
     return true;
 }
 
@@ -197,7 +207,7 @@ bool Binson::deserialize(binson_parser *p)
     binson_parser_reset(p);
     binson_parser_go_into_object(p);
     deseralizeItems(p);
-    binson_parser_go_up(p);
+    binson_parser_leave_object(p);
     return true;
 }
 
@@ -208,7 +218,8 @@ string Binson::toStr()
     str.resize(10000);
     vector<uint8_t> stream = serialize();
     binson_parser_init(&p, stream.data(), stream.size());
-    binson_parser_to_string(&p, (uint8_t*)str.data(), str.size(), true);
+    size_t size = stream.size();
+    binson_parser_to_string(&p, (char*)str.data(), &size, true);
     str.resize(strlen(str.c_str()) + 1);
     return str;
 }
