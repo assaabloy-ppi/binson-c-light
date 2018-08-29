@@ -303,8 +303,9 @@ typedef struct binson_parser
 		binson_parser_get_raw($self, &bb);
 		_checkParserError($self);		
 
-		char *newstr = (char *) malloc(bb.bsize);
+		char *newstr = (char *) malloc(bb.bsize + 1);
 		memcpy(newstr, bb.bptr, bb.bsize);
+		newstr[bb.bsize] = 0;
 		return newstr;
 	}
 
@@ -332,16 +333,18 @@ typedef struct binson_parser
 	char* getName()
 	{
 		bbuf *pbb = binson_parser_get_name_bbuf($self);
-		char *newstr = (char *) malloc(pbb->bsize);
+		char *newstr = (char *) malloc(pbb->bsize + 1);
 		memcpy(newstr, pbb->bptr, pbb->bsize);
+		newstr[pbb->bsize] = 0;
 		return newstr;
 	}	
 
 	char* getString()
 	{
 		bbuf *pbb = binson_parser_get_string_bbuf($self);
-		char *newstr = (char *) malloc(pbb->bsize);
+		char *newstr = (char *) malloc(pbb->bsize + 1);
 		memcpy(newstr, pbb->bptr, pbb->bsize);
+		newstr[pbb->bsize] = 0;
 		return newstr;
 	}	
 
@@ -349,7 +352,9 @@ typedef struct binson_parser
 	{
 		bbuf *pbb = binson_parser_get_bytes_bbuf($self);
 		char *newstr = (char *) malloc(pbb->bsize);
+		//memset(newstr, 0xff, 10);
 		memcpy(newstr, pbb->bptr, pbb->bsize);
+		//newstr[pbb->bsize] = 0;
 		return newstr;
 	}	
 	
