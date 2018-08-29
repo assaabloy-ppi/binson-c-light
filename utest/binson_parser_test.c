@@ -908,18 +908,25 @@ TEST(optional_field)
     /*
         {
           "A": {
+            "classic": true
           }, 
           "evolved": false
         }
     */
-    uint8_t without_optional[17] = { /* 401401414041140765766f6c7665644541*/
-        0x40, 0x14, 0x01, 0x41, 0x40, 0x41, 0x14, 0x07,
+    uint8_t without_optional[27] = { /* 401401414041140765766f6c7665644541*/
+        0x40,
+        0x14, 0x01, 0x41,
+        0x40,
+        0x14, 0x07, 0x63, 0x6c, 0x61, 0x73, 0x73, 0x69, 0x63, 0x44,
+        0x41,
+        0x14, 0x07,
         0x65, 0x76, 0x6f, 0x6c, 0x76, 0x65, 0x64, 0x45,
         0x41
     };
 
     binson_parser p;
     binson_parser_init(&p, with_optional, sizeof(with_optional));
+    ASSERT_TRUE(binson_parser_verify(&p));
     ASSERT_TRUE(binson_parser_go_into_object(&p));
     ASSERT_TRUE(binson_parser_field(&p, "classic"));
     ASSERT_TRUE(binson_parser_get_boolean(&p));
@@ -928,6 +935,7 @@ TEST(optional_field)
     ASSERT_TRUE(binson_parser_leave_object(&p));
 
     binson_parser_init(&p, without_optional, sizeof(without_optional));
+    ASSERT_TRUE(binson_parser_verify(&p));
     ASSERT_TRUE(binson_parser_go_into_object(&p));
     ASSERT_FALSE(binson_parser_field(&p, "classic"));
     ASSERT_TRUE(binson_parser_field(&p, "evolved"));
