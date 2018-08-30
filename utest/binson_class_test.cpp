@@ -99,7 +99,7 @@ TEST(binson_class_test1)
 
     Binson b;
     binson_parser_reset(&p);
-    ASSERT_TRUE(b.deserialize(&p));
+    b.deserialize(&p);
 
     binson_writer w;
     uint8_t binson_result_buffer[1000];

@@ -23,9 +23,9 @@ public:
     void clear();
     std::vector<uint8_t> serialize();
     bool serialize(binson_writer *w);
-    bool deserialize(const std::vector<uint8_t> &data);
-    bool deserialize(const uint8_t *data, size_t size);
-    bool deserialize(binson_parser *p);
+    void deserialize(const std::vector<uint8_t> &data);
+    void deserialize(const uint8_t *data, size_t size);
+    void deserialize(binson_parser *p);
     std::string toStr();
 
 private:

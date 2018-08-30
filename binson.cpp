@@ -7,6 +7,8 @@
 
 using namespace std;
 
+#define IF_RUNTIME_ERROR(x, msg) if (!(x)) throw std::runtime_error(msg)
+
 Binson & Binson::put(const std::string &key, const BinsonValue &v)
 {
     m_items[key] = move(v);
@@ -166,22 +168,22 @@ BinsonValue Binson::deseralizeItem(binson_parser *p)
         break;
     case BINSON_ID_OBJECT:
     {
-        binson_parser_go_into_object(p);
+        IF_RUNTIME_ERROR(binson_parser_go_into_object(p), "Parse error");
         Binson b;
         b.deseralizeItems(p);
-        binson_parser_leave_object(p);
+        IF_RUNTIME_ERROR(binson_parser_leave_object(p), "Parse error");
         return BinsonValue(b);
     }
         break;
     case BINSON_ID_ARRAY:
     {
-        binson_parser_go_into_array(p);
+        IF_RUNTIME_ERROR(binson_parser_go_into_array(p), "Parse error");
         vector<BinsonValue> array;
         while(binson_parser_next(p))
         {
             array.push_back(deseralizeItem(p));
         }
-        binson_parser_leave_array(p);
+        IF_RUNTIME_ERROR(binson_parser_leave_array(p), "Parse error");
         return array;
     }
         break;
@@ -197,12 +199,13 @@ void Binson::deseralizeItems(binson_parser *p)
     {
         bbuf *buf;
         buf = binson_parser_get_name(p);
+        IF_RUNTIME_ERROR(buf != nullptr, "Parse error");
         string name(reinterpret_cast<const char*>(buf->bptr), buf->bsize);
         put(name, deseralizeItem(p));
     }
 }
 
-bool Binson::deserialize(const std::vector<uint8_t> &data)
+void Binson::deserialize(const std::vector<uint8_t> &data)
 {
     binson_parser p;
     clear();
@@ -211,27 +214,24 @@ bool Binson::deserialize(const std::vector<uint8_t> &data)
     binson_parser_go_into_object(&p);
     deseralizeItems(&p);
     binson_parser_leave_object(&p);
-    return true;
 }
 
-bool Binson::deserialize(const uint8_t *data, size_t size)
+void Binson::deserialize(const uint8_t *data, size_t size)
 {
     binson_parser p;
     clear();
 
-    binson_parser_init(&p, const_cast<uint8_t*>(data), size);
+    IF_RUNTIME_ERROR(binson_parser_init(&p, const_cast<uint8_t*>(data), size), "Parser init error");
     deserialize(&p);
-    return true;
 }
 
-bool Binson::deserialize(binson_parser *p)
+void Binson::deserialize(binson_parser *p)
 {
     clear();
-    binson_parser_reset(p);
-    binson_parser_go_into_object(p);
+    IF_RUNTIME_ERROR(binson_parser_reset(p), "Parser reset error");
+    IF_RUNTIME_ERROR(binson_parser_go_into_object(p), "Parse error");
     deseralizeItems(p);
-    binson_parser_leave_object(p);
-    return true;
+    IF_RUNTIME_ERROR(binson_parser_leave_object(p), "Parse error");
 }
 
 string Binson::toStr()
