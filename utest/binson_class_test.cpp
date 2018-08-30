@@ -119,6 +119,8 @@ TEST(binson_class_test1)
     uint8_t binson_result_buffer[1000];
     ASSERT_TRUE(binson_writer_init(&w, binson_result_buffer, sizeof(binson_result_buffer)));
     b.serialize(&w);
+//    string s = b.toStr();
+//    printf("%s\n", s.c_str());
     ASSERT_TRUE(binson_writer_get_counter(&w) == binson_expected_size);
     bool result = memcmp(binson_bytes, binson_result_buffer, binson_expected_size) == 0;
     if (!result)
@@ -128,6 +130,21 @@ TEST(binson_class_test1)
                                         binson_expected_size).c_str());
     }
 
+    ASSERT_TRUE(b.get("A").getString() == string("B"));
+    ASSERT_TRUE(b.get("B").getObject().get("A").getString() == string("B"));
+    ASSERT_TRUE(b.get("C").getArray()[0].getString() == string("A"));
+    ASSERT_TRUE(b.get("C")
+                .getArray()[2]
+                .getObject()
+                .get("B")
+                .getArray()[3]
+                .getArray()[0]
+                .getArray()[0]
+                .getArray()[0]
+                .getArray()[0]
+                .getObject()
+                .get("A")
+                .getString() == string("B"));
     ASSERT_TRUE(result);
 }
 
