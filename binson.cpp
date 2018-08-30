@@ -44,70 +44,90 @@ void Binson::clear()
     m_items.clear();
 }
 
-void Binson::seralizeItem(binson_writer *w, BinsonValue &val)
+bool Binson::seralizeItem(binson_writer *w, BinsonValue &val)
 {
+    bool result = true;
     switch(val.myType())
     {
     case BinsonValue::Types::noneType:
         break;
     case BinsonValue::Types::boolType:
-        binson_write_boolean(w, val.getBool());
+        result = result && binson_write_boolean(w, val.getBool());
         break;
     case BinsonValue::Types::intType:
-        binson_write_integer(w, val.getInt());
+        result = result && binson_write_integer(w, val.getInt());
         break;
     case BinsonValue::Types::doubleType:
-        binson_write_double(w, val.getDouble());
+        result = result && binson_write_double(w, val.getDouble());
         break;
     case BinsonValue::Types::stringType:
-        binson_write_string_with_len(w, val.getString().data(), val.getString().size());
+        result = result && binson_write_string_with_len(w,
+                                                        val.getString().data(),
+                                                        val.getString().size());
         break;
     case BinsonValue::Types::binaryType:
-        binson_write_bytes(w, val.getBin().data(), val.getBin().size());
+        result = result && binson_write_bytes(w, val.getBin().data(), val.getBin().size());
         break;
     case BinsonValue::Types::objectType:
-        binson_write_object_begin(w);
-        val.getObject().seralizeItems(w);
-        binson_write_object_end(w);
+        result = result && binson_write_object_begin(w);
+        result = result && val.getObject().seralizeItems(w);
+        result = result && binson_write_object_end(w);
         break;
     case BinsonValue::Types::arrayType:
-        binson_write_array_begin(w);
+        result = result && binson_write_array_begin(w);
         for (auto &arrayValue : val.getArray())
         {
-            seralizeItem(w, arrayValue);
+            result = result && seralizeItem(w, arrayValue);
         }
-        binson_write_array_end(w);
+        result = result && binson_write_array_end(w);
         break;
     default:
-        throw runtime_error("Unknown type");
+        throw runtime_error("Unknown binson type");
     }
+    return result;
 }
 
-void Binson::seralizeItems(binson_writer *w)
+bool Binson::seralizeItems(binson_writer *w)
 {
+    bool result = true;
     for (auto &item: m_items)
     {
-        binson_write_name(w, item.first.c_str());
-        seralizeItem(w, item.second);
+        result = result && binson_write_name(w, item.first.c_str());
+        result = result && seralizeItem(w, item.second);
     }
+    return result;
 }
 
 std::vector<uint8_t> Binson::serialize()
 {
     vector<uint8_t> data;
-    data.resize(100000);
+    data.resize(10000);
     binson_writer w;
-    binson_writer_init(&w, data.data(), data.size());
-    serialize(&w);
-    data.resize(binson_writer_get_counter(&w));
+    int trys = 5;
+    bool result = false;
+    do
+    {
+        if (!binson_writer_init(&w, data.data(), data.size()))
+            break;
+        result = serialize(&w);
+        if (!result)
+            data.resize(data.size() * 2);
+    } while(!result && trys-- > 0 && w.error_flags == BINSON_ERROR_RANGE);
+
+    if (result)
+        data.resize(binson_writer_get_counter(&w));
+    else
+        data.clear();
     return data;
 }
 
-void Binson::serialize(binson_writer *w)
+bool Binson::serialize(binson_writer *w)
 {
-    binson_write_object_begin(w);
-    seralizeItems(w);
-    binson_write_object_end(w);
+    bool result = true;
+    result = result && binson_write_object_begin(w);
+    result = result && seralizeItems(w);
+    result = result && binson_write_object_end(w);
+    return result;
 }
 
 BinsonValue Binson::deseralizeItem(binson_parser *p)
@@ -217,10 +237,25 @@ string Binson::toStr()
     string str;
     str.resize(10000);
     vector<uint8_t> stream = serialize();
-    binson_parser_init(&p, stream.data(), stream.size());
-    size_t size = stream.size();
-    binson_parser_to_string(&p, (char*)str.data(), &size, true);
-    str.resize(strlen(str.c_str()) + 1);
+    if (stream.empty())
+        return string();
+    int trys = 5;
+    bool result = false;
+    size_t size = 0;
+    do
+    {
+        if (!binson_parser_init(&p, stream.data(), stream.size()))
+            break;
+        size = str.size();
+        result = binson_parser_to_string(&p, (char*)str.data(), &size, true);
+        if (!result)
+            str.resize(size * 2);
+    } while(!result && trys-- > 0 && p.error_flags == 0);
+
+    if (!result)
+        str.clear();
+    else
+        str.resize(size);
     return str;
 }
 
