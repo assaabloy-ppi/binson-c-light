@@ -158,7 +158,10 @@ BinsonValue Binson::deseralizeItem(binson_parser *p)
     {
         bbuf *buf;
         buf = binson_parser_get_bytes_bbuf(p);
-        return BinsonValue(vector<uint8_t>(buf->bptr, buf->bptr + buf->bsize));
+        if (buf)
+            return BinsonValue(vector<uint8_t>(buf->bptr, buf->bptr + buf->bsize));
+        else
+            throw runtime_error("Parse error, missing data");
     }
         break;
     case BINSON_ID_OBJECT:
