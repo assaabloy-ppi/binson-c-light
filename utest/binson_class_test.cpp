@@ -15,27 +15,13 @@
 
 #include <binson.hpp>
 #include "utest.h"
+#include <vector>
 
 /*======= Local Macro Definitions ===========================================*/
 /*======= Local function prototypes =========================================*/
 /*======= Local variable declarations =======================================*/
 
 using namespace std;
-
-//static string dump_hex(const uint8_t *data, size_t size)
-//{
-//    string res;
-
-//    for (size_t i = 0 ;  i < size ; i++)
-//    {
-//        char buf[20];
-//        sprintf(buf, "%02x ", (unsigned)*data++);
-//        res.append(buf);
-//        if ((i%8) == 0)
-//            res.append("\n");
-//    }
-//    return res;
-//}
 
 static char convert(char c)
 {
@@ -130,6 +116,8 @@ TEST(binson_class_test1)
                                         binson_expected_size).c_str());
     }
 
+    ASSERT_TRUE(result);
+
     ASSERT_TRUE(b.get("A").getString() == string("B"));
     ASSERT_TRUE(b.get("B").getObject().get("A").getString() == string("B"));
     ASSERT_TRUE(b.get("C").getArray()[0].getString() == string("A"));
@@ -145,7 +133,56 @@ TEST(binson_class_test1)
                 .getObject()
                 .get("A")
                 .getString() == string("B"));
-    ASSERT_TRUE(result);
+    ASSERT_TRUE(b.get("D").getDouble() == 3.141592653589793);
+    ASSERT_TRUE(b.get("E").getBool() == false);
+    ASSERT_TRUE(b.get("F").getInt() == 127);
+    ASSERT_TRUE(b.get("G").getBin() == vector<uint8_t>({0x02, 0x02}));
+
+    Binson b2;
+    b2.put("A", "B");
+    b2.put("B", Binson().put("A", "B"));
+
+    b2.put("C", vector<BinsonValue>({
+                                        "A",
+                                        "A",
+                                        Binson().put("A","B")
+                                        .put("B", vector<BinsonValue>({
+                                            "A",
+                                            "A",
+                                            Binson().put("A", "B"),
+                                            vector<BinsonValue>({
+                                                vector<BinsonValue>({
+                                                    vector<BinsonValue>({
+                                                        vector<BinsonValue>({
+                                                            Binson().put("A", "B")
+                                                        })
+                                                    })
+                                                })
+                                            })
+                                        })),
+                                        "A"
+                                    })
+           );
+    b2.put("D", 3.141592653589793);
+    b2.put("E", false);
+    b2.put("F", 127);
+    b2.put("G", vector<uint8_t>({0x02, 0x02}));
+
+    ASSERT_TRUE(binson_writer_init(&w, binson_result_buffer, sizeof(binson_result_buffer)));
+    b2.serialize(&w);
+//    string s = b.toStr();
+//    printf("%s\n", s.c_str());
+//    s = b2.toStr();
+//    printf("%s\n", s.c_str());
+    result = memcmp(binson_bytes, binson_result_buffer, binson_expected_size) == 0;
+    if (!result)
+    {
+        printf("%s\n", dump_compare_hex(binson_bytes,
+                                        binson_result_buffer,
+                                        binson_expected_size).c_str());
+    }
+    ASSERT_TRUE(binson_writer_get_counter(&w) == binson_expected_size);
+
 }
 
 
