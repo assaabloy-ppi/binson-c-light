@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/assaabloy-ppi/binson-c-light.svg?branch=master)](https://travis-ci.org/assaabloy-ppi/binson-c-light) [![codecov](https://codecov.io/gh/assaabloy-ppi/binson-c-light/branch/master/graph/badge.svg)](https://codecov.io/gh/assaabloy-ppi/binson-c-light)
+
+
 # binson-c-light
 
 A light-weight C implementation of the Binson serialization format
