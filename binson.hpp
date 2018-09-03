@@ -17,20 +17,20 @@ public:
     Binson& put(const std::string &key, const BinsonValue &v);
     Binson& put(const std::string &key, Binson o);
     Binson& put(const std::string &key, const uint8_t *data, size_t size);
-    BinsonValue get(const std::string &key);
-    bool hasKey(const std::string &key);
+    const BinsonValue get(const std::string &key) const;
+    bool hasKey(const std::string &key) const;
 
     void clear();
-    std::vector<uint8_t> serialize();
-    bool serialize(binson_writer *w);
+    std::vector<uint8_t> serialize() const;
+    bool serialize(binson_writer *w) const;
     void deserialize(const std::vector<uint8_t> &data);
     void deserialize(const uint8_t *data, size_t size);
     void deserialize(binson_parser *p);
-    std::string toStr();
+    std::string toStr() const;
 
 private:
-    bool seralizeItem(binson_writer *w, BinsonValue &val);
-    bool seralizeItems(binson_writer *w);
+    bool seralizeItem(binson_writer *w, const BinsonValue &val) const;
+    bool seralizeItems(binson_writer *w) const;
     BinsonValue deseralizeItem(binson_parser *p);
     void deseralizeItems(binson_parser *p);
 
@@ -84,13 +84,13 @@ public:
     }
     Types myType() const { return m_val.myType(); }
 
-    bool getBool(){ bool v = false; get(v); return v; }
-    int64_t getInt() { int64_t v = 0; get(v); return v; };
-    double getDouble() { double v = 0; get(v); return v; };
-    std::string getString(){ std::string v; get(v); return v; }
-    std::vector<uint8_t> getBin(){ std::vector<uint8_t> v; get(v); return v; }
-    Binson getObject(){ Binson v; get(v); return v; }
-    std::vector<BinsonValue> getArray(){ std::vector<BinsonValue> v; get(v); return v; }
+    bool getBool() const { bool v = false; get(v); return v; }
+    int64_t getInt() const { int64_t v = 0; get(v); return v; };
+    double getDouble() const { double v = 0; get(v); return v; };
+    std::string getString() const { std::string v; get(v); return v; }
+    std::vector<uint8_t> getBin() const { std::vector<uint8_t> v; get(v); return v; }
+    Binson getObject() const { Binson v; get(v); return v; }
+    std::vector<BinsonValue> getArray() const { std::vector<BinsonValue> v; get(v); return v; }
 private:
 
     std::string typeToString[8] =

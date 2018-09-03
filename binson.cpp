@@ -28,7 +28,7 @@ Binson & Binson::put(const string &key, const uint8_t *data, size_t size)
     return *this;
 }
 
-BinsonValue Binson::get(const string &key)
+const BinsonValue Binson::get(const string &key) const
 {
     if (!hasKey(key))
         throw std::out_of_range("Key '" + key + "' does not exist");
@@ -36,7 +36,7 @@ BinsonValue Binson::get(const string &key)
         return m_items.at(key);
 }
 
-bool Binson::hasKey(const string &key)
+bool Binson::hasKey(const string &key) const
 {
     return m_items.find(key) != m_items.end();
 }
@@ -46,7 +46,7 @@ void Binson::clear()
     m_items.clear();
 }
 
-bool Binson::seralizeItem(binson_writer *w, BinsonValue &val)
+bool Binson::seralizeItem(binson_writer *w, const BinsonValue &val) const
 {
     bool result = true;
     switch(val.myType())
@@ -89,7 +89,7 @@ bool Binson::seralizeItem(binson_writer *w, BinsonValue &val)
     return result;
 }
 
-bool Binson::seralizeItems(binson_writer *w)
+bool Binson::seralizeItems(binson_writer *w) const
 {
     bool result = true;
     for (auto &item: m_items)
@@ -100,7 +100,7 @@ bool Binson::seralizeItems(binson_writer *w)
     return result;
 }
 
-std::vector<uint8_t> Binson::serialize()
+std::vector<uint8_t> Binson::serialize() const
 {
     vector<uint8_t> data;
     data.resize(10000);
@@ -123,7 +123,7 @@ std::vector<uint8_t> Binson::serialize()
     return data;
 }
 
-bool Binson::serialize(binson_writer *w)
+bool Binson::serialize(binson_writer *w) const
 {
     bool result = true;
     result = result && binson_write_object_begin(w);
@@ -234,7 +234,7 @@ void Binson::deserialize(binson_parser *p)
     IF_RUNTIME_ERROR(binson_parser_leave_object(p), "Parse error");
 }
 
-string Binson::toStr()
+string Binson::toStr() const
 {
     binson_parser p;
     string str;
