@@ -25,7 +25,7 @@ Features
 
 
 What's new in v2
----------------
+----------------
 
 * v1 bugs fixed
 * No recursion
