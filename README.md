@@ -50,7 +50,6 @@ Changes from v2
 * binson_parser_at() removed since it was not used by any projects.
 * Verifying of binson object introduced by using binson_parser_verify()
 * Parser callback differs from v2.
-* 
 
 Looks stable with good unit test coverage, need more eyes for review, API is still a subject of discussion.
 
