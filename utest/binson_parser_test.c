@@ -944,6 +944,45 @@ TEST(optional_field)
 
 }
 
+TEST(get_raw)
+{
+    /* {"A":[{"A":"A"}]} */
+    uint8_t buffer[] = {
+        0x40,
+        0x14, 0x01, 0x41,
+        0x42,
+            0x40,
+                0x14, 0x01, 0x41,
+                0x42,
+                0x14, 0x01, 0x41,
+                0x43,
+            0x41,
+        0x43,
+        0x41
+    };
+    
+    binson_parser p;
+    bbuf raw;
+
+    ASSERT_TRUE(binson_parser_init(&p, buffer, sizeof(buffer)));
+    ASSERT_TRUE(binson_parser_verify(&p));
+
+    ASSERT_TRUE(binson_parser_go_into_object(&p));
+    ASSERT_TRUE(binson_parser_field(&p, "A"));
+    ASSERT_TRUE(binson_parser_get_raw(&p, &raw));
+    ASSERT_TRUE(raw.bsize == 12);
+    ASSERT_TRUE(memcmp(raw.bptr, &buffer[4], 12) == 0);
+
+    binson_parser_reset(&p);
+    ASSERT_TRUE(binson_parser_go_into_object(&p));
+    ASSERT_TRUE(binson_parser_field(&p, "A"));
+    ASSERT_TRUE(binson_parser_go_into_array(&p));
+    ASSERT_TRUE(binson_parser_next(&p));
+    ASSERT_TRUE(binson_parser_get_raw(&p, &raw));
+    ASSERT_TRUE(raw.bsize == 10);
+    ASSERT_TRUE(memcmp(raw.bptr, &buffer[5], 10) == 0);
+}
+
 /*======= Main function =====================================================*/
 
 int main(void) {
@@ -972,6 +1011,7 @@ int main(void) {
     RUN_TEST(get_raw_should_not_work_on_integer);
     RUN_TEST(object_first_element_in_array);
     RUN_TEST(optional_field);
+    RUN_TEST(get_raw);
     PRINT_RESULT();
 }
 
