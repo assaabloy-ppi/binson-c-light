@@ -14,14 +14,13 @@ Features
 * Portable MCU-friendly code.
 * Tested at:
   * x86_64 Linux (gcc, clang)
-  * ~~ARM Cortex-M3 (with QEMU)~~
-  * ~~ARM Cortex-M4 baremetal (nRF52832 SoC)~~
+  * ~~ARM Cortex-M3
+  * ~~ARM Cortex-M4
 * Compatible with: 
   * [binson-java](https://github.com/franslundberg/binson-java)
   * [binson-java-light](https://github.com/franslundberg/binson-java-light)
 * Has no 3rd party dependencies. (libc only)
 * No dynamic memory allocation (in-place parsing)
-
 
 Limitations
 -----------
