@@ -1,0 +1,30 @@
+cmake_minimum_required(VERSION 2.8)
+project(binson)
+
+include_directories(..)
+
+macro(do_test arg)
+    add_executable(${arg} ${arg}.c)
+    add_sanitizers(${arg})
+    add_dependencies(${arg} binson_parser binson_writer)
+    add_test(${arg} ${arg})
+    target_link_libraries(${arg} binson_parser binson_writer)
+endmacro(do_test)
+
+
+do_test(binson_parser_test)
+do_test(binson_parser_bad_test)
+do_test(binson_writer_test)
+do_test(binson_parser_ref_test)
+do_test(binson_parser_print_test)
+do_test(binson_parser_verify_test)
+do_test(binson_parser_array_test)
+
+file(GLOB files "generated_test_cases/*/*.c")
+foreach(file ${files})
+    get_filename_component(barename ${file} NAME)
+    add_executable(t_${barename} ${file})
+    add_sanitizers(t_${barename})
+    target_link_libraries(t_${barename} binson_writer binson_parser)
+    add_test(t_${barename} t_${barename})
+endforeach()

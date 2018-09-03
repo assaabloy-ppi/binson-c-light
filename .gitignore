@@ -1,3 +1,7 @@
+DebugSan
+Debug
+build
+
  Object files
 *.o
 *.ko
@@ -40,8 +44,6 @@
 *.cbp
 *.depend
 *.idea
-
-CMakeLists.txt
 
 CMakeCache.txt
 CMakeFiles/

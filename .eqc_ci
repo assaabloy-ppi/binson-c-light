@@ -1,3 +1,0 @@
-{build, "cd test/quickcheck/ebin; erl -make"}.
-{test_path, "test/quickcheck/ebin"}.
-{test_root, "test/quickcheck"}.
