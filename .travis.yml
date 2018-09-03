@@ -1,0 +1,8 @@
+language: C java
+install: make cmake
+compiler:
+ - gcc
+script:
+ - cmake -DSANITIZE_ADDRESS=On -DSANITIZE_UNDEFINED=On -DCMAKE_BUILD_TYPE=Debug .
+ - make
+ - make test
