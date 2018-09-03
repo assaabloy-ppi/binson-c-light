@@ -14,8 +14,8 @@ Features
 * Portable MCU-friendly code.
 * Tested at:
   * x86_64 Linux (gcc, clang)
-  * ~~ARM Cortex-M3
-  * ~~ARM Cortex-M4
+  * ARM Cortex-M3
+  * ARM Cortex-M4 (nRF52832 and nRF52840 SoC)
 * Compatible with: 
   * [binson-java](https://github.com/franslundberg/binson-java)
   * [binson-java-light](https://github.com/franslundberg/binson-java-light)
@@ -25,7 +25,7 @@ Features
 Limitations
 -----------
 
-* Due to no dynamic memory allocation, the maximum levels of nested objects must be defined at compile time by modifying the define BINSON_PARSER_MAX_DEPTH in binson_parser.h
+* Due to no dynamic memory allocation, the maximum levels of nested objects must be defined at compile time by modifying the define BINSON_PARSER_MAX_DEPTH in binson_parser.h.
 * Maximum array depth limited to 255.
 
 What's new in v3
@@ -51,23 +51,6 @@ Changes from v2
 * Parser callback differs from v2.
 
 Looks stable with good unit test coverage, need more eyes for review, API is still a subject of discussion.
-
-API changes in v2:
----------------
-
-* No implicit block level entering: for top-level nor for OBJECT items (e.g. "a":{})
-* User level API returns bool (succes/failure), it's up to app to check later "error_flags" if needed.
-* All parsing functions are just shortcuts to binson_parser_advance(), controlled with wide range of parameters.
-* *_ensure() functions are designed to additionaly check item type (see #8)
-
-
-TODO in v2:
------------
-
-* More code review & cleanup
-* Add more unit test cases (after code coverage checks)
-* Standartized API doc comments in the header/source files (doxygen)
-* Try to make quick integration of this project to act as low-level API of binson-c, to proof APIs are valid and flexible enough.
 
 
 Writer API usage
