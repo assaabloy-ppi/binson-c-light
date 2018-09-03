@@ -1,4 +1,4 @@
-language: C java
+language: C
 install: make cmake
 compiler:
  - gcc
@@ -8,5 +8,5 @@ script:
  - make test
  - gcov CMakeFiles/binson_parser.dir/binson_parser.c.gcno CMakeFiles/binson_writer.dir/binson_writer.c.gcno
 
- after_success:
-  - bash <(curl -s https://codecov.io/bash)
+after_success:
+ - bash <(curl -s https://codecov.io/bash)
