@@ -30,3 +30,6 @@ add_sanitizers(fuzz_goinoutarr)
 
 add_executable(fuzz_verify_array fuzz_verify_array.c ../binson_parser.c)
 add_sanitizers(fuzz_verify_array)
+
+add_executable(fuzz_class fuzz_class.cpp ../binson_parser.c ../binson.cpp ../binson_writer.c)
+add_sanitizers(fuzz_class)

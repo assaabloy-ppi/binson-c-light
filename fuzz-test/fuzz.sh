@@ -5,7 +5,7 @@ asan_build_dir="build_afl_asan"
 debug_build_dir="build_debug"
 testcases_dir="input"
 
-valid_targets=(`ls -Sr fuzz_*.c | cut -d'.' -f1`)
+valid_targets=(`ls -Sr fuzz_*.c fuzz_*.cpp | cut -d'.' -f1`)
 output_dir=""
 input_dir=""
 target=${valid_targets[0]}
