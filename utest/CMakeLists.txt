@@ -11,6 +11,14 @@ macro(do_test arg)
     target_link_libraries(${arg} binson_parser binson_writer)
 endmacro(do_test)
 
+macro(do_test_cpp arg)
+    add_executable(${arg} ${arg}.cpp)
+    add_sanitizers(${arg})
+    add_dependencies(${arg} binson_parser binson_writer)
+    add_test(${arg} ${arg})
+    target_link_libraries(${arg} binson_parser binson_writer binson_class)
+endmacro(do_test_cpp)
+
 
 do_test(binson_parser_test)
 do_test(binson_parser_bad_test)
@@ -19,6 +27,7 @@ do_test(binson_parser_ref_test)
 do_test(binson_parser_print_test)
 do_test(binson_parser_verify_test)
 do_test(binson_parser_array_test)
+do_test_cpp(binson_class_test)
 
 file(GLOB files "generated_test_cases/*/*.c")
 foreach(file ${files})

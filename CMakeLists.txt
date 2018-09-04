@@ -18,6 +18,9 @@ add_sanitizers(binson_parser)
 add_library(binson_writer binson_writer.c)
 add_sanitizers(binson_writer)
 
+add_library(binson_class binson.cpp)
+add_sanitizers(binson_class)
+
 add_subdirectory(fuzz-test)
 add_subdirectory(utest)
 
