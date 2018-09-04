@@ -23,15 +23,15 @@ public:
 
     void clear();
     std::vector<uint8_t> serialize() const;
-    bool serialize(binson_writer *w) const;
+    void serialize(binson_writer *w) const;
     void deserialize(const std::vector<uint8_t> &data);
     void deserialize(const uint8_t *data, size_t size);
     void deserialize(binson_parser *p);
     std::string toStr() const;
 
 private:
-    bool seralizeItem(binson_writer *w, const BinsonValue &val) const;
-    bool seralizeItems(binson_writer *w) const;
+    void seralizeItem(binson_writer *w, const BinsonValue &val) const;
+    void seralizeItems(binson_writer *w) const;
     BinsonValue deseralizeItem(binson_parser *p);
     void deseralizeItems(binson_parser *p);
 

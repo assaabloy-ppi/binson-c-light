@@ -49,49 +49,52 @@ static string dump_compare_hex(const uint8_t *data, const uint8_t *data2, size_t
     return res;
 }
 
+
+
 /*======= Test cases ========================================================*/
 
-TEST(binson_class_test1)
+/*
 {
-    /*
+  "A": "B",
+  "B": {
+    "A": "B"
+  },
+  "C": [
+    "A",
+    "A",
     {
       "A": "B",
-      "B": {
-        "A": "B"
-      },
-      "C": [
+      "B": [
         "A",
         "A",
         {
-          "A": "B",
-          "B": [
-            "A",
-            "A",
-            {
-              "A": "B"
-            },
+          "A": "B"
+        },
+        [
+          [
             [
               [
-                [
-                  [
-                    {
-                      "A": "B"
-                    }
-                  ]
-                ]
+                {
+                  "A": "B"
+                }
               ]
             ]
           ]
-        },
-        "A"
-      ],
-      "D": 3.141592653589793,
-      "E": false,
-      "F": 127,
-      "G": "0x0202"
-    }
-    */
-    uint8_t binson_bytes[105] = "\x40\x14\x01\x41\x14\x01\x42\x14\x01\x42\x40\x14\x01\x41\x14\x01\x42\x41\x14\x01\x43\x42\x14\x01\x41\x14\x01\x41\x40\x14\x01\x41\x14\x01\x42\x14\x01\x42\x42\x14\x01\x41\x14\x01\x41\x40\x14\x01\x41\x14\x01\x42\x41\x42\x42\x42\x42\x40\x14\x01\x41\x14\x01\x42\x41\x43\x43\x43\x43\x43\x41\x14\x01\x41\x43\x14\x01\x44\x46\x18\x2d\x44\x54\xfb\x21\x09\x40\x14\x01\x45\x45\x14\x01\x46\x10\x7f\x14\x01\x47\x18\x02\x02\x02\x41";
+        ]
+      ]
+    },
+    "A"
+  ],
+  "D": 3.141592653589793,
+  "E": false,
+  "F": 127,
+  "G": "0x0202"
+}
+*/
+uint8_t binson_bytes[105] = "\x40\x14\x01\x41\x14\x01\x42\x14\x01\x42\x40\x14\x01\x41\x14\x01\x42\x41\x14\x01\x43\x42\x14\x01\x41\x14\x01\x41\x40\x14\x01\x41\x14\x01\x42\x14\x01\x42\x42\x14\x01\x41\x14\x01\x41\x40\x14\x01\x41\x14\x01\x42\x41\x42\x42\x42\x42\x40\x14\x01\x41\x14\x01\x42\x41\x43\x43\x43\x43\x43\x41\x14\x01\x41\x43\x14\x01\x44\x46\x18\x2d\x44\x54\xfb\x21\x09\x40\x14\x01\x45\x45\x14\x01\x46\x10\x7f\x14\x01\x47\x18\x02\x02\x02\x41";
+
+TEST(binson_class_test1)
+{
     size_t binson_expected_size = sizeof(binson_bytes) - 1;
     binson_parser p;
     ASSERT_TRUE(binson_parser_init(&p, binson_bytes, binson_expected_size));
@@ -182,14 +185,59 @@ TEST(binson_class_test1)
                                         binson_expected_size).c_str());
     }
     ASSERT_TRUE(binson_writer_get_counter(&w) == binson_expected_size);
-
 }
 
+TEST(unsorted_writing)
+{
+    uint8_t buf[64];
+    binson_writer w;
+    binson_parser p;
+
+    Binson b;
+    b.put("a", 1);
+    b.put("c", 2);
+    b.put("b", 3);
+
+    binson_writer_init(&w, buf, sizeof(buf));
+    b.serialize(&w);
+    ASSERT_TRUE(w.error_flags == BINSON_ERROR_NONE);
+
+    Binson b2;
+    binson_parser_init(&p, buf, binson_writer_get_counter(&w));
+    b2.deserialize(&p);
+    ASSERT_TRUE(b2.get("a").getInt() == 1);
+    ASSERT_TRUE(b2.get("b").getInt() == 3);
+    ASSERT_TRUE(b2.get("c").getInt() == 2);
+}
+
+TEST(serialize_vector)
+{
+    size_t binson_expected_size = sizeof(binson_bytes) - 1;
+    binson_parser p;
+    ASSERT_TRUE(binson_parser_init(&p, binson_bytes, binson_expected_size));
+    ASSERT_TRUE(binson_parser_verify(&p));
+
+    Binson b;
+    binson_parser_reset(&p);
+    b.deserialize(&p);
+
+    auto data = b.serialize();
+    ASSERT(data.size() == binson_expected_size);
+    bool result = memcmp(binson_bytes, data.data(), binson_expected_size) == 0;
+    if (!result)
+    {
+        printf("%s\n", dump_compare_hex(binson_bytes,
+                                        data.data(),
+                                        binson_expected_size).c_str());
+    }
+}
 
 /*======= Main function =====================================================*/
 
 int main(void) {
     RUN_TEST(binson_class_test1);
+    RUN_TEST(unsorted_writing);
+    RUN_TEST(serialize_vector);
     PRINT_RESULT();
 }
 
