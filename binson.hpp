@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <array>
 #include <stdint.h>
 
 #include <binson_light.h>
@@ -93,17 +94,7 @@ public:
     std::vector<BinsonValue> getArray() const { std::vector<BinsonValue> v; get(v); return v; }
 private:
 
-    std::string typeToString[8] =
-    {
-        "noneType",
-        "boolType",
-        "intType",
-        "doubleType",
-        "stringType",
-        "binaryType",
-        "objectType",
-        "arrayType",
-    };
+    static const std::array<std::string, 8> typeToString;
 
     class InternalValue
     {
