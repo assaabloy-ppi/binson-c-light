@@ -36,11 +36,6 @@ bool binson_writer_init(binson_writer *writer, uint8_t *buffer, size_t buffer_si
         return false;
     }
 
-    if (buffer_size < 2) {
-        writer->error_flags = BINSON_ERROR_RANGE;
-        return false;
-    }
-
     writer->buffer_size = buffer_size;
     writer->buffer = buffer;
 

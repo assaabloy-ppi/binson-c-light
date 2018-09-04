@@ -41,14 +41,6 @@ TEST(invalid_init_null_ptr)
     ASSERT_FALSE(binson_writer_init(NULL, NULL, sizeof(buffer)));
 }
 
-TEST(invalid_init_buffer_to_small)
-{
-    
-    binson_writer writer;
-    uint8_t buffer[2] = { BINSON_DEF_OBJECT_BEGIN , BINSON_DEF_OBJECT_END };
-    ASSERT_FALSE(binson_writer_init(&writer, buffer, BINSON_OBJECT_MINIMUM_SIZE - 1));
-    ASSERT_FALSE(binson_writer_init(&writer, buffer, 0));
-}
 
 TEST(test_0)
 {
@@ -136,7 +128,6 @@ TEST(writer_should_give_required_size)
 int main(void) {
     RUN_TEST(valid_init);
     RUN_TEST(invalid_init_null_ptr);
-    RUN_TEST(invalid_init_buffer_to_small);
     RUN_TEST(test_0);
     RUN_TEST(error_should_be_reported);
     RUN_TEST(writer_should_give_required_size);
