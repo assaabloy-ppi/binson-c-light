@@ -9,16 +9,18 @@ using namespace std;
 
 #define IF_RUNTIME_ERROR(x, msg) if (!(x)) throw std::runtime_error(msg)
 
-const std::array<std::string, 8> BinsonValue::typeToString =
+const std::array<std::string, 8> BinsonValue::typeToString
 {
-    "noneType",
-    "boolType",
-    "intType",
-    "doubleType",
-    "stringType",
-    "binaryType",
-    "objectType",
-    "arrayType",
+    {
+        "noneType",
+        "boolType",
+        "intType",
+        "doubleType",
+        "stringType",
+        "binaryType",
+        "objectType",
+        "arrayType"
+    }
 };
 
 Binson & Binson::put(const std::string &key, const BinsonValue &v)
@@ -36,7 +38,7 @@ Binson & Binson::put(const std::string &key, Binson o)
 Binson & Binson::put(const string &key, const uint8_t *data, size_t size)
 {
     vector<uint8_t> v(data, data + size);
-    m_items[key] = move(BinsonValue(move(v)));
+    m_items[key] = BinsonValue(v);
     return *this;
 }
 
