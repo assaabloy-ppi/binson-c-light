@@ -66,8 +66,10 @@ static int __main(int argc, char **argv)
             printf("%02x", buffer_cpy[i]);
         }
         printf("\r\n");
+        ret = true;
     } catch (const std::runtime_error &e) {
         /* Not a valid binson object */
+        ret = false;
     }
 
     free(buffer_cpy);
