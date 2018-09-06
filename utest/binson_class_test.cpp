@@ -154,13 +154,19 @@ TEST(binson_class_test1)
                                             "A",
                                             Binson().put("A", "B"),
                                             vector<BinsonValue>({
-                                                vector<BinsonValue>({
+                                                {
                                                     vector<BinsonValue>({
-                                                        vector<BinsonValue>({
-                                                            Binson().put("A", "B")
-                                                        })
+                                                        {
+                                                            vector<BinsonValue>({
+                                                                {
+                                                                    vector<BinsonValue>({
+                                                                        Binson().put("A", "B")
+                                                                    })
+                                                                }
+                                                            })
+                                                        }
                                                     })
-                                                })
+                                                }
                                             })
                                         })),
                                         "A"
@@ -173,10 +179,10 @@ TEST(binson_class_test1)
 
     ASSERT_TRUE(binson_writer_init(&w, binson_result_buffer, sizeof(binson_result_buffer)));
     b2.serialize(&w);
-//    string s = b.toStr();
-//    printf("%s\n", s.c_str());
-//    s = b2.toStr();
-//    printf("%s\n", s.c_str());
+    auto s = b.toStr();
+    printf("%s\n", s.c_str());
+    auto s2 = b2.toStr();
+    printf("%s\n", s2.c_str());
     result = memcmp(binson_bytes, binson_result_buffer, binson_expected_size) == 0;
     if (!result)
     {
