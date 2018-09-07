@@ -46,6 +46,8 @@ $SCAN_BUILD -v -o $REPORT_DIR $SCAN_OPT cmake -DCMAKE_CXX_COMPILER=$CXX_ANALYZER
 make clean
 $SCAN_BUILD -v -o $REPORT_DIR $SCAN_OPT make -j
 
+cd ..
+CC=$CCC_ANALYZER CXX=$CXX_ANALYZER $SCAN_BUILD -v -o $REPORT_DIR $SCAN_OPT make -f scan.mk clean all
 
 cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
 cppcheck --project=compile_commands.json --enable=all

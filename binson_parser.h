@@ -156,26 +156,50 @@ bool binson_parser_next_ensure(binson_parser *parser, binson_type field_type);
 binson_type binson_parser_get_type(binson_parser *parser);
 
 /**
- * @brief [brief description]
- * @details [long description]
+ * @brief Parses until a field is found (or not found) in an object.
+ *        This is a macro for binson_parser_field_with_length so be
+ *        careful to not input a pointer as the argument field_name.
+ *        The length of the field name is determined using sizeof("string")-1
+ *        and not strlen().
+ *        I.e., if the field name is a pointer, the length will be the size of a pointer.
+ *        If the data field name points to is shorter than a pointer, a memory read out
+ *        of the limit will be caused.
+ *                
+ * Example usage:
  * 
- * @param parser Pointer to binson parser structure.
- * @param field_name [description]
+ *  // Ok
+ *  binson_parser p;
+ *  if (binson_parser_field(&p, "foo")) {
+ *    // Field "foo" exists"
+ *  }
+ *  
+ *  // Not ok
+ *  binson_parser p;
+ *  char *field_name_from_external_string;
+ *  if (binson_parser_field(&p, field_name_from_external_string)) {
+ *    // Might cause crash
+ *  }
  * 
- * @return [description]
+ * @param parser      Pointer to binson parser structure.
+ * @param field_name  String (not a pointer) with field name.
+ * 
+ * @return true   The field name was present in the object.
+ * @return false  The field name could be found (or was already found previous).
  */
 
 #define binson_parser_field(p, f) binson_parser_field_with_length(p, f, sizeof(f)-1)
 
 /**
- * @brief [brief description]
- * @details [long description]
+ * @brief Parses until a field is found (or not found) in an object.
+ *        See \ref @binson_parser_field. This function differs from
+ *        that and a field name length argument must be provided.
  * 
- * @param parser Pointer to binson parser structure.
- * @param field_name [description]
- * @param length [description]
+ * @param parser      Pointer to binson parser structure.
+ * @param field_name  String (not a pointer) with field name.
+ * @param length      Length of field name.
  * 
- * @return [description]
+ * @return true   The field name was present in the object.
+ * @return false  The field name could be found (or was already found previous).
  */
 bool binson_parser_field_with_length(binson_parser *parser,
                                      const char *field_name,
