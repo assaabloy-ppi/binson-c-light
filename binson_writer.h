@@ -46,7 +46,7 @@ bool binson_write_boolean(binson_writer *writer, bool value);
 bool binson_write_integer(binson_writer *writer, int64_t value);
 bool binson_write_double(binson_writer *writer, double value);
 bool binson_write_string(binson_writer *writer, const char *value);
-#define binson_write_string(w,s) binson_write_string_with_len(w, s, sizeof(s)-1)
+#define binson_write_string(w,s) binson_write_string_with_len(w, s, strlen(s))
 bool binson_write_string_with_len(binson_writer *writer,
                                   const char *value,
                                   size_t length);
