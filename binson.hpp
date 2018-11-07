@@ -18,7 +18,7 @@ public:
     Binson& put(const std::string &key, const BinsonValue &v);
     Binson& put(const std::string &key, Binson o);
     Binson& put(const std::string &key, const uint8_t *data, size_t size);
-    const BinsonValue get(const std::string &key) const;
+    const BinsonValue & get(const std::string &key) const;
     bool hasKey(const std::string &key) const;
 
     void clear();
@@ -28,6 +28,8 @@ public:
     void deserialize(const uint8_t *data, size_t size);
     void deserialize(binson_parser *p);
     std::string toStr() const;
+    std::map<std::string, BinsonValue>::const_iterator begin(){ return m_items.begin(); }
+    std::map<std::string, BinsonValue>::const_iterator end(){ return m_items.end(); }
 
 private:
     void seralizeItem(binson_writer *w, const BinsonValue &val) const;
@@ -78,20 +80,16 @@ public:
     BinsonValue operator=(Binson &&val);
     BinsonValue operator=(std::vector<BinsonValue> &&val);
 
-    template <class T>
-    bool isType(T t) const {
-        bool res = m_val.myType() == findType(t);
-        return res;
-    }
     Types myType() const { return m_val.myType(); }
 
-    bool getBool() const { bool v = false; get(v); return v; }
-    int64_t getInt() const { int64_t v = 0; get(v); return v; };
-    double getDouble() const { double v = 0; get(v); return v; };
-    std::string getString() const { std::string v; get(v); return v; }
-    std::vector<uint8_t> getBin() const { std::vector<uint8_t> v; get(v); return v; }
-    Binson getObject() const { Binson v; get(v); return v; }
-    std::vector<BinsonValue> getArray() const { std::vector<BinsonValue> v; get(v); return v; }
+    bool getBool() const;
+    int64_t getInt() const;
+    double getDouble() const;
+    const std::string & getString() const;
+    const std::vector<uint8_t> & getBin() const;
+    const Binson & getObject() const;
+    const std::vector<BinsonValue> & getArray() const;
+
 private:
 
     static const std::array<std::string, 8> typeToString;
@@ -110,41 +108,21 @@ private:
     public:
         InternalValue():b(false), tinfo(Types::noneType){ }
 
-        void get(bool &val) const { val = b; }
-        void get(int64_t &val) const { val = i; }
-        void get(int &val) const { val = i; }
-        void get(double &val) const { val = d; }
-        void get(std::string &val) const { val = str; }
-        void get(std::vector<uint8_t> &val) const { val = bin; }
-        void get(Binson &val) const { val = o; }
-        void get(std::vector<BinsonValue> &val) const { val = a; }
-
         void setType(Types t){ tinfo = t; }
 
         Types myType() const { return tinfo; }
     } m_val;
 
-    template<class T>
-    void get (T &val) const
+    void checkType(Types expected) const
     {
-        if (!isType(val))
-            throw std::runtime_error("Wrong type req(" +
-                                     typeToString[(int)findType(val)] + ") actual(" +
-                                     typeToString[(int)m_val.myType()] + ")");
-        else
+        if (myType() != expected)
         {
-            m_val.get(val);
+            throw std::runtime_error("Wrong type req(" +
+                                     typeToString[(int)expected] + ") actual(" +
+                                     typeToString[(int)m_val.myType()] + ")");
+
         }
     }
-
-    static Types findType(bool &val) {(void)val; return Types::boolType; }
-    static Types findType(int64_t &val) {(void)val; return Types::intType; }
-    static Types findType(int &val) {(void)val; return Types::intType; }
-    static Types findType(double &val) {(void)val; return Types::doubleType; }
-    static Types findType(std::string &val) {(void)val; return Types::stringType; }
-    static Types findType(std::vector<uint8_t> &val) {(void)val; return Types::binaryType; }
-    static Types findType(Binson &val) {(void)val; return Types::objectType; }
-    static Types findType(std::vector<BinsonValue> &val) {(void)val; return Types::arrayType; }
 };
 
 #endif // BINSON_HPP

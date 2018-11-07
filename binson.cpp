@@ -7,7 +7,17 @@
 
 using namespace std;
 
-#define IF_RUNTIME_ERROR(x, msg) if (!(x)) throw std::runtime_error(msg)
+void ifRuntimeError(bool x, const char *msg)
+{
+    if (!(x))
+        throw std::runtime_error(msg);
+}
+
+void CheckParserState(binson_parser *p)
+{
+    if (p->error_flags != BINSON_ERROR_NONE)
+        throw std::runtime_error("Parse error");
+}
 
 const std::array<std::string, 8> BinsonValue::typeToString
 {
@@ -42,7 +52,7 @@ Binson & Binson::put(const string &key, const uint8_t *data, size_t size)
     return *this;
 }
 
-const BinsonValue Binson::get(const string &key) const
+const BinsonValue &Binson::get(const string &key) const
 {
     if (!hasKey(key))
         throw std::out_of_range("Key '" + key + "' does not exist");
@@ -142,21 +152,36 @@ void Binson::serialize(binson_writer *w) const
 BinsonValue Binson::deseralizeItem(binson_parser *p)
 {
     uint8_t t = binson_parser_get_type(p);
+    CheckParserState(p);
+
     switch(t)
     {
     case BINSON_ID_BOOLEAN:
-        return BinsonValue(binson_parser_get_boolean(p) == 0 ? false : true);
+    {
+        bool val = binson_parser_get_boolean(p);
+        CheckParserState(p);
+        return BinsonValue(val);
+    }
         break;
     case BINSON_ID_INTEGER:
-        return BinsonValue(binson_parser_get_integer(p));
+    {
+        int64_t val = binson_parser_get_integer(p);
+        CheckParserState(p);
+        return BinsonValue(val);
+    }
         break;
     case BINSON_ID_DOUBLE:
-        return BinsonValue(binson_parser_get_double(p));
+    {
+        double val = binson_parser_get_double(p);
+        CheckParserState(p);
+        return BinsonValue(val);
+    }
         break;
     case BINSON_ID_STRING:
     {
         bbuf *buf;
         buf = binson_parser_get_string_bbuf(p);
+        CheckParserState(p);
         if (buf)
             return BinsonValue(string(reinterpret_cast<const char*>(buf->bptr), buf->bsize));
         else
@@ -167,6 +192,7 @@ BinsonValue Binson::deseralizeItem(binson_parser *p)
     {
         bbuf *buf;
         buf = binson_parser_get_bytes_bbuf(p);
+        CheckParserState(p);
         if (buf)
             return BinsonValue(vector<uint8_t>(buf->bptr, buf->bptr + buf->bsize));
         else
@@ -175,22 +201,22 @@ BinsonValue Binson::deseralizeItem(binson_parser *p)
         break;
     case BINSON_ID_OBJECT:
     {
-        IF_RUNTIME_ERROR(binson_parser_go_into_object(p), "Parse error");
+        ifRuntimeError(binson_parser_go_into_object(p), "Parse error");
         Binson b;
         b.deseralizeItems(p);
-        IF_RUNTIME_ERROR(binson_parser_leave_object(p), "Parse error");
+        ifRuntimeError(binson_parser_leave_object(p), "Parse error");
         return BinsonValue(b);
     }
         break;
     case BINSON_ID_ARRAY:
     {
-        IF_RUNTIME_ERROR(binson_parser_go_into_array(p), "Parse error");
+        ifRuntimeError(binson_parser_go_into_array(p), "Parse error");
         vector<BinsonValue> array;
         while(binson_parser_next(p))
         {
             array.push_back(deseralizeItem(p));
         }
-        IF_RUNTIME_ERROR(binson_parser_leave_array(p), "Parse error");
+        ifRuntimeError(binson_parser_leave_array(p), "Parse error");
         return array;
     }
         break;
@@ -206,10 +232,12 @@ void Binson::deseralizeItems(binson_parser *p)
     {
         bbuf *buf;
         buf = binson_parser_get_name(p);
-        IF_RUNTIME_ERROR(buf != nullptr, "Parse error");
+        CheckParserState(p);
+        ifRuntimeError(buf != nullptr, "Parse error");
         string name(reinterpret_cast<const char*>(buf->bptr), buf->bsize);
         put(name, deseralizeItem(p));
     }
+    CheckParserState(p);
 }
 
 void Binson::deserialize(const std::vector<uint8_t> &data)
@@ -228,17 +256,17 @@ void Binson::deserialize(const uint8_t *data, size_t size)
     binson_parser p;
     clear();
 
-    IF_RUNTIME_ERROR(binson_parser_init(&p, const_cast<uint8_t*>(data), size), "Parser init error");
+    ifRuntimeError(binson_parser_init(&p, const_cast<uint8_t*>(data), size), "Parser init error");
     deserialize(&p);
 }
 
 void Binson::deserialize(binson_parser *p)
 {
     clear();
-    IF_RUNTIME_ERROR(binson_parser_reset(p), "Parser reset error");
-    IF_RUNTIME_ERROR(binson_parser_go_into_object(p), "Parse error");
+    ifRuntimeError(binson_parser_reset(p), "Parser reset error");
+    ifRuntimeError(binson_parser_go_into_object(p), "Parse error");
     deseralizeItems(p);
-    IF_RUNTIME_ERROR(binson_parser_leave_object(p), "Parse error");
+    ifRuntimeError(binson_parser_leave_object(p), "Parse error");
 }
 
 string Binson::toStr() const
@@ -406,4 +434,46 @@ BinsonValue BinsonValue::operator=(std::vector<BinsonValue> &&val)
     m_val.a = move(val);
     m_val.setType(Types::arrayType);
     return *this;
+}
+
+bool BinsonValue::getBool() const
+{
+    checkType(Types::boolType);
+    return m_val.b;
+}
+
+int64_t BinsonValue::getInt() const
+{
+    checkType(Types::intType);
+    return m_val.i;
+}
+
+double BinsonValue::getDouble() const
+{
+    checkType(Types::doubleType);
+    return m_val.d;
+}
+
+const string & BinsonValue::getString() const
+{
+    checkType(Types::stringType);
+    return m_val.str;
+}
+
+const std::vector<uint8_t> & BinsonValue::getBin() const
+{
+    checkType(Types::binaryType);
+    return m_val.bin;
+}
+
+const Binson & BinsonValue::getObject() const
+{
+    checkType(Types::objectType);
+    return m_val.o;
+}
+
+const std::vector<BinsonValue> & BinsonValue::getArray() const
+{
+    checkType(Types::arrayType);
+    return m_val.a;
 }
