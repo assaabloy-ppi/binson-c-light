@@ -16,6 +16,7 @@ extern "C" {
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "binson_parser.h"
 
