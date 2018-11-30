@@ -78,7 +78,10 @@ bool binson_parser_init_object(binson_parser *parser,
                                const uint8_t *buffer,
                                size_t buffer_size)
 {
-    if ((NULL == parser) || (NULL == buffer)) {
+    if ((NULL == parser) ||
+        (NULL == buffer) ||
+        (NULL == parser->state) ||
+        (0 == parser->max_depth)) {
         return false;
     }
 
@@ -101,7 +104,8 @@ bool binson_parser_init_object(binson_parser *parser,
         return false;
     }
 
-    memset(parser, 0x00U, sizeof(binson_parser));
+    memset(parser->state, 0x00U, (sizeof(binson_state)*parser->max_depth));
+    parser->buffer_used = 0;
     parser->buffer      = buffer;
     parser->buffer_size = buffer_size;
     parser->error_flags = BINSON_ERROR_NONE;
@@ -119,7 +123,10 @@ bool binson_parser_init_array(binson_parser *parser,
                               const uint8_t *buffer,
                               size_t buffer_size)
 {
-    if ((NULL == parser) || (NULL == buffer)) {
+    if ((NULL == parser) ||
+        (NULL == buffer) ||
+        (NULL == parser->state) ||
+        (0 == parser->max_depth)) {
         return false;
     }
 
@@ -142,7 +149,8 @@ bool binson_parser_init_array(binson_parser *parser,
         return false;
     }
 
-    memset(parser, 0x00U, sizeof(binson_parser));
+    memset(parser->state, 0x00U, (sizeof(binson_state)*parser->max_depth));
+    parser->buffer_used = 0;
     parser->buffer      = buffer;
     parser->buffer_size = buffer_size;
     parser->error_flags = BINSON_ERROR_NONE;
@@ -164,20 +172,13 @@ bool binson_parser_reset(binson_parser *parser)
     }
 
     bool ret;
-    binson_cb cb        = parser->cb;
-    void *cb_context    = parser->cb_context;
 
-    if (parser->type == BINSON_TYPE_OBJECT)
-    {
+    if (parser->type == BINSON_TYPE_OBJECT) {
         ret = binson_parser_init_object(parser, parser->buffer, parser->buffer_size);
     }
-    else
-    {
+    else {
         ret = binson_parser_init_array(parser, parser->buffer, parser->buffer_size);
     }
-
-    parser->cb = cb;
-    parser->cb_context = cb_context;
 
     return ret;
 
@@ -279,7 +280,7 @@ bool binson_parser_field_ensure_with_length(binson_parser *parser,
                                             binson_type field_type)
 {
 
-    if ((NULL != parser) && 
+    if ((NULL != parser) &&
         binson_parser_field_with_length(parser, field_name, length)) {
         if (field_type == binson_parser_get_type(parser)) {
             return true;
@@ -374,7 +375,7 @@ bool binson_parser_get_raw(binson_parser *parser, bbuf *raw)
         (NULL != parser->current_state))) {
         return NULL;
     }
- 
+
     size_t current_pos = parser->buffer_used;
     raw->bptr = &parser->buffer[parser->buffer_used];
 
@@ -386,7 +387,7 @@ bool binson_parser_get_raw(binson_parser *parser, bbuf *raw)
             return true;
         }
 
-        return false;        
+        return false;
 
     }
 
@@ -397,7 +398,7 @@ bool binson_parser_get_raw(binson_parser *parser, bbuf *raw)
             return true;
         }
 
-        return false;  
+        return false;
     }
 
     return false;
@@ -530,7 +531,7 @@ static void _binson_print_cb(binson_parser *parser, uint16_t next_state, void *c
             }
             printf("\"");
             break;
-            
+
     }
 
 }
@@ -654,7 +655,7 @@ static void _binson_to_string_cb(binson_parser *parser, uint16_t next_state, voi
             }
             ret += snprintf(&pbuf[ret], available, "\"");
             break;
-            
+
     }
 
 
@@ -761,7 +762,7 @@ static uint16_t _process_one(binson_parser *parser, bbuf *consumed, size_t *byte
     switch (consumed->bptr[0]) {
         /*
          * Handeled by the peek in _advance
-         * 
+         *
          * case BINSON_DEF_OBJECT_BEGIN:
          * case BINSON_DEF_OBJECT_END:
          * case BINSON_DEF_ARRAY_BEGIN:
@@ -916,7 +917,7 @@ static bool _advance_parsing(binson_parser *parser, uint8_t scan_flags, bbuf *sc
                 }
                 else {
                     parser->error_flags = BINSON_ERROR_FORMAT;
-                    return false;  
+                    return false;
                 }
             }
         }
@@ -994,7 +995,7 @@ static bool _advance_parsing(binson_parser *parser, uint8_t scan_flags, bbuf *sc
                             return false;
                         }
                     }
-                    
+
                     parser->buffer_used += 1;
                     memset(parser->current_state, 0x00, sizeof(binson_state));
                     if (parser->depth > 1) {
@@ -1017,7 +1018,7 @@ static bool _advance_parsing(binson_parser *parser, uint8_t scan_flags, bbuf *sc
                         parser->error_flags = BINSON_ERROR_FORMAT;
                         return false;
                     }
-                    
+
                 }
                 else {
                     /* End of block */
@@ -1056,7 +1057,7 @@ static bool _advance_parsing(binson_parser *parser, uint8_t scan_flags, bbuf *sc
                 state->flags = BINSON_STATE_IN_OBJ_EXPECTING_VALUE;
 
                 proceed = true;
-                
+
                 break;
             case BINSON_STATE_PARSED_ARRAY_BEGIN:
 
@@ -1095,7 +1096,7 @@ static bool _advance_parsing(binson_parser *parser, uint8_t scan_flags, bbuf *sc
                         (orig_array_depth == state->array_depth)) {
                         CLEARBITMASK(scan_flags, BINSON_ADVANCE_LEAVE_ARRAY);
                     }
-                    
+
                     if (state->array_depth == 0) {
                         /* Should never happend. */
                         parser->error_flags = BINSON_ERROR_FORMAT;
@@ -1195,7 +1196,7 @@ static bool _consume(binson_parser *parser,
     if (!peek) {
         parser->buffer_used += size;
     }
-    
+
     return true;
 
 }
