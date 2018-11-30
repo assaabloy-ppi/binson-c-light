@@ -18,16 +18,21 @@ extern "C" {
 
 /*======= Public macro definitions ==========================================*/
 
-#define BINSON_PARSER_MAX_DEPTH     (10U)
+#define BINSON_PARSER_DEFAULT_DEPTH     (10U)
 #define _BP_DEF2(p, depth)                          \
-    binson_state p##data[depth];                    \
+    binson_state p##data##__LINE__[depth];          \
     binson_parser p;                                \
     p.max_depth = depth;                            \
-    p.state = p##data
-#define _BP_DEF1(p) _BP_DEF2(p, 10U)
+    p.state = p##data##__LINE__
+#define _BP_DEF1(p) _BP_DEF2(p, BINSON_PARSER_DEFAULT_DEPTH)
 #define _BP_GETMACRO(_1, _2, NAME, ...) NAME
-#define BINSON_PARSER_DEF(...) _BP_GETMACRO(__VA_ARGS__, _BP_DEF2, _BP_DEF1)(__VA_ARGS__)
-
+//#define BINSON_PARSER_DEF(...) _BP_GETMACRO(__VA_ARGS__, _BP_DEF2, _BP_DEF1)(__VA_ARGS__)
+#define BINSON_PARSER_DEF_DEPTH(p, depth)           \
+    binson_state p##data##__LINE__[depth];          \
+    binson_parser p;                                \
+    p.max_depth = depth;                            \
+    p.state = p##data##__LINE__
+#define BINSON_PARSER_DEF(p) BINSON_PARSER_DEF_DEPTH(p, BINSON_PARSER_DEFAULT_DEPTH)
 /*======= Type Definitions and declarations =================================*/
 
 typedef struct binson_state_s {

@@ -67,7 +67,7 @@ static const uint8_t binson_bytes[104] = "\x40\x14\x01\x41\x14\x01\x42\x14\x01\x
 
 TEST(print_binson)
 {
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     binson_parser_init(&p, binson_bytes, sizeof(binson_bytes));
     ASSERT_TRUE(binson_parser_print(&p));
     /* Expected:

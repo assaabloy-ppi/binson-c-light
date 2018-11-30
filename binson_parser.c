@@ -60,6 +60,10 @@
 /*======= Local function prototypes =========================================*/
 /*======= Local variable declarations =======================================*/
 
+static bool _binson_parser_init(binson_parser *parser,
+                                const uint8_t *buffer,
+                                size_t buffer_size,
+                                uint8_t type);
 static bool _parse_integer(bbuf *length_data, int64_t *value, bool check_boundaries);
 static int _cmp_name(bbuf *a, bbuf *b);
 #define _advance(p, s) _advance_parsing(p, s, NULL)
@@ -78,85 +82,60 @@ bool binson_parser_init_object(binson_parser *parser,
                                const uint8_t *buffer,
                                size_t buffer_size)
 {
-    if ((NULL == parser) ||
-        (NULL == buffer) ||
-        (NULL == parser->state) ||
-        (0 == parser->max_depth)) {
-        return false;
-    }
-
-    /*
-     * Minimum object size is 2 bytes for an empty
-     * object: { }
-     */
-    if (buffer_size < BINSON_OBJECT_MINIMUM_SIZE) {
-        parser->error_flags = BINSON_ERROR_RANGE;
-        return false;
-    }
-
-    /*
-     * The serialized binson object must begin and end correctly:
-     * object = { ... }
-     */
-    if (!((BINSON_DEF_OBJECT_BEGIN == buffer[0]) &&
-          (BINSON_DEF_OBJECT_END == buffer[buffer_size-1]))) {
-        parser->error_flags = BINSON_ERROR_FORMAT;
-        return false;
-    }
-
-    memset(parser->state, 0x00U, (sizeof(binson_state)*parser->max_depth));
-    parser->buffer_used = 0;
-    parser->buffer      = buffer;
-    parser->buffer_size = buffer_size;
-    parser->error_flags = BINSON_ERROR_NONE;
-
-    parser->type            = BINSON_PTYPE_OBJECT;
-    parser->depth           = 0;
-    parser->buffer_used     = 0;
-    parser->state[0].flags  = BINSON_STATE_UNDEFINED;
-    parser->current_state = &parser->state[0];
-
-    return true;
+    return _binson_parser_init(parser, buffer, buffer_size, BINSON_PTYPE_OBJECT);
 }
 
 bool binson_parser_init_array(binson_parser *parser,
                               const uint8_t *buffer,
                               size_t buffer_size)
+{   
+    return _binson_parser_init(parser, buffer, buffer_size, BINSON_PTYPE_ARRAY);
+}
+
+bool binson_parser_reset(binson_parser *parser)
 {
     if ((NULL == parser) ||
-        (NULL == buffer) ||
+        (NULL == parser->buffer) ||
         (NULL == parser->state) ||
         (0 == parser->max_depth)) {
         return false;
     }
 
-    /*
-     * Minimum object size is 2 bytes for an empty
-     * object: { }
-     */
-    if (buffer_size < BINSON_OBJECT_MINIMUM_SIZE) {
+    if (parser->buffer_size < BINSON_OBJECT_MINIMUM_SIZE) {
         parser->error_flags = BINSON_ERROR_RANGE;
         return false;
     }
 
-    /*
-     * The serialized binson object must begin and end correctly:
-     * array = [ ... ]
-     */
-    if (!((BINSON_DEF_ARRAY_BEGIN == buffer[0]) &&
-          (BINSON_DEF_ARRAY_END == buffer[buffer_size-1]))) {
-        parser->error_flags = BINSON_ERROR_FORMAT;
+    if (parser->type == BINSON_PTYPE_OBJECT) {
+        /*
+         * The serialized binson object must begin and end correctly:
+         * object = { ... }
+         */
+        if (!((BINSON_DEF_OBJECT_BEGIN == parser->buffer[0]) &&
+              (BINSON_DEF_OBJECT_END == parser->buffer[parser->buffer_size-1]))) {
+            parser->error_flags = BINSON_ERROR_FORMAT;
+            return false;
+        }
+        parser->depth = 0;
+    }
+    else if (parser->type == BINSON_PTYPE_ARRAY) {
+        /*
+         * The serialized binson object must begin and end correctly:
+         * array = [ ... ]
+         */
+        if (!((BINSON_DEF_ARRAY_BEGIN == parser->buffer[0]) &&
+              (BINSON_DEF_ARRAY_END == parser->buffer[parser->buffer_size-1]))) {
+            parser->error_flags = BINSON_ERROR_FORMAT;
+            return false;
+        }
+        parser->depth = 1;
+    }
+    else {
         return false;
     }
 
     memset(parser->state, 0x00U, (sizeof(binson_state)*parser->max_depth));
-    parser->buffer_used = 0;
-    parser->buffer      = buffer;
-    parser->buffer_size = buffer_size;
     parser->error_flags = BINSON_ERROR_NONE;
-
-    parser->type            = BINSON_PTYPE_ARRAY;
-    parser->depth           = 1;
     parser->buffer_used     = 0;
     parser->state[0].flags  = BINSON_STATE_UNDEFINED;
     parser->current_state = &parser->state[0];
@@ -165,30 +144,8 @@ bool binson_parser_init_array(binson_parser *parser,
 
 }
 
-bool binson_parser_reset(binson_parser *parser)
-{
-    if (NULL == parser) {
-        return false;
-    }
-
-    bool ret;
-
-    if (parser->type == BINSON_TYPE_OBJECT) {
-        ret = binson_parser_init_object(parser, parser->buffer, parser->buffer_size);
-    }
-    else {
-        ret = binson_parser_init_array(parser, parser->buffer, parser->buffer_size);
-    }
-
-    return ret;
-
-}
-
 bool binson_parser_verify(binson_parser *parser)
 {
-    if (NULL == parser) {
-        return false;
-    }
 
     if (!binson_parser_reset(parser)) {
         return false;
@@ -699,7 +656,27 @@ bool binson_parser_to_string(binson_parser *parser,
 
 /*======= Local function implementations ====================================*/
 
+static bool _binson_parser_init(binson_parser *parser,
+                                const uint8_t *buffer,
+                                size_t buffer_size,
+                                uint8_t type)
+{
+    if ((NULL == parser) ||
+        (NULL == buffer) ||
+        (NULL == parser->state) ||
+        (0 == parser->max_depth)) {
+        return false;
+    }
 
+    parser->cb          = NULL;
+    parser->cb_context  = NULL;
+    parser->buffer      = buffer;
+    parser->buffer_size = buffer_size;
+    parser->error_flags = BINSON_ERROR_NONE;
+    parser->type        = type;
+
+    return binson_parser_reset(parser);
+}
 
 static bool _parse_integer(bbuf *length_data, int64_t *value, bool check_boundaries)
 {
@@ -871,7 +848,6 @@ static bool _advance_parsing(binson_parser *parser, uint8_t scan_flags, bbuf *sc
     uint_fast8_t orig_array_depth = state->array_depth;
     uint_fast8_t orig_object_depth = parser->depth;
     while (proceed) {
-
         proceed = false;
         state = &parser->state[(parser->depth > 0) ? parser->depth - 1 : 0];
 
@@ -959,7 +935,7 @@ static bool _advance_parsing(binson_parser *parser, uint8_t scan_flags, bbuf *sc
                                              BINSON_ADVANCE_LEAVE_OBJECT)) {
                     CLEARBITMASK(scan_flags, BINSON_ADVANCE_ENTER_OBJECT);
                     parser->buffer_used += 1;
-                    if (parser->depth < BINSON_PARSER_MAX_DEPTH) {
+                    if (parser->depth < UINT8_MAX && parser->depth < parser->max_depth) {
                         parser->depth++;
                         parser->current_state = &parser->state[parser->depth - 1];
                         state = parser->current_state;

@@ -11,7 +11,7 @@
 int main(void)
 {
     uint8_t binson_bytes[11] = "\x40\x14\x00\x14\x00\x14\x01\x41\x10\x43\x41";
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     double dval; (void) dval;
     int64_t intval; (void) intval;
     bool boolval; (void) boolval;

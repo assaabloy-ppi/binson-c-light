@@ -257,7 +257,7 @@ bool binson_writer_verify(binson_writer *writer)
     if (NULL == writer) {
         return false;
     }
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     if (!binson_parser_init(&p, writer->buffer, writer->buffer_used)) {
         return false;
     }

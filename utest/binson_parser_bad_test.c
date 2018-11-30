@@ -28,7 +28,7 @@ TEST(bad_binson_only_field_name)
     uint8_t buffer[5] = { /* 4014010041*/
         0x40, 0x14, 0x01, 0x00, 0x41
     };
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     
     binson_parser_init(&p, buffer, sizeof(buffer));
     ASSERT_FALSE(binson_parser_verify(&p));

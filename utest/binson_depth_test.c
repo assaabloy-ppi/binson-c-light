@@ -14,7 +14,7 @@
 #include <string.h>
 
 #include "binson_defines.h"
-#include "binson_writer.h"
+#include "binson_parser.h"
 #include "utest.h"
 
 /*======= Local Macro Definitions ===========================================*/
@@ -31,17 +31,27 @@ TEST(test_different_depths)
     BINSON_PARSER_DEF(p10);
     binson_parser_init(&p10, buffer, sizeof(buffer));
     ASSERT_TRUE(p10.max_depth == 10);
-    ASSERT_TRUE(sizeof(p10data) == (sizeof(binson_state) * 10));
 
-    BINSON_PARSER_DEF(p2, 2);
+    BINSON_PARSER_DEF_DEPTH(p2, 2);
     binson_parser_init(&p2, buffer, sizeof(buffer));
     ASSERT_TRUE(p2.max_depth == 2);
-    ASSERT_TRUE(sizeof(p2data) == (sizeof(binson_state) * 2));
 
-    BINSON_PARSER_DEF(p100, 100);
+    BINSON_PARSER_DEF_DEPTH(p100, 100);
     binson_parser_init(&p100, buffer, sizeof(buffer));
     ASSERT_TRUE(p100.max_depth == 100);
-    ASSERT_TRUE(sizeof(p100data) == (sizeof(binson_state) * 100));
+
+    uint8_t two_levels[] = {
+        0x40,
+        0x14, 0x01, 0x41,
+            0x40,
+                0x14, 0x01, 0x41, 0x14, 0x01, 0x41,
+            0x41,
+        0x41
+    };
+
+    ASSERT_TRUE(binson_parser_init(&p2, two_levels, sizeof(two_levels)));
+    ASSERT_TRUE(p2.max_depth == 2);
+    ASSERT_TRUE(binson_parser_verify(&p2));
 
 }
 

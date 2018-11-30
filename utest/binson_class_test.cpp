@@ -96,7 +96,7 @@ uint8_t binson_bytes[105] = "\x40\x14\x01\x41\x14\x01\x42\x14\x01\x42\x40\x14\x0
 TEST(binson_class_test1)
 {
     size_t binson_expected_size = sizeof(binson_bytes) - 1;
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     ASSERT_TRUE(binson_parser_init(&p, binson_bytes, binson_expected_size));
     ASSERT_TRUE(binson_parser_verify(&p));
 
@@ -197,7 +197,7 @@ TEST(unsorted_writing)
 {
     uint8_t buf[64];
     binson_writer w;
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
 
     Binson b;
     b.put("a", 1);
@@ -219,7 +219,7 @@ TEST(unsorted_writing)
 TEST(serialize_vector)
 {
     size_t binson_expected_size = sizeof(binson_bytes) - 1;
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     ASSERT_TRUE(binson_parser_init(&p, binson_bytes, binson_expected_size));
     ASSERT_TRUE(binson_parser_verify(&p));
 
