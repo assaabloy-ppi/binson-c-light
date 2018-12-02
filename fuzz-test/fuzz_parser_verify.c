@@ -88,6 +88,7 @@ static int __main(int argc, char **argv)
         }
     }
 
+    free(state);
     free(buffer_cpy);
 
     return (ret) ? 0 : -1;
