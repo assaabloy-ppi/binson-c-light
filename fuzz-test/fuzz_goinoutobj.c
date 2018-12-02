@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 static bool parse_binson(uint8_t *buffer, uint32_t size)
 {
 
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
 
     binson_parser_init(&p, buffer, size);
     VERIFY(binson_parser_go_into_object(&p));

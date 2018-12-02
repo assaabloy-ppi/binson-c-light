@@ -151,10 +151,11 @@ bool binson_parser_verify(binson_parser *parser)
         return false;
     }
 
-    bool ret = _advance(parser, BINSON_ADVANCE_VERIFY);
+    bool ret = _advance(parser, BINSON_ADVANCE_VERIFY) && (BINSON_ERROR_NONE == parser->error_flags);
     ret = ((false == ret) && (BINSON_ERROR_NONE == parser->error_flags));
-
-    binson_parser_reset(parser);
+    if (ret) {
+        binson_parser_reset(parser);
+    }
     return ret;
 }
 

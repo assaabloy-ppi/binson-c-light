@@ -53,6 +53,11 @@ TEST(test_different_depths)
     ASSERT_TRUE(p2.max_depth == 2);
     ASSERT_TRUE(binson_parser_verify(&p2));
 
+    ASSERT_TRUE(binson_parser_reset(&p2));
+    p2.max_depth = 1;
+    ASSERT_FALSE(binson_parser_verify(&p2));
+    ASSERT_TRUE(p2.error_flags == BINSON_ERROR_MAX_DEPTH);
+
 }
 
 /*======= Main function =====================================================*/
