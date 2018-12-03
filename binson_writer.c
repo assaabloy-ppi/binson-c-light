@@ -7,7 +7,6 @@
 
 /*======= Includes ==========================================================*/
 
-#include <string.h>
 #include "binson_writer.h"
 
 /*======= Local Macro Definitions ===========================================*/
@@ -86,11 +85,6 @@ bool binson_write_name(binson_writer *writer, const char *name)
 bool binson_write_object_begin(binson_writer *writer)
 {
     binson_value bval;
-
-    if (NULL == writer) {
-        return false;
-    }
-
     uint8_t token = BINSON_DEF_OBJECT_BEGIN;
     bval.raw.bptr = &token;
     bval.raw.bsize = 1;
@@ -100,11 +94,6 @@ bool binson_write_object_begin(binson_writer *writer)
 bool binson_write_object_end(binson_writer *writer)
 {
     binson_value bval;
-
-    if (NULL == writer) {
-        return false;
-    }
-
     uint8_t token = BINSON_DEF_OBJECT_END;
     bval.raw.bptr = &token;
     bval.raw.bsize = 1;
@@ -114,11 +103,6 @@ bool binson_write_object_end(binson_writer *writer)
 bool binson_write_array_begin(binson_writer *writer)
 {
     binson_value bval;
-
-    if (NULL == writer) {
-        return false;
-    }
-
     uint8_t token = BINSON_DEF_ARRAY_BEGIN;
     bval.raw.bptr = &token;
     bval.raw.bsize = 1;
@@ -128,11 +112,6 @@ bool binson_write_array_begin(binson_writer *writer)
 bool binson_write_array_end(binson_writer *writer)
 {
     binson_value bval;
-
-    if (NULL == writer) {
-        return false;
-    }
-
     uint8_t token = BINSON_DEF_ARRAY_END;
     bval.raw.bptr = &token;
     bval.raw.bsize = 1;
@@ -142,11 +121,6 @@ bool binson_write_array_end(binson_writer *writer)
 bool binson_write_boolean(binson_writer *writer, bool value)
 {
     binson_value bval;
-
-    if (NULL == writer) {
-        return false;
-    }
-
     uint8_t token = (value) ? BINSON_DEF_TRUE : BINSON_DEF_FALSE;
     bval.raw.bptr = &token;
     bval.raw.bsize = 1;
@@ -156,11 +130,6 @@ bool binson_write_boolean(binson_writer *writer, bool value)
 bool binson_write_integer(binson_writer *writer, int64_t value)
 {
     binson_value bval;
-
-    if (NULL == writer) {
-        return false;
-    }
-
     bval.integer_value = value;
     return _write_token(writer, &bval, BINSON_TYPE_INTEGER);
 }
@@ -168,11 +137,6 @@ bool binson_write_integer(binson_writer *writer, int64_t value)
 bool binson_write_double(binson_writer *writer, double value)
 {
     binson_value bval;
-
-    if (NULL == writer) {
-        return false;
-    }
-
     bval.double_value = value;
     return _write_token(writer, &bval, BINSON_TYPE_DOUBLE);
 }
@@ -182,39 +146,16 @@ bool binson_write_string_with_len(binson_writer *writer,
                                   size_t length)
 {
     binson_value bval;
-
-    if (NULL == writer) {
-        return false;
-    }
-
-    bval.string_value.bptr = (const uint8_t *) value;
-    bval.string_value.bsize = length;
-
-    if (bval.string_value.bsize > INT32_MAX) {
-        writer->error_flags = BINSON_ERROR_FORMAT;
-        return false;
-    }
-
+    bval.bytes_value.bptr = (const uint8_t *) value;
+    bval.bytes_value.bsize = length;
     return _write_token(writer, &bval, BINSON_TYPE_STRING);
 }
 
 bool binson_write_bytes(binson_writer *writer, const uint8_t *pbuf, size_t length)
 {
     binson_value bval;
-
-    if (NULL == writer) {
-        return false;
-    }
-
-
     bval.bytes_value.bptr = pbuf;
     bval.bytes_value.bsize = length;
-
-    if (bval.bytes_value.bsize > INT32_MAX) {
-        writer->error_flags = BINSON_ERROR_FORMAT;
-        return false;
-    }
-
     return _write_token(writer, &bval, BINSON_TYPE_BYTES);
 }
 
@@ -308,6 +249,10 @@ static bool _write_token(binson_writer *writer,
                          binson_type type)
 {
 
+    if (NULL == writer) {
+        return false;
+    }
+
     uint8_t pack_buffer[sizeof(int64_t) + 1];
     bbuf value_descriptor;
     value_descriptor.bsize = 0;
@@ -342,12 +287,14 @@ static bool _write_token(binson_writer *writer,
                                                     true);
             return _write(writer, &value_descriptor);
         case BINSON_TYPE_STRING:
-            pack_buffer[0] = BINSON_DEF_STRINGLEN_INT8;
-            value_data.bptr = value->string_value.bptr;
-            value_data.bsize = value->string_value.bsize;
-            break;
         case BINSON_TYPE_BYTES:
-            pack_buffer[0] = BINSON_DEF_BYTESLEN_INT8;
+            pack_buffer[0] = BINSON_DEF_STRINGLEN_INT8;
+            if (BINSON_TYPE_BYTES == type) {
+                pack_buffer[0] = BINSON_DEF_BYTESLEN_INT8;
+            }
+            if (value->bytes_value.bsize > INT32_MAX) {
+                writer->error_flags = BINSON_ERROR_FORMAT;
+            }
             value_data.bptr = value->bytes_value.bptr;
             value_data.bsize = value->bytes_value.bsize;
             break;
@@ -389,7 +336,7 @@ static bool _write(binson_writer *writer, bbuf *data)
     if (writer->error_flags == BINSON_ERROR_NONE) {
         memmove(&writer->buffer[writer->buffer_used], data->bptr, data->bsize);
     }
-    
+
     writer->buffer_used += data->bsize;
     return (writer->error_flags == BINSON_ERROR_NONE);
 }

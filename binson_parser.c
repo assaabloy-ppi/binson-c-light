@@ -175,9 +175,6 @@ bool binson_parser_next(binson_parser *parser)
 
 bool binson_parser_next_ensure(binson_parser *parser, binson_type field_type)
 {
-    if (NULL == parser) {
-        return false;
-    }
 
     if (!binson_parser_next(parser)) {
         return false;
@@ -205,8 +202,7 @@ binson_type binson_parser_get_type(binson_parser *parser)
 bool binson_parser_field(binson_parser *parser,
                          const char *field_name)
 {
-    if ((NULL != parser) &&
-        (NULL != field_name)) {
+    if (NULL != field_name) {
         return binson_parser_field_with_length(parser,
                                                field_name,
                                                strlen(field_name));
@@ -248,8 +244,7 @@ bool binson_parser_field_ensure(binson_parser *parser,
                                const char *field_name,
                                binson_type field_type)
 {
-    if ((NULL != parser) &&
-        (NULL != field_name)) {
+    if (NULL != field_name) {
         return binson_parser_field_ensure_with_length(parser,
                                                       field_name,
                                                       strlen(field_name),
