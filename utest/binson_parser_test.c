@@ -125,6 +125,7 @@ TEST(parse_bad_name_length)
 
     ASSERT_TRUE(binson_parser_init(&parser, buffer0, sizeof(buffer0)));
     ASSERT_FALSE(binson_parser_verify(&parser));
+    binson_parser_reset(&parser);
     ASSERT_TRUE(binson_parser_go_into_object(&parser));
     ASSERT_FALSE(binson_parser_next(&parser));
     ASSERT_TRUE(BINSON_ERROR_FORMAT == parser.error_flags);
@@ -138,6 +139,7 @@ TEST(parse_bad_name_length)
     };
     ASSERT_TRUE(binson_parser_init(&parser, buffer1, sizeof(buffer1)));
     ASSERT_FALSE(binson_parser_verify(&parser));
+    binson_parser_reset(&parser);
     ASSERT_TRUE(binson_parser_go_into_object(&parser));
     ASSERT_FALSE(binson_parser_next(&parser));
     ASSERT_TRUE(BINSON_ERROR_RANGE == parser.error_flags);
