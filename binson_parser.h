@@ -31,7 +31,9 @@ extern "C" {
         .buffer_used = 0,                           \
         .buffer = NULL,                             \
         .error_flags = BINSON_ERROR_NONE,           \
-        .state = (binson_state [user_depth]) {{0}}, \
+        .state = (binson_state [user_depth]) {{     \
+            .current_value = { 0 }                  \
+        }},                                         \
         .current_state = NULL,                      \
         .cb = NULL,                                 \
         .cb_context = NULL                          \
@@ -56,9 +58,9 @@ extern "C" {
 /*======= Type Definitions and declarations =================================*/
 
 typedef struct binson_state_s {
-    binson_type     current_type;
     binson_value    current_value;
     bbuf            current_name;
+    binson_type     current_type;
     uint16_t        flags;
     uint_fast8_t    array_depth;
 } binson_state;

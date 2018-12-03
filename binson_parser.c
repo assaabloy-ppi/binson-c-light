@@ -151,7 +151,7 @@ bool binson_parser_verify(binson_parser *parser)
         return false;
     }
 
-    bool ret = _advance(parser, BINSON_ADVANCE_VERIFY) && (BINSON_ERROR_NONE == parser->error_flags);
+    bool ret = _advance(parser, BINSON_ADVANCE_VERIFY);
     ret = ((false == ret) && (BINSON_ERROR_NONE == parser->error_flags));
     if (ret) {
         binson_parser_reset(parser);
@@ -329,9 +329,12 @@ bool binson_parser_leave_array(binson_parser *parser)
 bbuf *binson_parser_get_name(binson_parser *parser)
 {
     if ((NULL != parser) &&
-        (BINSON_ERROR_NONE == parser->error_flags) &&
-        (NULL != parser->current_state)) {
-        return &parser->current_state->current_name;
+        (BINSON_ERROR_NONE == parser->error_flags)) {
+        if ((NULL != parser->current_state) &&
+            (NULL != parser->current_state->current_name.bptr)) {
+            return &parser->current_state->current_name;
+        }
+        parser->error_flags = BINSON_ERROR_STATE;
     }
     return NULL;
 }
