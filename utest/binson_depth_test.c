@@ -22,6 +22,11 @@
 /*======= Local variable declarations =======================================*/
 /*======= Test cases ========================================================*/
 
+static binson_parser static_parser = BINSON_PARSER(5);
+struct my_struct {
+    binson_parser p;
+};
+
 TEST(test_different_depths)
 {
 
@@ -58,6 +63,27 @@ TEST(test_different_depths)
     ASSERT_FALSE(binson_parser_verify(&p2));
     ASSERT_TRUE(p2.error_flags == BINSON_ERROR_MAX_DEPTH);
 
+    ASSERT_TRUE(binson_parser_init(&static_parser, two_levels, sizeof(two_levels)));
+    ASSERT_TRUE(binson_parser_verify(&static_parser));
+
+    BINSON_PARSER_DEF_STATIC(tmp);
+    ASSERT_TRUE(binson_parser_init(&tmp, two_levels, sizeof(two_levels)));
+    ASSERT_TRUE(binson_parser_verify(&tmp));
+
+    struct my_struct test = {
+        .p = BINSON_PARSER(5)
+    };
+    ASSERT_TRUE(binson_parser_init(&test.p, two_levels, sizeof(two_levels)));
+    ASSERT_TRUE(binson_parser_verify(&test.p));
+
+    struct my_struct test1 = {
+        .p = BINSON_PARSER(5)
+    };
+    struct my_struct test2 = {
+        .p = BINSON_PARSER(10)
+    };
+    ASSERT_TRUE(test1.p.max_depth == 5);
+    ASSERT_TRUE(test2.p.max_depth == 10);
 }
 
 /*======= Main function =====================================================*/

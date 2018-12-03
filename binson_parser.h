@@ -18,6 +18,25 @@ extern "C" {
 
 /*======= Public macro definitions ==========================================*/
 
+/*
+ * Only works for c99 (and later?)
+ * Not c++.
+ */
+#define BINSON_PARSER(user_depth)                   \
+    {                                               \
+        .type = 0,                                  \
+        .depth = 0,                                 \
+        .max_depth = user_depth,                    \
+        .buffer_size = 0,                           \
+        .buffer_used = 0,                           \
+        .buffer = NULL,                             \
+        .error_flags = BINSON_ERROR_NONE,           \
+        .state = (binson_state [user_depth]) {{0}}, \
+        .current_state = NULL,                      \
+        .cb = NULL,                                 \
+        .cb_context = NULL                          \
+    }
+
 #define BINSON_PARSER_DEFAULT_DEPTH     (10U)
 #define BINSON_PARSER_DEF_DEPTH(p, depth)           \
     binson_state p##data##__LINE__[depth];          \
@@ -26,6 +45,13 @@ extern "C" {
     p.state = p##data##__LINE__
 #define BINSON_PARSER_DEF(p) \
     BINSON_PARSER_DEF_DEPTH(p, BINSON_PARSER_DEFAULT_DEPTH)
+#define BINSON_PARSER_DEF_DEPTH_STATIC(p, depth)    \
+    static binson_state p##data##__LINE__[depth];   \
+    static binson_parser p;                         \
+    p.max_depth = depth;                            \
+    p.state = p##data##__LINE__
+#define BINSON_PARSER_DEF_STATIC(p) \
+    BINSON_PARSER_DEF_DEPTH_STATIC(p, BINSON_PARSER_DEFAULT_DEPTH)
 
 /*======= Type Definitions and declarations =================================*/
 
