@@ -14,10 +14,6 @@ extern "C" {
 
 /*======= Includes ==========================================================*/
 
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-
 #include "binson_parser.h"
 
 /*======= Public macro definitions ==========================================*/

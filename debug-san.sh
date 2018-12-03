@@ -3,8 +3,8 @@
 mkdir -p DebugSan
 cd DebugSan
 cmake -DCMAKE_BUILD_TYPE=Debug -DSANITIZE_ADDRESS=On -DSANITIZE_UNDEFINED=On ..
-make -j
-ctest
+make -j8
+ctest -j8
 
 for executable in fuzz_parser_verify fuzz_defined fuzz_goinoutobj fuzz_goinoutarr;
 do
@@ -13,13 +13,12 @@ do
     do
         ./DebugSan/r_$executable < $file > /dev/null
     done
-    
+
 done
 
 mkdir -p coverage
 lcov --base-directory . \
     --directory . \
     --capture --output-file coverage/coverage.info
-
 genhtml -o coverage coverage/coverage.info
 printf "Coverage report in $(pwd)/coverage/index.html\n"

@@ -15,7 +15,7 @@ extern "C" {
  * string     = stringLen utf
  * bytes      = bytesLen raw
  * boolean    = true / false
- * 
+ *
  * begin      = %x40
  * end        = %x41
  * beginArray = %x42
@@ -26,7 +26,7 @@ extern "C" {
  * integer    = %x10 int8 / %x11 int16 / %x12 int32 / %x13 int64
  * stringLen  = %x14 int8 / %x15 int16 / %x16 int32
  * bytesLen   = %x18 int8 / %x19 int16 / %x1a int32
- * 
+ *
  * float64    = 8OCTET ; double precision floation point number [IEEE-754]
  * int8       = 1OCTET ;  8-bit signed two's complement integer
  * int16      = 2OCTET ; 16-bit signed two's complement integer
@@ -41,7 +41,8 @@ extern "C" {
 
 #include <inttypes.h>
 #include <stdbool.h>
-#include <stdlib.h>
+#include <stddef.h>
+#include <string.h>
 
 /*======= Public macro definitions ==========================================*/
 

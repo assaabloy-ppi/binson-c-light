@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <float.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "binson_defines.h"
 #include "binson_writer.h"
@@ -24,7 +25,7 @@
 
 TEST(valid_init)
 {
-    
+
     binson_writer writer;
     uint8_t buffer[2] = { BINSON_DEF_OBJECT_BEGIN , BINSON_DEF_OBJECT_END };
     ASSERT_TRUE(binson_writer_init(&writer, buffer, sizeof(buffer)));
@@ -33,7 +34,7 @@ TEST(valid_init)
 
 TEST(invalid_init_null_ptr)
 {
-    
+
     binson_writer writer;
     uint8_t buffer[2] = { BINSON_DEF_OBJECT_BEGIN , BINSON_DEF_OBJECT_END };
     ASSERT_FALSE(binson_writer_init(NULL, buffer, sizeof(buffer)));

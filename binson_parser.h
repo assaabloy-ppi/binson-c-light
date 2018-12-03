@@ -19,20 +19,14 @@ extern "C" {
 /*======= Public macro definitions ==========================================*/
 
 #define BINSON_PARSER_DEFAULT_DEPTH     (10U)
-#define _BP_DEF2(p, depth)                          \
-    binson_state p##data##__LINE__[depth];          \
-    binson_parser p;                                \
-    p.max_depth = depth;                            \
-    p.state = p##data##__LINE__
-#define _BP_DEF1(p) _BP_DEF2(p, BINSON_PARSER_DEFAULT_DEPTH)
-#define _BP_GETMACRO(_1, _2, NAME, ...) NAME
-//#define BINSON_PARSER_DEF(...) _BP_GETMACRO(__VA_ARGS__, _BP_DEF2, _BP_DEF1)(__VA_ARGS__)
 #define BINSON_PARSER_DEF_DEPTH(p, depth)           \
     binson_state p##data##__LINE__[depth];          \
     binson_parser p;                                \
     p.max_depth = depth;                            \
     p.state = p##data##__LINE__
-#define BINSON_PARSER_DEF(p) BINSON_PARSER_DEF_DEPTH(p, BINSON_PARSER_DEFAULT_DEPTH)
+#define BINSON_PARSER_DEF(p) \
+    BINSON_PARSER_DEF_DEPTH(p, BINSON_PARSER_DEFAULT_DEPTH)
+
 /*======= Type Definitions and declarations =================================*/
 
 typedef struct binson_state_s {
@@ -171,12 +165,7 @@ binson_type binson_parser_get_type(binson_parser *parser);
 /**
  * @brief Parses until a field is found (or not found) in an object.
  *        This is a macro for binson_parser_field_with_length so be
- *        careful to not input a pointer as the argument field_name.
- *        The length of the field name is determined using sizeof("string")-1
- *        and not strlen().
- *        I.e., if the field name is a pointer, the length will be the size of a pointer.
- *        If the data field name points to is shorter than a pointer, a memory read out
- *        of the limit will be caused.
+ *        careful that the field name pointer is NULL terminated.
  *
  * Example usage:
  *
@@ -186,12 +175,6 @@ binson_type binson_parser_get_type(binson_parser *parser);
  *    // Field "foo" exists"
  *  }
  *
- *  // Not ok
- *  binson_parser p;
- *  char *field_name_from_external_string;
- *  if (binson_parser_field(&p, field_name_from_external_string)) {
- *    // Might cause crash
- *  }
  *
  * @param parser      Pointer to binson parser structure.
  * @param field_name  String (not a pointer) with field name.
@@ -199,8 +182,8 @@ binson_type binson_parser_get_type(binson_parser *parser);
  * @return true   The field name was present in the object.
  * @return false  The field name could be found (or was already found previous).
  */
-
-#define binson_parser_field(p, f) binson_parser_field_with_length(p, f, sizeof(f)-1)
+bool binson_parser_field(binson_parser *parser,
+                         const char *field_name);
 
 /**
  * @brief Parses until a field is found (or not found) in an object.
@@ -230,7 +213,6 @@ bool binson_parser_field_with_length(binson_parser *parser,
 bool binson_parser_field_ensure(binson_parser *parser,
                                const char *field_name,
                                binson_type field_type);
-#define binson_parser_field_ensure(p, f, t) binson_parser_field_ensure_with_length(p, f, sizeof(f)-1, t)
 
 /**
  * @brief [brief description]

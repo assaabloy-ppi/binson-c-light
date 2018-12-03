@@ -29,6 +29,14 @@ TEST(valid_init)
     uint8_t buffer[2] = { BINSON_DEF_OBJECT_BEGIN , BINSON_DEF_OBJECT_END };
     ASSERT_TRUE(binson_parser_init(&parser, buffer, sizeof(buffer)));
 
+
+    parser.type = 4;
+    ASSERT_FALSE(binson_parser_reset(&parser));
+
+    ASSERT_FALSE(binson_parser_field(NULL, "a"));
+    ASSERT_FALSE(binson_parser_field(&parser, NULL));
+    ASSERT_FALSE(binson_parser_field(NULL, NULL));
+
 }
 
 TEST(invalid_init_null_ptr)
@@ -295,7 +303,9 @@ TEST(one_nested)
     binson_parser_init(&p, buffer2, sizeof(buffer2));
     ASSERT_TRUE(binson_parser_verify(&p));
     ASSERT_TRUE(binson_parser_go_into_object(&p));
+
     ASSERT_TRUE(binson_parser_field_ensure(&p, "B", BINSON_TYPE_ARRAY));
+    ASSERT_FALSE(binson_parser_field(&p, "A"));
     ASSERT_TRUE(binson_parser_field_ensure(&p, "C", BINSON_TYPE_OBJECT));
 
 }
@@ -804,10 +814,10 @@ TEST(null_args)
     ASSERT_FALSE(binson_parser_field_with_length(NULL, "A", 1));
     ASSERT_FALSE(binson_parser_field_with_length(&p, NULL, 1));
     ASSERT_FALSE(binson_parser_field_with_length(NULL, NULL, 1));
-
+    char *tmp = NULL;
     ASSERT_FALSE(binson_parser_field_ensure(NULL, "A", BINSON_ID_STRING));
-    ASSERT_FALSE(binson_parser_field_ensure(&p, NULL, BINSON_ID_STRING));
-    ASSERT_FALSE(binson_parser_field_ensure(NULL, NULL, BINSON_ID_STRING));
+    ASSERT_FALSE(binson_parser_field_ensure(&p, tmp, BINSON_ID_STRING));
+    ASSERT_FALSE(binson_parser_field_ensure(NULL, tmp, BINSON_ID_STRING));
 
     ASSERT_FALSE(binson_parser_go_into_object(NULL));
     ASSERT_FALSE(binson_parser_leave_object(NULL));
@@ -930,6 +940,8 @@ TEST(optional_field)
     binson_parser_init(&p, with_optional, sizeof(with_optional));
     ASSERT_TRUE(binson_parser_verify(&p));
     ASSERT_TRUE(binson_parser_go_into_object(&p));
+    ASSERT_TRUE(1 == binson_parser_get_depth(&p));
+    ASSERT_TRUE(0 == binson_parser_get_depth(NULL));
     ASSERT_TRUE(binson_parser_field(&p, "classic"));
     ASSERT_TRUE(binson_parser_get_boolean(&p));
     ASSERT_TRUE(binson_parser_field(&p, "evolved"));
@@ -985,6 +997,36 @@ TEST(get_raw)
     ASSERT_TRUE(memcmp(raw.bptr, &buffer[5], 10) == 0);
 }
 
+TEST(for_coverage)
+{
+    uint8_t buffer[] = {
+        0x40,
+            0x14, 0x01, 0x41,
+            0x40, 0x43,
+        0x41
+    };
+    BINSON_PARSER_DEF(p);
+    ASSERT_TRUE(binson_parser_init(&p, buffer, sizeof(buffer)));
+    ASSERT_TRUE(binson_parser_go_into_object(&p));
+    ASSERT_TRUE(binson_parser_field(&p, "A"));
+    bbuf raw;
+    ASSERT_FALSE(binson_parser_get_raw(&p, &raw));
+
+    uint8_t buffer2[] = {
+        0x40,
+            0x14, 0x01, 0x41,
+            0x42, 0x41,
+        0x41
+    };
+    ASSERT_TRUE(binson_parser_init(&p, buffer2, sizeof(buffer2)));
+    ASSERT_TRUE(binson_parser_go_into_object(&p));
+    ASSERT_TRUE(binson_parser_field(&p, "A"));
+    ASSERT_FALSE(binson_parser_get_raw(&p, &raw));
+
+    ASSERT_FALSE(binson_parser_string_equals(&p, "B"));
+
+}
+
 /*======= Main function =====================================================*/
 
 int main(void) {
@@ -1014,6 +1056,7 @@ int main(void) {
     RUN_TEST(object_first_element_in_array);
     RUN_TEST(optional_field);
     RUN_TEST(get_raw);
+    RUN_TEST(for_coverage);
     PRINT_RESULT();
 }
 

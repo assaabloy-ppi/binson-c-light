@@ -88,7 +88,7 @@ bool binson_parser_init_object(binson_parser *parser,
 bool binson_parser_init_array(binson_parser *parser,
                               const uint8_t *buffer,
                               size_t buffer_size)
-{   
+{
     return _binson_parser_init(parser, buffer, buffer_size, BINSON_PTYPE_ARRAY);
 }
 
@@ -202,6 +202,18 @@ binson_type binson_parser_get_type(binson_parser *parser)
     return BINSON_TYPE_NONE;
 }
 
+bool binson_parser_field(binson_parser *parser,
+                         const char *field_name)
+{
+    if ((NULL != parser) &&
+        (NULL != field_name)) {
+        return binson_parser_field_with_length(parser,
+                                               field_name,
+                                               strlen(field_name));
+    }
+    return false;
+}
+
 bool binson_parser_field_with_length(binson_parser *parser, const char *field_name, size_t length)
 {
     if (NULL == parser) {
@@ -224,6 +236,7 @@ bool binson_parser_field_with_length(binson_parser *parser, const char *field_na
             return true;
         }
         else if (r < 0) {
+            /* Necessary? */
             break;
         }
     }
@@ -231,6 +244,19 @@ bool binson_parser_field_with_length(binson_parser *parser, const char *field_na
     return false;
 }
 
+bool binson_parser_field_ensure(binson_parser *parser,
+                               const char *field_name,
+                               binson_type field_type)
+{
+    if ((NULL != parser) &&
+        (NULL != field_name)) {
+        return binson_parser_field_ensure_with_length(parser,
+                                                      field_name,
+                                                      strlen(field_name),
+                                                      field_type);
+    }
+    return false;
+}
 
 bool binson_parser_field_ensure_with_length(binson_parser *parser,
                                             const char *field_name,
