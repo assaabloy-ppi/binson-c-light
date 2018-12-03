@@ -228,8 +228,10 @@ bool binson_parser_field_with_length(binson_parser *parser,
                                      size_t length);
 
 /**
- * @brief [brief description]
- * @details [long description]
+ * @brief See \ref @binson_parser_field_ensure_with_length
+ * @details Exactly as \reg @binson_parser_field_ensure_with_length
+ *          but will use strlen to determine the length of the field
+ *          name.
  *
  * @param parser Pointer to binson parser structure.
  * @param field_name [description]
@@ -241,13 +243,25 @@ bool binson_parser_field_ensure(binson_parser *parser,
                                binson_type field_type);
 
 /**
- * @brief [brief description]
- * @details [long description]
+ * @brief Parses a field and verifies the type.
  *
- * @param parser Pointer to binson parser structure.
- * @param field_name [description]
- * @param field_type [description]
- * @return [description]
+ * @details Parses a field and verifies the type. If the field
+ *          name doesn't exists it will stop if any field name
+ *          greated than the searched on comes up.
+ *
+ *          If the correct field name comes up but with wrong
+ *          type it will also stop.
+ *
+ *          See \ref @binson_parser_field
+ *
+ * @param parser      Pointer to binson parser structure.
+ * @param field_name  Pointer to string with the field name.
+ * @param length      Length of the field name.
+ * @param field_type  Field type.
+ *
+ * @return true   The field with the given type was found in the object.
+ * @return false  The field with the given type could not be found.
+ *                See parser->error_flags for errors.
  */
 bool binson_parser_field_ensure_with_length(binson_parser *parser,
                                             const char *field_name,
@@ -255,21 +269,23 @@ bool binson_parser_field_ensure_with_length(binson_parser *parser,
                                             binson_type field_type);
 
 /**
- * @brief [brief description]
- * @details [long description]
+ * @brief Enters a binson object.
+ * @details If the current field is a binson object, enter it.
+ *          Also, this must be called at the initial state of
+ *          parsing a binson object.
  *
- * @param p [description]
- * @return [description]
+ * @param parser      Pointer to binson parser structure.
+ * @return true   The binson object could be entered.
+ * @return false  The binson object could not be entered.
  */
 bool binson_parser_go_into_object(binson_parser *parser);
 
 /**
- * @brief [brief description]
- * @details [long description]
+ * @brief Leaves the current binson object.
  *
- * @param p [description]
- * @return [description]
- */
+ * @param parser      Pointer to binson parser structure.
+ * @return true   The binson object could be leaved.
+ * @return false  The binson object could not be leaved. */
 bool binson_parser_leave_object(binson_parser *parser);
 
 /**
