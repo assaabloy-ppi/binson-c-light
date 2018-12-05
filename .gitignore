@@ -1,6 +1,9 @@
 DebugSan
 Debug
 build
+html
+dummy
+dummy.c
 
  Object files
 *.o

@@ -278,7 +278,9 @@ bool binson_parser_field_ensure_with_length(binson_parser *parser,
                                             size_t length,
                                             binson_type field_type)
 {
-    if (binson_parser_field_with_length(parser, field_name, length)) {
+
+    if ((NULL != parser) && 
+        binson_parser_field_with_length(parser, field_name, length)) {
         if (field_type == binson_parser_get_type(parser)) {
             return true;
         }
@@ -862,7 +864,7 @@ static bool _advance_parsing(binson_parser *parser, uint8_t scan_flags, bbuf *sc
 
     bbuf consumed;
     uint16_t next_state;
-    size_t bytes_consumed;
+    size_t bytes_consumed = 0;
     bool proceed = true;
     binson_state *state = parser->current_state;
     uint_fast8_t orig_array_depth = state->array_depth;

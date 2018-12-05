@@ -123,6 +123,31 @@ TEST(writer_should_give_required_size)
     free(buffer);
 }
 
+TEST(write_string)
+{
+    uint8_t buffer[100];
+    const char *str = "Hello world";
+
+    binson_writer w;
+
+    ASSERT_TRUE(binson_writer_init(&w, buffer, sizeof(buffer)));
+    ASSERT_TRUE(binson_write_object_begin(&w));
+    ASSERT_TRUE(binson_write_name(&w, "A"));
+    ASSERT_TRUE(binson_write_string(&w, str));
+    ASSERT_TRUE(binson_write_object_end(&w));
+
+    binson_parser p;
+    bbuf *b;
+    ASSERT_TRUE(binson_parser_init(&p, buffer, binson_writer_get_counter(&w)));
+    ASSERT_TRUE(binson_parser_go_into_object(&p));
+    ASSERT_TRUE(binson_parser_next(&p));
+    b = binson_parser_get_string_bbuf(&p);
+    ASSERT(b != NULL);
+    ASSERT_TRUE(b->bsize == strlen(str));
+    ASSERT_TRUE(memcmp(str, b->bptr, strlen(str)) == 0);
+    ASSERT_TRUE(binson_parser_leave_object(&p));
+}
+
 /*======= Main function =====================================================*/
 
 int main(void) {
@@ -131,6 +156,7 @@ int main(void) {
     RUN_TEST(test_0);
     RUN_TEST(error_should_be_reported);
     RUN_TEST(writer_should_give_required_size);
+    RUN_TEST(write_string);
     PRINT_RESULT();
 }
 

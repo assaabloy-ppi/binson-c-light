@@ -24,7 +24,7 @@
 
 TEST(valid_init)
 {
-    
+
     binson_parser parser;
     uint8_t buffer[2] = { BINSON_DEF_OBJECT_BEGIN , BINSON_DEF_OBJECT_END };
     ASSERT_TRUE(binson_parser_init(&parser, buffer, sizeof(buffer)));
@@ -33,7 +33,7 @@ TEST(valid_init)
 
 TEST(invalid_init_null_ptr)
 {
-    
+
     binson_parser parser;
     uint8_t buffer[2] = { BINSON_DEF_OBJECT_BEGIN , BINSON_DEF_OBJECT_END };
     ASSERT_FALSE(binson_parser_init(NULL, buffer, sizeof(buffer)));
@@ -43,7 +43,7 @@ TEST(invalid_init_null_ptr)
 
 TEST(invalid_init_buffer_to_small)
 {
-    
+
     binson_parser parser;
     uint8_t buffer[2] = { BINSON_DEF_OBJECT_BEGIN , BINSON_DEF_OBJECT_END };
     ASSERT_FALSE(binson_parser_init(&parser, buffer, BINSON_OBJECT_MINIMUM_SIZE - 1));
@@ -52,10 +52,10 @@ TEST(invalid_init_buffer_to_small)
 
 TEST(invalid_init_bad_format)
 {
-    
+
     binson_parser parser;
     uint8_t buffer[2] = {
-        (uint8_t) ~BINSON_DEF_OBJECT_BEGIN , 
+        (uint8_t) ~BINSON_DEF_OBJECT_BEGIN ,
         (uint8_t) ~BINSON_DEF_OBJECT_END
     };
     ASSERT_FALSE(binson_parser_init(&parser, buffer, sizeof(buffer)));
@@ -63,7 +63,7 @@ TEST(invalid_init_bad_format)
 
 TEST(parse_empty_object)
 {
-    
+
     binson_parser parser;
     /* {} */
     uint8_t buffer[2] = { BINSON_DEF_OBJECT_BEGIN , BINSON_DEF_OBJECT_END };
@@ -75,7 +75,7 @@ TEST(parse_empty_object)
 
 TEST(parse_verify)
 {
-    
+
     binson_parser parser;
     /* {} */
     uint8_t buffer[2] = { BINSON_DEF_OBJECT_BEGIN , BINSON_DEF_OBJECT_END };
@@ -113,7 +113,7 @@ TEST(parse_verify)
 
 TEST(parse_bad_name_length)
 {
-    
+
     binson_parser parser;
     /* 0x14 >= Stringlength <= 127 */
     uint8_t buffer0[8] = {
@@ -146,10 +146,10 @@ TEST(parse_bad_name_length)
 
 TEST(parse_one_string)
 {
-    
+
     /*
      * Hexstring: 4014014114014241
-     * input = { 
+     * input = {
      *   A := "B"
      * }
      */
@@ -181,7 +181,7 @@ TEST(parse_one_string)
 
 TEST(parse_integers16)
 {
-    
+
     binson_parser parser;
     int64_t intval;
     uint8_t buffer[26] = {
@@ -233,7 +233,7 @@ TEST(parse_integers16)
     ASSERT_TRUE(binson_parser_init(&parser, buffer1, sizeof(buffer1)));
     ASSERT_TRUE(binson_parser_go_into_object(&parser));
     ASSERT_FALSE(binson_parser_field_ensure(&parser, "A", BINSON_TYPE_INTEGER));
-    ASSERT_TRUE(parser.error_flags ==  BINSON_ERROR_FORMAT);    
+    ASSERT_TRUE(parser.error_flags ==  BINSON_ERROR_FORMAT);
     ASSERT_TRUE(binson_parser_reset(&parser));
     ASSERT_TRUE(binson_parser_go_into_object(&parser));
     ASSERT_FALSE(binson_parser_next(&parser));
@@ -243,7 +243,7 @@ TEST(parse_integers16)
 
 TEST(one_nested)
 {
-    
+
     binson_parser p;
     /* {"A":{}} */
     uint8_t buffer[13] = {
@@ -301,7 +301,7 @@ TEST(one_nested)
 TEST(bad_binson)
 {
 
-    
+
     uint8_t buffer[259] = { /* 4014015840414214101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101000101010101010107f1010101010101010101010101010103110101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010108c4341*/
         0x40, 0x14, 0x01, 0x58, 0x40, 0x41, 0x42, 0x14,
         0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
@@ -348,7 +348,7 @@ TEST(bad_binson)
 
 TEST(parse_doubles)
 {
-    
+
     uint8_t buffer[62] = { /* 4014014146ffffffffffffef7f14014246000000000000100014014346000000000000000014014446ffffffffffffefff14014546000000000000108041*/
         0x40, 0x14, 0x01, 0x41, 0x46, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xef, 0x7f, 0x14, 0x01, 0x42,
@@ -389,7 +389,7 @@ TEST(parse_doubles)
 
 TEST(parse_bool)
 {
-    
+
     uint8_t buffer[10] = {
         0x40,
         0x14, 0x01, 0x41, 0x44, /* "A": true */
@@ -526,7 +526,7 @@ TEST(parse_float)
 
 TEST(test_integer_pack)
 {
-    
+
     ASSERT_FALSE(test_int16(0));
     ASSERT_FALSE(test_int16(INT8_MIN));
     ASSERT_FALSE(test_int16(INT8_MAX));
@@ -573,7 +573,7 @@ TEST(test_integer_pack)
 
 TEST(test_multi_nested)
 {
-    
+
     binson_parser p;
     /* {"A":{"A":{"A":{"A":{"A":{}}}}}, "B":1} */
     uint8_t buffer[] = {
@@ -838,7 +838,7 @@ TEST(get_raw_should_not_work_on_integer)
     ASSERT_TRUE(binson_parser_field_ensure(&p1, "A", BINSON_TYPE_INTEGER));
     ASSERT_FALSE(binson_parser_get_raw(&p1, &raw));
     binson_parser_leave_object(&p1);
-    
+
     ASSERT_FALSE(binson_parser_field_ensure(&p1, "B", BINSON_TYPE_INTEGER));
     ASSERT_FALSE(binson_parser_next_ensure(&p1, BINSON_TYPE_ARRAY));
 
@@ -847,7 +847,7 @@ TEST(get_raw_should_not_work_on_integer)
 
 TEST(object_first_element_in_array)
 {
-    /* {"A":[{"A":"A"}]} */
+    /* [{"A":["A"]}] */
     uint8_t buffer[] = {
         0x42,
             0x40,
@@ -858,7 +858,7 @@ TEST(object_first_element_in_array)
             0x41,
         0x43,
     };
-    
+
     binson_parser p;
     bool found = false;
 
@@ -893,8 +893,8 @@ TEST(optional_field)
     /*
         {
           "A": {
-          }, 
-          "classic": true, 
+          },
+          "classic": true,
           "evolved": false
         }
     */
@@ -909,7 +909,7 @@ TEST(optional_field)
         {
           "A": {
             "classic": true
-          }, 
+          },
           "evolved": false
         }
     */
@@ -960,7 +960,7 @@ TEST(get_raw)
         0x43,
         0x41
     };
-    
+
     binson_parser p;
     bbuf raw;
 
