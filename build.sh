@@ -35,11 +35,15 @@ do
 done
 
 mkdir -p coverage
-lcov --base-directory . \
-    --directory . \
+lcov -b . \
+    -d DebugSan/CMakeFiles/binson_parser.dir \
+    -d DebugSan/CMakeFiles/binson_writer.dir \
+    -d DebugSan/CMakeFiles/binson_class.dir \
+    --no-recursion \
+    --no-external \
     --capture --output-file coverage/coverage.info
-
 genhtml -o coverage coverage/coverage.info
+
 printf "Coverage report in $(pwd)/coverage/index.html\n"
 
 exit 0
