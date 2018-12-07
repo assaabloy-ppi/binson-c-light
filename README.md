@@ -101,7 +101,7 @@ Parser API usage
    * p.max_depth = 5;
    *
    */
-  BINSON_PARSER_DEF(p);
+  BINSON_PARSER_DEF(p); /* Default maximum depth = 10 */
 
   binson_parser_init(&p, src, sizeof(src));
 
@@ -127,7 +127,7 @@ Binson c++ class example
     // Serialize to binson format
     uint8_t buf[64];
     binson_writer w;
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
 
     Binson b;
     b.put("a", 123);
