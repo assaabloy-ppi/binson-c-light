@@ -960,7 +960,8 @@ static bool _advance_parsing(binson_parser *parser, uint8_t scan_flags, bbuf *sc
                                              BINSON_ADVANCE_LEAVE_OBJECT)) {
                     CLEARBITMASK(scan_flags, BINSON_ADVANCE_ENTER_OBJECT);
                     parser->buffer_used += 1;
-                    if (parser->depth < UINT8_MAX && parser->depth < parser->max_depth) {
+                    if ((parser->depth < UINT8_MAX) &&
+                        (parser->depth < parser->max_depth)) {
                         parser->depth++;
                         parser->current_state = &parser->state[parser->depth - 1];
                         state = parser->current_state;
