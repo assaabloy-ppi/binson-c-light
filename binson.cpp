@@ -242,7 +242,7 @@ void Binson::deseralizeItems(binson_parser *p)
 
 void Binson::deserialize(const std::vector<uint8_t> &data)
 {
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     clear();
 
     binson_parser_init(&p, const_cast<uint8_t*>(data.data()), data.size());
@@ -253,7 +253,7 @@ void Binson::deserialize(const std::vector<uint8_t> &data)
 
 void Binson::deserialize(const uint8_t *data, size_t size)
 {
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     clear();
 
     ifRuntimeError(binson_parser_init(&p, const_cast<uint8_t*>(data), size), "Parser init error");
@@ -271,7 +271,7 @@ void Binson::deserialize(binson_parser *p)
 
 string Binson::toStr() const
 {
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     string str;
     str.resize(10000);
     vector<uint8_t> stream = serialize();

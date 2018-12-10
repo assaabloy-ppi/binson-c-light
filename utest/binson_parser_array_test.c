@@ -27,7 +27,7 @@
 TEST(init_of_array_should_work)
 {
     uint8_t buffer[2] = { 0x42, 0x43 };
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     ASSERT_TRUE(binson_parser_init_array(&p, buffer, sizeof(buffer)));
     ASSERT_FALSE(binson_parser_init_array(&p, buffer, 0));
     ASSERT_FALSE(binson_parser_init_array(&p, buffer, 1));
@@ -49,7 +49,7 @@ TEST(init_of_array_should_work)
 TEST(verify_should_work)
 {
     uint8_t buffer[2] = { 0x42, 0x43 };
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     ASSERT_TRUE(binson_parser_init_array(&p, buffer, sizeof(buffer)));
     ASSERT_TRUE(binson_parser_verify(&p));
 }
@@ -57,7 +57,7 @@ TEST(verify_should_work)
 TEST(bad_array)
 {
     uint8_t buffer[3] = { 0x42, 0x43, 0x43 };
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     ASSERT_TRUE(binson_parser_init_array(&p, buffer, sizeof(buffer)));
     ASSERT_TRUE(binson_parser_go_into_array(&p));
     ASSERT_FALSE(binson_parser_leave_array(&p));
@@ -75,8 +75,8 @@ TEST(get_raw_array_should_work)
         0x43,
         0x41,
     };
-    binson_parser p1;
-    binson_parser p2;
+    BINSON_PARSER_DEF(p1);
+    BINSON_PARSER_DEF(p2);
     bbuf raw;
     binson_parser_init(&p1, buffer, sizeof(buffer));
     ASSERT_TRUE(binson_parser_verify(&p1));

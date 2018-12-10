@@ -21,6 +21,7 @@ endmacro(do_test_cpp)
 
 
 do_test(binson_parser_test)
+do_test(binson_depth_test)
 do_test(binson_parser_bad_test)
 do_test(binson_writer_test)
 do_test(binson_parser_ref_test)

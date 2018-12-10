@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 static bool parse_binson(const uint8_t *buffer, uint32_t size, uint16_t depth)
 {
 
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
 
     bbuf *prev_name = NULL;
     bbuf *current_name = NULL;

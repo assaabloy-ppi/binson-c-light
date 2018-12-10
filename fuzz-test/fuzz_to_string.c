@@ -47,7 +47,7 @@ static int __main(int argc, char **argv)
     }
 
     memcpy(buffer_cpy, buffer, size);
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     size_t psize = sizeof(str_buffer);
     binson_parser_init(&p, buffer, size);
     ret = binson_parser_to_string(&p, str_buffer, &psize, true);

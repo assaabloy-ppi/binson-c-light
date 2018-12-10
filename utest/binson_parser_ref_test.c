@@ -67,14 +67,14 @@ static const uint8_t binson_bytes[104] = "\x40\x14\x01\x41\x14\x01\x42\x14\x01\x
 
 TEST(verify_should_work)
 {
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     ASSERT_TRUE(binson_parser_init(&p, binson_bytes, sizeof(binson_bytes)));
     ASSERT_TRUE(binson_parser_verify(&p));
 }
 
 TEST(go_into_depth_1)
 {
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     binson_parser_init(&p, binson_bytes, sizeof(binson_bytes));
     ASSERT_TRUE(binson_parser_go_into_object(&p));
     ASSERT_TRUE(binson_parser_get_depth(&p) == 1);
@@ -82,7 +82,7 @@ TEST(go_into_depth_1)
 
 TEST(parse_one_field)
 {
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     bbuf *str;
     binson_parser_init(&p, binson_bytes, sizeof(binson_bytes));
 
@@ -140,7 +140,7 @@ TEST(parse_one_field)
 
 TEST(go_into_depth_2)
 {
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     bbuf *str;
     binson_parser_init(&p, binson_bytes, sizeof(binson_bytes));
     ASSERT_TRUE(binson_parser_go_into_object(&p));
@@ -178,7 +178,7 @@ TEST(go_into_depth_2)
 
 TEST(skip_go_into_object)
 {
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     binson_parser_init(&p, binson_bytes, sizeof(binson_bytes));
     ASSERT_TRUE(binson_parser_go_into_object(&p));
     ASSERT_TRUE(binson_parser_field_ensure(&p, "C", BINSON_TYPE_ARRAY));
@@ -186,7 +186,7 @@ TEST(skip_go_into_object)
 
 TEST(skip_go_into_array)
 {
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     binson_parser_init(&p, binson_bytes, sizeof(binson_bytes));
     ASSERT_TRUE(binson_parser_go_into_object(&p));
     ASSERT_TRUE(binson_parser_field_ensure(&p, "D", BINSON_TYPE_DOUBLE));
@@ -194,7 +194,7 @@ TEST(skip_go_into_array)
 
 TEST(go_into_array)
 {
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     bbuf *str;
     binson_parser_init(&p, binson_bytes, sizeof(binson_bytes));
     ASSERT_TRUE(binson_parser_go_into_object(&p));
@@ -223,7 +223,7 @@ TEST(go_into_array)
 
 TEST(skip_object_in_array)
 {
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     bbuf *str;
     binson_parser_init(&p, binson_bytes, sizeof(binson_bytes));
     ASSERT_TRUE(binson_parser_go_into_object(&p));
@@ -252,7 +252,7 @@ TEST(skip_object_in_array)
 
 TEST(get_raw_object)
 {
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     bbuf raw;
     bbuf *str;
     binson_parser_init(&p, binson_bytes, sizeof(binson_bytes));
@@ -260,7 +260,7 @@ TEST(get_raw_object)
     ASSERT_TRUE(binson_parser_field_ensure(&p, "B", BINSON_TYPE_OBJECT));
     ASSERT_TRUE(binson_parser_get_raw(&p, &raw));
     ASSERT_TRUE(raw.bptr != NULL && raw.bsize > 0);
-    binson_parser p2;
+    BINSON_PARSER_DEF(p2);
     ASSERT_TRUE(binson_parser_init(&p2, raw.bptr, raw.bsize));
     ASSERT_TRUE(binson_parser_go_into_object(&p2));
     ASSERT_TRUE(binson_parser_next(&p2));
@@ -276,7 +276,7 @@ TEST(get_raw_object)
 
 TEST(parse_all)
 {
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     double dval; (void) dval;
     int64_t intval; (void) intval;
     bool boolval; (void) boolval;
@@ -422,7 +422,7 @@ TEST(parse_all)
 
 TEST(print_binson)
 {
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     binson_parser_init(&p, binson_bytes, sizeof(binson_bytes));
     ASSERT_TRUE(binson_parser_print(&p));
 }

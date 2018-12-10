@@ -24,15 +24,15 @@
 
 /*
 {
-  "A": "B", 
+  "A": "B",
   "B": {
     "A": "B"
-  }, 
+  },
   "C": [
     "A",
     "A",
     {
-      "A": "B", 
+      "A": "B",
       "B": [
         "A",
         "A",
@@ -53,10 +53,10 @@
       ]
     },
     "A"
-  ], 
-  "D": 3.141592653589793, 
-  "E": false, 
-  "F": 127, 
+  ],
+  "D": 3.141592653589793,
+  "E": false,
+  "F": 127,
   "G": "0x0202"
 }
 */
@@ -67,7 +67,7 @@ static const uint8_t binson_bytes[104] = "\x40\x14\x01\x41\x14\x01\x42\x14\x01\x
 
 TEST(print_binson)
 {
-    binson_parser p;
+    BINSON_PARSER_DEF(p);
     binson_parser_init(&p, binson_bytes, sizeof(binson_bytes));
     ASSERT_TRUE(binson_parser_print(&p));
     /* Expected:
@@ -79,6 +79,15 @@ TEST(print_binson)
     size_t size = sizeof(buffer);
     ASSERT_TRUE(binson_parser_to_string(&p, buffer, &size, false));
     printf("%*.*s", 0, (int) size, buffer);
+
+    ASSERT_FALSE(binson_parser_print(NULL));
+    ASSERT_FALSE(binson_parser_to_string(NULL, buffer, &size, false));
+    ASSERT_FALSE(binson_parser_to_string(NULL, NULL, &size, false));
+    ASSERT_FALSE(binson_parser_to_string(NULL, buffer, NULL, false));
+
+    size_t to_small_size = 4;
+    ASSERT_FALSE(binson_parser_to_string(&p, buffer, &to_small_size, false));
+
 }
 
 /*======= Main function =====================================================*/

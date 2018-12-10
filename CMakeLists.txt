@@ -7,8 +7,8 @@ find_package(Sanitizers)
 
 option(BUILD_TESTS "Build tests" ON)
 
-set(CMAKE_C_FLAGS " -std=c99 -g -ggdb -Werror -Wall -Wextra -Wpedantic -Wshadow -Wcast-qual -std=c99 ")
-set(CMAKE_CXX_FLAGS " -std=c++11 -g -ggdb -Werror -Wall -Wextra -Wpedantic -Wshadow ")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -g -ggdb -Werror -Wall -Wextra -Wpedantic -Wshadow -Wcast-qual -std=c99 ")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -ggdb -Werror -Wall -Wextra -Wpedantic -Wshadow ")
 
 if(BUILD_TESTS)
     enable_testing()

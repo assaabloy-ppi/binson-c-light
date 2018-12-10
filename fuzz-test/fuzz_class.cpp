@@ -34,7 +34,7 @@ static int __main(int argc, char **argv)
     ssize_t size;
     uint8_t *buffer_cpy;
     bool ret;
-    binson_parser parser;
+    BINSON_PARSER_DEF(parser);
 
     size = read(0, buffer, sizeof(buffer));
 

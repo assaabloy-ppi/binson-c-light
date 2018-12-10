@@ -6,7 +6,7 @@
 
 static void verify_empty_object(void)
 {
-    binson_parser parser;
+    BINSON_PARSER_DEF(parser);
     /* {} */
     uint8_t buffer[2] = { BINSON_DEF_OBJECT_BEGIN , BINSON_DEF_OBJECT_END };
     assert(binson_parser_init(&parser, buffer, sizeof(buffer)));
@@ -15,7 +15,7 @@ static void verify_empty_object(void)
 
 static void verify_one_string(void)
 {
-    binson_parser parser;
+    BINSON_PARSER_DEF(parser);
     /* {"A":"B"} */
     uint8_t buffer[8] = {
         0x40,
