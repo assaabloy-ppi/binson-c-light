@@ -31,6 +31,7 @@ if(BUILD_TESTS)
   add_sanitizers(binson_writer)
   add_sanitizers(binson_parser)
 
+  add_subdirectory(examples)
   add_subdirectory(fuzz-test)
   add_subdirectory(utest)
 
