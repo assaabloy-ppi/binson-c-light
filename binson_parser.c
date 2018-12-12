@@ -968,7 +968,7 @@ static bool _advance_parsing(binson_parser *parser, uint8_t scan_flags, bbuf *sc
                         state->flags = BINSON_STATE_IN_OBJ_EXPECTING_FIELD;
                     }
                     else {
-                        parser->error_flags = BINSON_ERROR_MAX_DEPTH;
+                        parser->error_flags = BINSON_ERROR_MAX_DEPTH_OBJECT;
                         break;
                     }
 
@@ -1064,7 +1064,7 @@ static bool _advance_parsing(binson_parser *parser, uint8_t scan_flags, bbuf *sc
             case BINSON_STATE_PARSED_ARRAY_BEGIN:
 
                 if (state->array_depth >= UINT8_MAX) {
-                    parser->error_flags = BINSON_ERROR_MAX_DEPTH;
+                    parser->error_flags = BINSON_ERROR_MAX_DEPTH_ARRAY;
                     break;
                 }
 

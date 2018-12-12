@@ -93,7 +93,8 @@ typedef enum binson_err_e {
     BINSON_ERROR_NULL,
     BINSON_ERROR_STATE,
     BINSON_ERROR_WRONG_TYPE,
-    BINSON_ERROR_MAX_DEPTH
+    BINSON_ERROR_MAX_DEPTH_OBJECT,
+    BINSON_ERROR_MAX_DEPTH_ARRAY
 } binson_err;
 
 /* For backwards compatibility */

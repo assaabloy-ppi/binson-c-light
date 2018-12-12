@@ -69,7 +69,7 @@ static int __main(int argc, char **argv)
                 printf("\r\n");
             }
             else {
-                if (parser.error_flags == BINSON_ERROR_MAX_DEPTH) {
+                if (parser.error_flags == BINSON_ERROR_MAX_DEPTH_OBJECT) {
                     if (parser.max_depth < UINT8_MAX) {
                         parser.max_depth++;
                         state = realloc(state, (sizeof(binson_state)*parser.max_depth));
