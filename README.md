@@ -65,9 +65,11 @@ int main(void)
 ```
 Will print:
 
-`
-0x40 0x14 0x03 0x63 0x69 0x64 0x10 0x7b 0x41
-`
+```
+=== Binson writer example ===
+Hex representation: 0x40 0x14 0x03 0x63 0x69 0x64 0x10 0x7b 0x41
+JSON Representation: {"cid":123}
+```
 
 Parser API usage
 ---------
@@ -115,6 +117,7 @@ int main(void)
 Will print:
 
 ```
+=== Binson parser example ===
 a: 123
 bcd: Hello world!
 ```
@@ -153,6 +156,7 @@ int main(void)
 Will print:
 
 ```
+=== Binson class example ===
 a: 123
 bcd: Hello world!
 ```

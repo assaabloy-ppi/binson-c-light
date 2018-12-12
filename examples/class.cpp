@@ -3,6 +3,7 @@
 
 int main(void)
 {
+    printf("=== Binson class example ===\r\n");
     // Serialize to binson format
     uint8_t buf[64];
     binson_writer w;
