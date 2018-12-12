@@ -25,7 +25,7 @@ Features
 Limitations
 -----------
 
-* Due to no dynamic memory allocation, the maximum levels of nested objects must be defined at compile time by modifying the define BINSON_PARSER_MAX_DEPTH in binson_parser.h.
+* Due to no dynamic memory allocation, the maximum levels of nested objects must be defined when defining the parser. See examples below.
 * Maximum array depth limited to 255.
 
 What's new in v3
@@ -33,9 +33,7 @@ What's new in v3
 
 * Issues from security audit on v2 fixed.
 * Parser callback support (ready to be used as low-level API for "binson-c" project)
-* Positioning by index supported for both OBJECT and ARRAY blocks  ( see binson_parser_at() )
 * Raw binson encoded block extraction and output supported now (see #8)
-* Removed type checks in getters (it's up to user app now)
 * Built-in binson-to-string convertion function
 * Optimization frendly single-function traversal code.
 * Less lines, smaller binary size
