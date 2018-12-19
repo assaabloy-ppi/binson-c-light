@@ -386,11 +386,15 @@ double binson_parser_get_double(binson_parser *parser);
 bbuf *binson_parser_get_bytes_bbuf(binson_parser *parser);
 
 bool binson_parser_string_equals(binson_parser *pp, const char *pstr);
+
+#ifdef BINSON_PARSER_WITH_PRINT
+
 bool binson_parser_print(binson_parser *parser);
 bool binson_parser_to_string(binson_parser *parser,
                              char *pbuf,
                              size_t *buf_size,
                              bool nice);
+#endif
 
 #ifdef __cplusplus
 }

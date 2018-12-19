@@ -7,7 +7,6 @@
 
 /*======= Includes ==========================================================*/
 
-#include <stdio.h>
 #include <string.h>
 
 #include "binson_parser.h"
@@ -450,6 +449,10 @@ bool binson_parser_string_equals(binson_parser *parser, const char *pstr)
     return _cmp_name(&parser->current_state->current_value.string_value, &cmp) == 0;
 }
 
+#ifdef BINSON_PARSER_WITH_PRINT
+
+#include <stdio.h>
+
 static void _binson_print_cb(binson_parser *parser, uint16_t next_state, void *context)
 {
 
@@ -678,6 +681,8 @@ bool binson_parser_to_string(binson_parser *parser,
     }
     return false;
 }
+
+#endif
 
 /*======= Local function implementations ====================================*/
 
