@@ -28,8 +28,8 @@ public:
     void deserialize(const uint8_t *data, size_t size);
     void deserialize(binson_parser *p);
     std::string toStr() const;
-    std::map<std::string, BinsonValue>::const_iterator begin(){ return m_items.begin(); }
-    std::map<std::string, BinsonValue>::const_iterator end(){ return m_items.end(); }
+    std::map<std::string, BinsonValue>::const_iterator begin() const { return m_items.begin(); }
+    std::map<std::string, BinsonValue>::const_iterator end() const { return m_items.end(); }
 
 private:
     void seralizeItem(binson_writer *w, const BinsonValue &val) const;
