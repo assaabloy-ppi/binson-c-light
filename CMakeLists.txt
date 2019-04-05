@@ -10,7 +10,7 @@ option(BUILD_TESTS "Build tests" ON)
 option(WITH_PRINT "Add support for print" ON)
 
 if(WITH_PRINT)
-  add_definitions(-BINSON_PARSER_WITH_PRINT)
+  add_definitions(-DBINSON_PARSER_WITH_PRINT)
 endif(WITH_PRINT)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -g -ggdb -Werror -Wall -Wextra -Wpedantic -Wshadow -Wcast-qual -std=c99 ")
