@@ -10,7 +10,7 @@ option(BUILD_TESTS "Build tests" OFF)
 option(WITH_PRINT "Add support for print" ON)
 option(WITH_CPP "Add support for C++ wrapper" ON)
 option(BUILD_EXAMPLES "Build examples" OFF)
-+option(BUILD_FUZZ_TESTS "Build fuzz tests" ON)
+option(BUILD_FUZZ_TESTS "Build fuzz tests" OFF)
 
 if(WITH_PRINT)
   add_definitions(-DBINSON_PARSER_WITH_PRINT)
