@@ -1,4 +1,4 @@
-option(ENABLE_COVERAGE "Enables code coverage" ON)
+option(ENABLE_COVERAGE "Enables code coverage" OFF)
 
 if (ENABLE_COVERAGE)
     if (NOT DEFINED CODECOV_OUTPUTFILE)

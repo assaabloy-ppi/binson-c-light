@@ -28,9 +28,10 @@
     #define FUZZ_TOOL FUZZ_TOOL_NONE
 #endif
 
+extern bool fuzz_one_input(const uint8_t *data, size_t size);
+
 #if FUZZ_TOOL == FUZZ_TOOL_NONE || FUZZ_TOOL == FUZZ_TOOL_AFL
 
-extern bool fuzz_one_input(const uint8_t *data, size_t size);
 static uint8_t tmp_buffer[AFL_MAX_SIZE];
 static size_t fuzz_read(uint8_t **data)
 {
