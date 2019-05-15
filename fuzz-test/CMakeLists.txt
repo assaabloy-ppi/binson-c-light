@@ -1,23 +1,31 @@
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-macro(add_fuzz_target name file)
+macro(add_fuzz_target_c name file)
     add_executable(${name} ${file})
     add_sanitizers(${name})
     target_link_libraries(${name} binson_light ${ARGN})
+    target_compile_options(${name} PRIVATE -Werror -Wall -Wextra -Wpedantic -Wshadow -Wcast-qual -std=c99 -Wno-gnu-statement-expression)
 endmacro(add_fuzz_target)
 
-add_fuzz_target(fuzz_binson fuzz_binson.c)
-add_fuzz_target(fuzz_defined fuzz_defined.c)
-add_fuzz_target(fuzz_goinoutarr fuzz_goinoutarr.c)
-add_fuzz_target(fuzz_goinoutobj fuzz_goinoutobj.c)
-add_fuzz_target(fuzz_parser_verify fuzz_parser_verify.c)
+macro(add_fuzz_target_cpp name file)
+    add_executable(${name} ${file})
+    add_sanitizers(${name})
+    target_link_libraries(${name} binson_light ${ARGN})
+    target_compile_options(${name} PRIVATE -Werror -Wall -Wextra -Wpedantic -Wshadow -std=c++11 -Wno-gnu-statement-expression)
+endmacro(add_fuzz_target)
+
+
+add_fuzz_target_c(fuzz_binson fuzz_binson.c)
+add_fuzz_target_c(fuzz_defined fuzz_defined.c)
+add_fuzz_target_c(fuzz_goinoutarr fuzz_goinoutarr.c)
+add_fuzz_target_c(fuzz_goinoutobj fuzz_goinoutobj.c)
+add_fuzz_target_c(fuzz_parser_verify fuzz_parser_verify.c)
 
 if(WITH_PRINT)
-add_fuzz_target(fuzz_to_string fuzz_to_string.c)
+add_fuzz_target_c(fuzz_to_string fuzz_to_string.c)
 endif(WITH_PRINT)
 
-add_fuzz_target(fuzz_class fuzz_class.cpp binson_class)
-target_compile_options(fuzz_class PRIVATE -Werror -Wall -Wextra -Wpedantic -Wshadow -std=c++11 -Wno-gnu-statement-expression)
+add_fuzz_target_cpp(fuzz_class fuzz_class.cpp binson_class)
 
 file(GLOB files "${CMAKE_SOURCE_DIR}/utest/test_data/valid_objects/*")
 foreach(file ${files})

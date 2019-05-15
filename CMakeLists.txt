@@ -19,15 +19,15 @@ endif(WITH_PRINT)
 add_subdirectory(src)
 include_directories(include)
 
-if(BUILD_FUZZ_TESTS)
-  add_subdirectory(fuzz-test)
-endif(BUILD_FUZZ_TESTS)
-
 if(BUILD_TESTS)
     enable_testing()
     add_subdirectory(utest)
-    add_subdirectory(fuzz-test)
+    set(BUILD_FUZZ_TESTS ON)
 endif(BUILD_TESTS)
+
+if(BUILD_FUZZ_TESTS)
+  add_subdirectory(fuzz-test)
+endif(BUILD_FUZZ_TESTS)
 
 if(BUILD_EXAMPLES)
   add_subdirectory(examples)
