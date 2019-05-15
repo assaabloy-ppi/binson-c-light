@@ -35,8 +35,9 @@ build_targets() {
     cmake \
         -DCMAKE_CXX_COMPILER=$AFL_CXX \
         -DCMAKE_C_COMPILER=$AFL_CC -DBUILD_FUZZ_TESTS=ON \
-        -DCMAKE_CXX_FLAGS="-O9 -std=c99 -Wall -Wextra -Wpedantic -DFUZZ_TOOL=FUZZ_TOOL_AFL" \
-        -DCMAKE_C_FLAGS="-O9 -std=c99 -Wall -Wextra -Wpedantic -DFUZZ_TOOL=FUZZ_TOOL_AFL" ../.. && \
+        -DFUZZ_TOOL=FUZZ_TOOL_AFL \
+        -DCMAKE_CXX_FLAGS="-O9" \
+        -DCMAKE_C_FLAGS="-O9" ../.. && \
     make -j && \
     cd .. && \
     unset AFL_HARDEN && \
@@ -46,16 +47,17 @@ build_targets() {
     cmake \
         -DCMAKE_CXX_COMPILER=$AFL_CXX \
         -DCMAKE_C_COMPILER=$AFL_CC -DBUILD_FUZZ_TESTS=ON \
-        -DCMAKE_CXX_FLAGS="-O9 -std=c99 -Wall -Wextra -Wpedantic -DFUZZ_TOOL=FUZZ_TOOL_AFL" \
-        -DCMAKE_C_FLAGS="-O9 -std=c99 -Wall -Wextra -Wpedantic -DFUZZ_TOOL=FUZZ_TOOL_AFL" ../.. && \
+        -DFUZZ_TOOL=FUZZ_TOOL_AFL \
+        -DCMAKE_CXX_FLAGS="-O9" \
+        -DCMAKE_C_FLAGS="-O9" ../.. && \
     make -j && \
     unset AFL_USE_ASAN && \
     cd .. && \
     mkdir -p $debug_build_dir && \
     cd $debug_build_dir && \
     cmake \
-        -DCMAKE_C_FLAGS="-DFUZZ_TOOL=FUZZ_TOOL_NONE" -DBUILD_FUZZ_TESTS=ON \
-        -DCMAKE_CXX_FLAGS="-DFUZZ_TOOL=FUZZ_TOOL_AFL" \
+        -DBUILD_FUZZ_TESTS=ON \
+        -DFUZZ_TOOL=FUZZ_TOOL_NONE \
         -DSANITIZE_ADDRESS=On -DSANITIZE_UNDEFINED=On -DENABLE_COVERAGE=On -DCMAKE_BUILD_TYPE=Debug ../.. && \
     make -j && cd .. && \
     mkdir -p $libfuzzer_no_sanitizer_build_dir &&
@@ -65,9 +67,10 @@ build_targets() {
         -DCMAKE_CXX_COMPILER_WORKS=1 \
         -DCMAKE_CXX_COMPILER=clang++ \
         -DCMAKE_C_COMPILER=clang -DBUILD_FUZZ_TESTS=ON \
+        -DFUZZ_TOOL=FUZZ_TOOL_LIBFUZZER \
         -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=fuzzer" \
-        -DCMAKE_C_FLAGS="-std=c99 -Wall -Wextra -Wpedantic -Werror -g -O1 -fsanitize=fuzzer -DFUZZ_TOOL=FUZZ_TOOL_LIBFUZZER" \
-        -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic -Werror -g -O1 -fsanitize=fuzzer -DFUZZ_TOOL=FUZZ_TOOL_LIBFUZZER" ../.. && \
+        -DCMAKE_C_FLAGS="-g -O1 -fsanitize=fuzzer" \
+        -DCMAKE_CXX_FLAGS="-g -O1 -fsanitize=fuzzer" ../.. && \
     make -j && cd .. &&
     mkdir -p $libfuzzer_asan_build_dir &&
     cd $libfuzzer_asan_build_dir && \
@@ -76,9 +79,10 @@ build_targets() {
         -DCMAKE_CXX_COMPILER_WORKS=1 \
         -DCMAKE_CXX_COMPILER=clang++ \
         -DCMAKE_C_COMPILER=clang -DBUILD_FUZZ_TESTS=ON \
+        -DFUZZ_TOOL=FUZZ_TOOL_LIBFUZZER \
         -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=fuzzer,address" \
-        -DCMAKE_C_FLAGS="-std=c99 -Wall -Wextra -Wpedantic -Werror -g -O1 -fsanitize=fuzzer,address -DFUZZ_TOOL=FUZZ_TOOL_LIBFUZZER" \
-        -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic -Werror -g -O1 -fsanitize=fuzzer,address -DFUZZ_TOOL=FUZZ_TOOL_LIBFUZZER" ../.. && \
+        -DCMAKE_C_FLAGS="-g -O1 -fsanitize=fuzzer,address" \
+        -DCMAKE_CXX_FLAGS="-g -O1 -fsanitize=fuzzer,address" ../.. && \
     make -j && cd .. &&
     mkdir -p $libfuzzer_ubsan_build_dir &&
     cd $libfuzzer_ubsan_build_dir && \
@@ -87,9 +91,10 @@ build_targets() {
         -DCMAKE_CXX_COMPILER_WORKS=1 \
         -DCMAKE_CXX_COMPILER=clang++ \
         -DCMAKE_C_COMPILER=clang -DBUILD_FUZZ_TESTS=ON \
+        -DFUZZ_TOOL=FUZZ_TOOL_LIBFUZZER \
         -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=fuzzer,signed-integer-overflow" \
-        -DCMAKE_C_FLAGS="-std=c99 -Wall -Wextra -Wpedantic -Werror -g -O1 -fsanitize=fuzzer,signed-integer-overflow -DFUZZ_TOOL=FUZZ_TOOL_LIBFUZZER" \
-        -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic -Werror -g -O1 -fsanitize=fuzzer,signed-integer-overflow -DFUZZ_TOOL=FUZZ_TOOL_LIBFUZZER" ../.. && \
+        -DCMAKE_C_FLAGS="-g -O1 -fsanitize=fuzzer,signed-integer-overflow" \
+        -DCMAKE_CXX_FLAGS="-g -O1 -fsanitize=fuzzer,signed-integer-overflow" ../.. && \
     make -j && cd .. &&
     mkdir -p $libfuzzer_msan_build_dir &&
     cd $libfuzzer_msan_build_dir && \
@@ -98,9 +103,10 @@ build_targets() {
         -DCMAKE_CXX_COMPILER_WORKS=1 \
         -DCMAKE_CXX_COMPILER=clang++ \
         -DCMAKE_C_COMPILER=clang -DBUILD_FUZZ_TESTS=ON \
+        -DFUZZ_TOOL=FUZZ_TOOL_LIBFUZZER \
         -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=fuzzer,memory" \
-        -DCMAKE_C_FLAGS="-std=c99 -Wall -Wextra -Wpedantic -Werror -g -O1 -fsanitize=fuzzer,memory -DFUZZ_TOOL=FUZZ_TOOL_LIBFUZZER" \
-        -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic -Werror -g -O1 -fsanitize=fuzzer,memory -DFUZZ_TOOL=FUZZ_TOOL_LIBFUZZER" ../.. && \
+        -DCMAKE_C_FLAGS="-g -O1 -fsanitize=fuzzer,memory" \
+        -DCMAKE_CXX_FLAGS="-g -O1 -fsanitize=fuzzer,memory" ../.. && \
     make -j && cd .. &&
     return 0 || return 1
 }
