@@ -51,8 +51,8 @@ build_targets() {
     cd $debug_build_dir && \
     cmake \
         -DBUILD_FUZZ_TESTS=ON \
-        -DCMAKE_C_FLAGS="-O0 -g -ggdb -std=c99 -Wall -Wextra -Wpedantic -Werror -fprofile-arcs -ftest-coverage" \
-        -DCMAKE_EXE_LINKER_FLAGS="-fprofile-arcs -ftest-coverage" \
+        -DCMAKE_C_FLAGS="-O0 -g -ggdb -std=c99 -Wall -Wextra -Wpedantic -Werror" \
+        -DENABLE_COVERAGE=ON \
         -DSANITIZE_ADDRESS=On -DSANITIZE_UNDEFINED=On ../.. && \
     make -j && cd .. && return 0 || return 1
 }
