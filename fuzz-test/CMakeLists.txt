@@ -37,10 +37,10 @@ foreach(file ${files})
     get_filename_component(barename ${file} NAME)
     add_test(
         NAME verify_invalid_${barename}
-        COMMAND sh -c "${CMAKE_CURRENT_BINARY_DIR}/fuzz_parser_verify < ${file} > /dev/null 2&>1 && exit -1 || exit -0")
+        COMMAND sh -c "${CMAKE_CURRENT_BINARY_DIR}/fuzz_parser_verify < ${file} > /dev/null 2&>1 && exit -1 || exit 0")
     if(WITH_PRINT)
     add_test(
         NAME print_invalid_${barename}
-        COMMAND sh -c "${CMAKE_CURRENT_BINARY_DIR}/fuzz_to_string < ${file} > /dev/null 2&>1 && exit -1 || exit -0")
+        COMMAND sh -c "${CMAKE_CURRENT_BINARY_DIR}/fuzz_to_string < ${file} > /dev/null 2&>1 && exit -1 || exit 0")
     endif(WITH_PRINT)
 endforeach()
