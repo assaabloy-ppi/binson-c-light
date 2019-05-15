@@ -13,4 +13,5 @@ add_sanitizers(binson_light)
 
 add_library(binson_class binson.cpp)
 target_compile_options(binson_class PRIVATE -Werror -Wall -Wextra -Wpedantic -Wshadow -Wcast-qual -std=c++11)
+target_link_libraries(binson_class binson_light)
 add_sanitizers(binson_class)
