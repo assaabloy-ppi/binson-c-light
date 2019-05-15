@@ -5,14 +5,14 @@ macro(add_fuzz_target_c name file)
     add_sanitizers(${name})
     target_link_libraries(${name} binson_light ${ARGN})
     target_compile_options(${name} PRIVATE -Werror -Wall -Wextra -Wpedantic -Wshadow -Wcast-qual -std=c99 -Wno-gnu-statement-expression)
-endmacro(add_fuzz_target)
+endmacro(add_fuzz_target_c)
 
 macro(add_fuzz_target_cpp name file)
     add_executable(${name} ${file})
     add_sanitizers(${name})
     target_link_libraries(${name} binson_light ${ARGN})
     target_compile_options(${name} PRIVATE -Werror -Wall -Wextra -Wpedantic -Wshadow -std=c++11 -Wno-gnu-statement-expression)
-endmacro(add_fuzz_target)
+endmacro(add_fuzz_target_cpp)
 
 
 add_fuzz_target_c(fuzz_binson fuzz_binson.c)
