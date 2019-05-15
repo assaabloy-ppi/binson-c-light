@@ -29,7 +29,9 @@ int main(void)
     BINSON_PARSER_DEF(p);
     binson_parser_init(&p, buf, cnt);
     assert(binson_parser_verify(&p));
+    #ifdef BINSON_PARSER_WITH_PRINT
     binson_parser_print(&p);
+    #endif
     printf("\r\n");
 
     return 0;

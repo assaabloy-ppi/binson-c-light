@@ -420,12 +420,14 @@ TEST(parse_all)
     ASSERT_TRUE(p.error_flags == BINSON_ID_OK);
 }
 
+#ifdef BINSON_PARSER_WITH_PRINT
 TEST(print_binson)
 {
     BINSON_PARSER_DEF(p);
     binson_parser_init(&p, binson_bytes, sizeof(binson_bytes));
     ASSERT_TRUE(binson_parser_print(&p));
 }
+#endif
 
 /*======= Main function =====================================================*/
 
@@ -440,7 +442,9 @@ int main(void) {
     RUN_TEST(skip_object_in_array);
     RUN_TEST(get_raw_object);
     RUN_TEST(parse_all);
+    #ifdef BINSON_PARSER_WITH_PRINT
     RUN_TEST(print_binson);
+    #endif
     PRINT_RESULT();
 }
 

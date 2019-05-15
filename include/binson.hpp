@@ -27,7 +27,9 @@ public:
     void deserialize(const std::vector<uint8_t> &data);
     void deserialize(const uint8_t *data, size_t size);
     void deserialize(binson_parser *p);
+    #ifdef BINSON_PARSER_WITH_PRINT
     std::string toStr() const;
+    #endif
     std::map<std::string, BinsonValue>::const_iterator begin() const { return m_items.begin(); }
     std::map<std::string, BinsonValue>::const_iterator end() const { return m_items.end(); }
 

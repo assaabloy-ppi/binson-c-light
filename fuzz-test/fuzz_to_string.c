@@ -30,7 +30,11 @@ static int __main(int argc, char **argv)
     ssize_t size;
     uint8_t *buffer_cpy;
     uint8_t buffer[4096];
-    char str_buffer[8192];
+    char *str_buffer = malloc(10);
+    if (str_buffer == NULL)
+    {
+        return -1;
+    }
 
 
     size = read(0, buffer, sizeof(buffer));
@@ -48,18 +52,33 @@ static int __main(int argc, char **argv)
 
     memcpy(buffer_cpy, buffer, size);
     BINSON_PARSER_DEF(p);
-    size_t psize = sizeof(str_buffer);
+    size_t psize = 10;
     binson_parser_init(&p, buffer, size);
+
     ret = binson_parser_to_string(&p, str_buffer, &psize, true);
-    printf("%*.*s\r\n", 0, (int) psize, (char*) str_buffer);
-    ret |= binson_parser_to_string(&p, str_buffer, &psize, false);
-    printf("%*.*s\r\n", 0, (int) psize, (char*) str_buffer);
-    if (ret) {
-        for (ssize_t i = 0; i < size; i++) {
-            printf("%02x", buffer_cpy[i]);
-        } printf("\r\n");
+
+    if (!ret)
+    {
+        free(str_buffer);
+        str_buffer = malloc(psize);
+        if (str_buffer == NULL)
+        {
+            free(buffer_cpy);
+            return -1;
+        }
+
+        ret = binson_parser_to_string(&p, str_buffer, &psize, true);
+
     }
 
+    if (ret)
+    {
+        printf("%zu\r\n", psize);
+        printf("%*.*s\r\n", 0, (int) psize, (char*) str_buffer);
+    }
+
+
+    free(str_buffer);
     free(buffer_cpy);
 
     return (ret) ? 0 : -1;

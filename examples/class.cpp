@@ -23,4 +23,9 @@ int main(void)
 
     printf("a: %d\n", (int)b2.get("a").getInt());
     printf("bcd: %s\n", b2.get("bcd").getString().c_str());
+
+    #ifdef BINSON_PARSER_WITH_PRINT
+    std::string str = b.toStr();
+    printf("%s\r\n", str.c_str());
+    #endif
 }

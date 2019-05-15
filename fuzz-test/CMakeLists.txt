@@ -1,35 +1,46 @@
-cmake_minimum_required (VERSION 2.8.11)
-project(binson-c-light-fuzz)
-enable_language(C)
+include_directories(${CMAKE_SOURCE_DIR}/include)
 
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
-set(Sanitizers_DIR)
-find_package(Sanitizers)
+macro(add_fuzz_target name file)
+    add_executable(${name} ${file})
+    add_sanitizers(${name})
+    target_link_libraries(${name} binson_light ${ARGN})
+endmacro(add_fuzz_target)
 
-include_directories(../)
-add_executable(fuzz_binson fuzz_binson.c ../binson_parser.c)
-add_sanitizers(fuzz_binson)
+add_fuzz_target(fuzz_binson fuzz_binson.c)
+add_fuzz_target(fuzz_defined fuzz_defined.c)
+add_fuzz_target(fuzz_goinoutarr fuzz_goinoutarr.c)
+add_fuzz_target(fuzz_goinoutobj fuzz_goinoutobj.c)
+add_fuzz_target(fuzz_parser_verify fuzz_parser_verify.c)
 
-add_executable(fuzz_defined fuzz_defined.c ../binson_parser.c)
-add_sanitizers(fuzz_defined)
+if(WITH_PRINT)
+add_fuzz_target(fuzz_to_string fuzz_to_string.c)
+endif(WITH_PRINT)
 
-add_executable(fuzz_to_string fuzz_to_string.c ../binson_parser.c)
-target_compile_definitions(fuzz_to_string PRIVATE WITH_TO_STRING=1)
-add_sanitizers(fuzz_to_string)
+add_fuzz_target(fuzz_class fuzz_class.cpp binson_class)
+target_compile_options(fuzz_class PRIVATE -Werror -Wall -Wextra -Wpedantic -Wshadow -Wcast-qual -std=c++11)
 
-add_executable(fuzz_parser_verify fuzz_parser_verify.c ../binson_parser.c)
-add_sanitizers(fuzz_parser_verify)
+file(GLOB files "${CMAKE_SOURCE_DIR}/utest/test_data/valid_objects/*")
+foreach(file ${files})
+    get_filename_component(barename ${file} NAME)
+    add_test(
+        NAME verify_valid_${barename}
+        COMMAND sh -c "${CMAKE_CURRENT_BINARY_DIR}/fuzz_parser_verify < ${file} > /dev/null 2&>1 && exit 0 || exit -1")
+    if(WITH_PRINT)
+    add_test(
+        NAME print_valid_${barename}
+        COMMAND sh -c "${CMAKE_CURRENT_BINARY_DIR}/fuzz_to_string < ${file} > /dev/null 2&>1 && exit 0 || exit -1")
+    endif(WITH_PRINT)
+endforeach()
 
-
-add_executable(fuzz_goinoutobj fuzz_goinoutobj.c ../binson_parser.c)
-add_sanitizers(fuzz_goinoutobj)
-
-
-add_executable(fuzz_goinoutarr fuzz_goinoutarr.c ../binson_parser.c)
-add_sanitizers(fuzz_goinoutarr)
-
-add_executable(fuzz_verify_array fuzz_verify_array.c ../binson_parser.c)
-add_sanitizers(fuzz_verify_array)
-
-add_executable(fuzz_class fuzz_class.cpp ../binson_parser.c ../binson.cpp ../binson_writer.c)
-add_sanitizers(fuzz_class)
+file(GLOB files "${CMAKE_SOURCE_DIR}/utest/test_data/bad_objects/*")
+foreach(file ${files})
+    get_filename_component(barename ${file} NAME)
+    add_test(
+        NAME verify_invalid_${barename}
+        COMMAND sh -c "${CMAKE_CURRENT_BINARY_DIR}/fuzz_parser_verify < ${file} > /dev/null 2&>1 && exit -1 || exit -0")
+    if(WITH_PRINT)
+    add_test(
+        NAME print_invalid_${barename}
+        COMMAND sh -c "${CMAKE_CURRENT_BINARY_DIR}/fuzz_to_string < ${file} > /dev/null 2&>1 && exit -1 || exit -0")
+    endif(WITH_PRINT)
+endforeach()

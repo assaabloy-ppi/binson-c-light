@@ -179,10 +179,12 @@ TEST(binson_class_test1)
 
     ASSERT_TRUE(binson_writer_init(&w, binson_result_buffer, sizeof(binson_result_buffer)));
     b2.serialize(&w);
+    #ifdef BINSON_PARSER_WITH_PRINT
     auto s = b.toStr();
     printf("%s\n", s.c_str());
     auto s2 = b2.toStr();
     printf("%s\n", s2.c_str());
+    #endif
     result = memcmp(binson_bytes, binson_result_buffer, binson_expected_size) == 0;
     if (!result)
     {
