@@ -29,9 +29,10 @@ build_targets() {
     mkdir -p $harden_build_dir && \
     cd $harden_build_dir && \
     cmake \
+        -DBUILD_FUZZ_TESTS=ON \
         -DCMAKE_CXX_COMPILER=$AFL_CXX \
         -DCMAKE_C_COMPILER=$AFL_CC \
-        -DCMAKE_C_FLAGS="-O9 -std=c99 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-statement-expression" .. && \
+        -DCMAKE_C_FLAGS="-O9 -std=c99 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-statement-expression" ../.. && \
     make -j && \
     cd .. && \
     unset AFL_HARDEN && \
@@ -39,18 +40,20 @@ build_targets() {
     mkdir -p $asan_build_dir && \
     cd $asan_build_dir && \
     cmake \
+        -DBUILD_FUZZ_TESTS=ON \
         -DCMAKE_CXX_COMPILER=$AFL_CXX \
         -DCMAKE_C_COMPILER=$AFL_CC \
-        -DCMAKE_C_FLAGS="-O9 -std=c99 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-statement-expression" .. && \
+        -DCMAKE_C_FLAGS="-O9 -std=c99 -Wall -Wextra -Wpedantic -Werror -Wno-gnu-statement-expression" ../.. && \
     make -j && \
     unset AFL_USE_ASAN && \
     cd .. && \
     mkdir -p $debug_build_dir && \
     cd $debug_build_dir && \
     cmake \
+        -DBUILD_FUZZ_TESTS=ON \
         -DCMAKE_C_FLAGS="-O0 -g -ggdb -std=c99 -Wall -Wextra -Wpedantic -Werror -fprofile-arcs -ftest-coverage" \
         -DCMAKE_EXE_LINKER_FLAGS="-fprofile-arcs -ftest-coverage" \
-        -DSANITIZE_ADDRESS=On -DSANITIZE_UNDEFINED=On .. && \
+        -DSANITIZE_ADDRESS=On -DSANITIZE_UNDEFINED=On ../.. && \
     make -j && cd .. && return 0 || return 1
 }
 
@@ -97,11 +100,11 @@ check_and_set_config() {
     output_dir="output/$target"
 
     if [ "$mode" = "asan" ]; then
-        binary_dir=$asan_build_dir
+        binary_dir=$asan_build_dir/fuzz-test
         mode="asan"
         fuzz_args="-m none"
     elif [ "$mode" = "harden" ]; then
-        binary_dir=$harden_build_dir
+        binary_dir=$harden_build_dir/fuzz-test
         mode="harden"
     else
         echo "Error: \"$mode\" not a valid method."

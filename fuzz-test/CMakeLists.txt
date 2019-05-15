@@ -17,7 +17,7 @@ add_fuzz_target(fuzz_to_string fuzz_to_string.c)
 endif(WITH_PRINT)
 
 add_fuzz_target(fuzz_class fuzz_class.cpp binson_class)
-target_compile_options(fuzz_class PRIVATE -Werror -Wall -Wextra -Wpedantic -Wshadow -Wcast-qual -std=c++11)
+target_compile_options(fuzz_class PRIVATE -Werror -Wall -Wextra -Wpedantic -Wshadow -std=c++11)
 
 file(GLOB files "${CMAKE_SOURCE_DIR}/utest/test_data/valid_objects/*")
 foreach(file ${files})

@@ -10,6 +10,7 @@ option(BUILD_TESTS "Build tests" OFF)
 option(WITH_PRINT "Add support for print" ON)
 option(WITH_CPP "Add support for C++ wrapper" ON)
 option(BUILD_EXAMPLES "Build examples" OFF)
++option(BUILD_FUZZ_TESTS "Build fuzz tests" ON)
 
 if(WITH_PRINT)
   add_definitions(-DBINSON_PARSER_WITH_PRINT)
@@ -18,6 +19,9 @@ endif(WITH_PRINT)
 add_subdirectory(src)
 include_directories(include)
 
+if(BUILD_FUZZ_TEST)
+  add_subdirectory(fuzz-test)
+endif(BUILD_FUZZ_TEST)
 
 if(BUILD_TESTS)
     enable_testing()
