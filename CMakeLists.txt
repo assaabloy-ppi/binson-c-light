@@ -19,9 +19,9 @@ endif(WITH_PRINT)
 add_subdirectory(src)
 include_directories(include)
 
-if(BUILD_FUZZ_TEST)
+if(BUILD_FUZZ_TESTS)
   add_subdirectory(fuzz-test)
-endif(BUILD_FUZZ_TEST)
+endif(BUILD_FUZZ_TESTS)
 
 if(BUILD_TESTS)
     enable_testing()

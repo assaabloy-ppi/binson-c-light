@@ -637,7 +637,7 @@ static void _binson_to_string_cb(binson_parser *parser, uint16_t next_state, voi
             }
             pbuf = &ctx->buffer[ctx->buffer_used];
             if ((state->current_value.bytes_value.bsize > (SIZE_MAX/2)) ||
-                !_check_boundary(ctx->buffer_used, (state->current_value.bytes_value.bsize*2) + 1, ctx->buffer_size)) {
+                !_check_boundary(ctx->buffer_used, (state->current_value.bytes_value.bsize*2) + 2, ctx->buffer_size)) {
                 ctx->buffer_full = true;
                 available = 0;
             }
