@@ -1,5 +1,9 @@
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+if(NOT FUZZ_TOOL)
+    set(FUZZ_TOOL FUZZ_TOOL_NONE)
+endif(NOT FUZZ_TOOL)
+
 macro(add_fuzz_target_c name file)
     add_executable(${name} ${file})
     add_sanitizers(${name})
@@ -18,7 +22,7 @@ add_library(main_entry_c main_entry.c)
 target_compile_options(main_entry_c PRIVATE -DFUZZ_TOOL=${FUZZ_TOOL} -Werror -Wall -Wextra -Wpedantic -Wshadow -Wcast-qual -std=c99 -Wno-gnu-statement-expression)
 
 add_library(main_entry_cpp main_entry.cpp)
-target_compile_options(main_entry_cpp PRIVATE -DFUZZ_TOOL=${FUZZ_TOOL} -Werror -Wall -Wextra -Wpedantic -Wshadow -std=c++11 -Wno-gnu-statement-expression)
+target_compile_options(main_entry_cpp PRIVATE -DFUZZ_TOOL=${FUZZ_TOOL} -Werror -Wall -Wextra -Wpedantic -Wshadow -std=c++11)
 add_fuzz_target_c(fuzz_binson fuzz_binson.c)
 add_fuzz_target_c(fuzz_defined fuzz_defined.c)
 add_fuzz_target_c(fuzz_goinoutarr fuzz_goinoutarr.c)
