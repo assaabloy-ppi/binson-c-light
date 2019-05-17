@@ -39,7 +39,7 @@ bool fuzz_one_input(const uint8_t *data, size_t size)
         __builtin_trap();
     }
 
-    char *str_buffer = malloc(size);
+    char *str_buffer = malloc(psize);
 
     if (NULL == str_buffer)
     {

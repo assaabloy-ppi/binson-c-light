@@ -42,6 +42,7 @@ bool fuzz_one_input(const uint8_t *data, size_t size)
             printf("%02x", data[i]);
         }
         printf("\r\n");
+        printf("%s\r\n", b.toStr().c_str());
         ret = true;
     } catch (const std::runtime_error &e) {
         /* Not a valid binson object */

@@ -9,7 +9,7 @@ libfuzzer_ubsan_build_dir="build_libfuzzer_ubsan"
 libfuzzer_msan_build_dir="build_libfuzzer_msan"
 testcases_dir="input"
 
-valid_targets=(`ls -Sr fuzz_*.c | cut -d'.' -f1`)
+valid_targets=(`ls -Sr fuzz_*.c* | cut -d'.' -f1`)
 output_dir=""
 input_dir=""
 target=${valid_targets[0]}
@@ -327,7 +327,7 @@ do_continue_fuzz_libfuzzer() {
         cp $input_dir/* $output_dir/queue_all/
     fi
 
-    ./$binary_dir/fuzz-test/$target $output_dir/queue_all -jobs=$num_cores -dict=binson.dict -verbosity=0
+    ./$binary_dir/fuzz-test/$target $output_dir/queue_all -jobs=$num_cores -dict=binson.dict -verbosity=0 -close_fd_mask=3
 
 }
 
@@ -348,13 +348,13 @@ do_continue_fuzz_afl() {
 
     if ! screen -list | grep -q $masterFuzzer; then
         echo "Error: Master fuzzing start failed."
-        afl-fuzz -x fuzz.dict $fuzz_args -i $output_dir/queue_all -o $output_dir -M fuzzer1 -- ./$binary_dir/fuzz-test/$target
+        afl-fuzz -x binson.dict $fuzz_args -i $output_dir/queue_all -o $output_dir -M fuzzer1 -- ./$binary_dir/fuzz-test/$target
         exit 1
     fi
-
     for a in $(seq 2 $num_cores); do
         slaveFuzzer=$a"Slave$target"
-        screen -dmS $slaveFuzzer afl-fuzz -x fuzz.dict $fuzz_args -i $output_dir/queue_all -o $output_dir -S fuzzer$a -- ./$binary_dir/fuzz-test/$target
+        screen -dmS $slaveFuzzer afl-fuzz -x binson.dict $fuzz_args -i $output_dir/queue_all -o $output_dir -S fuzzer$a -- ./$binary_dir/fuzz-test/$target
+
     done
 
     screen -x $masterFuzzer
