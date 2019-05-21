@@ -1,7 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
-project(binson)
-
-include_directories(..)
+include_directories(${CMAKE_SOURCE_DIR}/include)
 
 macro(do_test arg)
     add_executable(${arg} ${arg}.c)
@@ -17,6 +14,7 @@ macro(do_test_cpp arg)
     add_dependencies(${arg} binson_parser binson_writer)
     add_test(${arg} ${arg})
     target_link_libraries(${arg} binson_parser binson_writer binson_class)
+    target_compile_options(${arg} PRIVATE -Werror -Wall -Wextra -Wpedantic -Wshadow -Wcast-qual -std=c++11)
 endmacro(do_test_cpp)
 
 
@@ -25,12 +23,14 @@ do_test(binson_depth_test)
 do_test(binson_parser_bad_test)
 do_test(binson_writer_test)
 do_test(binson_parser_ref_test)
+if(WITH_PRINT)
 do_test(binson_parser_print_test)
+endif(WITH_PRINT)
 do_test(binson_parser_verify_test)
 do_test(binson_parser_array_test)
 do_test_cpp(binson_class_test)
 
-file(GLOB files "generated_test_cases/*/*.c")
+file(GLOB files "${CMAKE_SOURCE_DIR}/utest/generated_test_cases/*/*.c")
 foreach(file ${files})
     get_filename_component(barename ${file} NAME)
     add_executable(t_${barename} ${file})

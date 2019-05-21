@@ -269,33 +269,37 @@ void Binson::deserialize(binson_parser *p)
     ifRuntimeError(binson_parser_leave_object(p), "Parse error");
 }
 
+#ifdef BINSON_PARSER_WITH_PRINT
 string Binson::toStr() const
 {
     BINSON_PARSER_DEF(p);
-    string str;
-    str.resize(10000);
+    vector<char> str_vector(10);
     vector<uint8_t> stream = serialize();
     if (stream.empty())
         return string();
-    int trys = 5;
-    bool result = false;
-    size_t size = 0;
-    do
-    {
-        if (!binson_parser_init(&p, stream.data(), stream.size()))
-            break;
-        size = str.size();
-        result = binson_parser_to_string(&p, (char*)str.data(), &size, true);
-        if (!result)
-            str.resize(size * 2);
-    } while(!result && trys-- > 0 && p.error_flags == 0);
 
+    bool result = false;
+    size_t size = str_vector.capacity();
+
+    if (!binson_parser_init(&p, stream.data(), stream.size()))
+    {
+        return string();
+    }
+
+    result = binson_parser_to_string(&p, str_vector.data(), &size, true);
     if (!result)
-        str.clear();
-    else
-        str.resize(size);
-    return str;
+    {
+        str_vector.resize(size);
+    }
+    result = binson_parser_to_string(&p, str_vector.data(), &size, true);
+    if (!result)
+    {
+        return string();
+    }
+
+    return string(str_vector.data(), size);;
 }
+#endif
 
 BinsonValue::BinsonValue()
 {

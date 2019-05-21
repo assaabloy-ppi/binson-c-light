@@ -1,11 +1,17 @@
+include_directories(${CMAKE_SOURCE_DIR}/include)
 
-include_directories(..)
 add_executable(writer writer.c)
 target_link_libraries(writer binson_writer binson_parser)
+target_compile_options(writer PRIVATE -Werror -Wall -Wextra -Wpedantic -Wshadow -Wcast-qual -std=c99)
+add_sanitizers(writer)
 
 add_executable(parser parser.c)
 target_link_libraries(parser binson_parser)
+target_compile_options(parser PRIVATE -Werror -Wall -Wextra -Wpedantic -Wshadow -Wcast-qual -std=c99)
+add_sanitizers(parser)
 
 
 add_executable(class class.cpp)
 target_link_libraries(class binson_parser binson_writer binson_class)
+target_compile_options(class PRIVATE -Werror -Wall -Wextra -Wpedantic -Wshadow -Wcast-qual -std=c++11)
+add_sanitizers(class)

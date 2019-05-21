@@ -552,21 +552,23 @@ static void _binson_to_string_cb(binson_parser *parser, uint16_t next_state, voi
     uint8_t *pstate = &ctx->pstate;
     char *pbuf = &ctx->buffer[ctx->buffer_used];
 
-    if (ctx->buffer_full || ctx->buffer_used >= ctx->buffer_size) {
-        return;
+    size_t available = 0;
+    if (ctx->buffer_used < ctx->buffer_size) {
+        available = ctx->buffer_size - ctx->buffer_used;
     }
-
-    size_t available = ctx->buffer_size - ctx->buffer_used;
+     
     size_t ret = 0;
 
     if (next_state != BINSON_STATE_PARSED_ARRAY_END && *pstate == 0x05) {
         ret = snprintf(pbuf, available, ",");
         if (!_check_boundary(ctx->buffer_used, ret, ctx->buffer_size)) {
             ctx->buffer_full = true;
-            return;
         }
         ctx->buffer_used += ret;
         pbuf = &ctx->buffer[ctx->buffer_used];
+        if (available > 0) {
+            available--;
+        }
     }
 
     if (*pstate == 0x04) {
@@ -600,9 +602,12 @@ static void _binson_to_string_cb(binson_parser *parser, uint16_t next_state, voi
                 ret = snprintf(pbuf, available, ",");
                 if (!_check_boundary(ctx->buffer_used, ret, ctx->buffer_size)) {
                     ctx->buffer_full = true;
-                    return;
                 }
                 ctx->buffer_used += ret;
+                if (available > 0)
+                {
+                    available--;
+                }
                 pbuf = &ctx->buffer[ctx->buffer_used];
             }
             *pstate = 0x02;
@@ -624,14 +629,17 @@ static void _binson_to_string_cb(binson_parser *parser, uint16_t next_state, voi
             ret = snprintf(pbuf, available, "\"0x");
             if (!_check_boundary(ctx->buffer_used, ret, ctx->buffer_size)) {
                 ctx->buffer_full = true;
-                return;
+                available = 0;
             }
             ctx->buffer_used += ret;
+            if (available >= ret) {
+                available -= ret;
+            }
             pbuf = &ctx->buffer[ctx->buffer_used];
-            if ((state->current_value.bytes_value.bsize > (SIZE_MAX/2)) &&
-                !_check_boundary(ctx->buffer_used, (state->current_value.bytes_value.bsize*2) + 1, ctx->buffer_size)) {
+            if ((state->current_value.bytes_value.bsize > ((SIZE_MAX/2)-2)) ||
+                !_check_boundary(ctx->buffer_used, (state->current_value.bytes_value.bsize*2) + 2, ctx->buffer_size)) {
                 ctx->buffer_full = true;
-                return;
+                available = 0;
             }
             ret = 0;
             size_t i;
@@ -643,10 +651,13 @@ static void _binson_to_string_cb(binson_parser *parser, uint16_t next_state, voi
 
     }
 
+    if (ret >= available) {
+        ctx->buffer_full = true;
+    }
+
 
     if (!_check_boundary(ctx->buffer_used, ret, ctx->buffer_size)) {
         ctx->buffer_full = true;
-        return;
     }
 
     ctx->buffer_used += ret;
@@ -658,8 +669,13 @@ bool binson_parser_to_string(binson_parser *parser,
                              size_t *buf_size,
                              bool nice)
 {
-    if (NULL == parser || NULL == pbuf || NULL == buf_size) {
+    if (NULL == parser || NULL == buf_size) {
         return false;
+    }
+
+    if (NULL == pbuf)
+    {
+        *buf_size = 0;
     }
 
     struct _to_string_ctx ctx;
@@ -675,10 +691,11 @@ bool binson_parser_to_string(binson_parser *parser,
     bool ret = binson_parser_verify(parser);
     parser->cb = NULL;
     parser->cb_context = NULL;
+    *buf_size = ctx.buffer_used;
     if (ret && !ctx.buffer_full) {
-        *buf_size = ctx.buffer_used;
         return true;
     }
+    (*buf_size)++;
     return false;
 }
 

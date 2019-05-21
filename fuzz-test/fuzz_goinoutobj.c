@@ -21,67 +21,29 @@
 /*======= Local function prototypes =========================================*/
 /*======= Local variable declarations =======================================*/
 
-static bool parse_binson(uint8_t *buffer, uint32_t size);
+static bool parse_binson(const uint8_t *buffer, uint32_t size);
 
 /*======= Global function implementations ===================================*/
 
-static int __main(int argc, char **argv)
+bool fuzz_one_input(const uint8_t *data, size_t size)
 {
-
-    (void) argc;
-    (void) argv;
-    ssize_t size;
-    uint8_t *buffer_cpy;
-    uint8_t buffer[4096];
-
-
-    size = read(0, buffer, sizeof(buffer));
-    bool ret;
-
-    if (size == 0) {
-        return -1;
-    }
-
-    buffer_cpy = malloc(size);
-
-    if (buffer_cpy == NULL) {
-        return -1;
-    }
-
-    memcpy(buffer_cpy, buffer, size);
-    ret = parse_binson(buffer_cpy, size);
-
+    bool ret = parse_binson(data, size);
+    if (ret)
+    {
     if (ret) {
-        for (ssize_t i = 0; i < size; i++) {
-            printf("%02x", buffer_cpy[i]);
-        } printf("\r\n");
+            for (size_t i = 0; i < size; i++) {
+                printf("%02x", data[i]);
+            } printf("\r\n");
+        }
     }
-
-    free(buffer_cpy);
-
-    return (ret) ? 0 : -1;
-
+    return ret;
 }
-
-int main(int argc, char **argv)
-{
-    #ifdef __AFL_LOOP
-    while (__AFL_LOOP(1000)) {
-        __main(argc, argv);
-    }
-    return 0;
-    #else
-    return __main(argc, argv);
-    #endif
-
-}
-
 
 /*======= Local function implementations ====================================*/
 
 #define VERIFY(x) if(!(x)) return false
 
-static bool parse_binson(uint8_t *buffer, uint32_t size)
+static bool parse_binson(const uint8_t *buffer, uint32_t size)
 {
 
     BINSON_PARSER_DEF(p);

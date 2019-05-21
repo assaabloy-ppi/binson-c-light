@@ -20,40 +20,16 @@
 /*======= Type Definitions ==================================================*/
 /*======= Local function prototypes =========================================*/
 /*======= Local variable declarations =======================================*/
-
-static uint8_t buffer[8192];
-
 /*======= Global function implementations ===================================*/
 
-static int __main(int argc, char **argv)
+bool fuzz_one_input(const uint8_t *data, size_t size)
 {
-
-    (void) argc;
-    (void) argv;
-
-    ssize_t size;
-    uint8_t *buffer_cpy;
-    bool ret;
     BINSON_PARSER_DEF(parser);
-
-    size = read(0, buffer, sizeof(buffer));
-
-    if (size == 0) {
-        return -1;
-    }
-
-    buffer_cpy = (uint8_t *) malloc(size);
-
-    if (buffer_cpy == NULL) {
-        return -1;
-    }
-
-    memcpy(buffer_cpy, buffer, size);
-
     Binson b;
+    bool ret;
     try {
-        b.deserialize(buffer_cpy, size);
-        binson_parser_init(&parser, buffer_cpy, size);
+        b.deserialize(data, size);
+        binson_parser_init(&parser, data, size);
 
         /*
          * if b.deserialize() didn't throw exception
@@ -62,34 +38,17 @@ static int __main(int argc, char **argv)
          */
         assert(binson_parser_verify(&parser));
 
-        for (ssize_t i = 0; i < size; i++) {
-            printf("%02x", buffer_cpy[i]);
+        for (size_t i = 0; i < size; i++) {
+            printf("%02x", data[i]);
         }
         printf("\r\n");
+        printf("%s\r\n", b.toStr().c_str());
         ret = true;
     } catch (const std::runtime_error &e) {
         /* Not a valid binson object */
         ret = false;
     }
-
-    free(buffer_cpy);
-
-    return (ret) ? 0 : -1;
-
+    return ret;
 }
-
-int main(int argc, char **argv)
-{
-    #ifdef __AFL_LOOP
-    while (__AFL_LOOP(1000)) {
-        __main(argc, argv);
-    }
-    return 0;
-    #else
-    return __main(argc, argv);
-    #endif
-
-}
-
 
 /*======= Local function implementations ====================================*/
