@@ -4,7 +4,7 @@ enable_language(C)
 enable_language(CXX)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 find_package(Sanitizers)
-include(${CMAKE_SOURCE_DIR}/cmake/coverage.cmake)
+include(cmake/coverage.cmake)
 
 option(BUILD_TESTS "Build tests" OFF)
 option(WITH_PRINT "Add support for print" ON)

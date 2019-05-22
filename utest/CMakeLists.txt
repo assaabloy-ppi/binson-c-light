@@ -1,5 +1,3 @@
-include_directories(${CMAKE_SOURCE_DIR}/include)
-
 macro(do_test arg)
     add_executable(${arg} ${arg}.c)
     add_sanitizers(${arg})
@@ -23,14 +21,19 @@ do_test(binson_depth_test)
 do_test(binson_parser_bad_test)
 do_test(binson_writer_test)
 do_test(binson_parser_ref_test)
+
 if(WITH_PRINT)
-do_test(binson_parser_print_test)
+    do_test(binson_parser_print_test)
 endif(WITH_PRINT)
+
 do_test(binson_parser_verify_test)
 do_test(binson_parser_array_test)
-do_test_cpp(binson_class_test)
 
-file(GLOB files "${CMAKE_SOURCE_DIR}/utest/generated_test_cases/*/*.c")
+if(WITH_CPP)
+    do_test_cpp(binson_class_test)
+endif(WITH_CPP)
+
+file(GLOB files "generated_test_cases/*/*.c")
 foreach(file ${files})
     get_filename_component(barename ${file} NAME)
     add_executable(t_${barename} ${file})

@@ -1,5 +1,3 @@
-include_directories(${CMAKE_SOURCE_DIR}/include)
-
 if(NOT FUZZ_TOOL)
     set(FUZZ_TOOL FUZZ_TOOL_NONE)
 endif(NOT FUZZ_TOOL)
@@ -21,8 +19,6 @@ endmacro(add_fuzz_target_cpp)
 add_library(main_entry_c main_entry.c)
 target_compile_options(main_entry_c PRIVATE -DFUZZ_TOOL=${FUZZ_TOOL} -Werror -Wall -Wextra -Wpedantic -Wshadow -Wcast-qual -std=c99 -Wno-gnu-statement-expression)
 
-add_library(main_entry_cpp main_entry.cpp)
-target_compile_options(main_entry_cpp PRIVATE -DFUZZ_TOOL=${FUZZ_TOOL} -Werror -Wall -Wextra -Wpedantic -Wshadow -std=c++11)
 add_fuzz_target_c(fuzz_binson fuzz_binson.c)
 add_fuzz_target_c(fuzz_defined fuzz_defined.c)
 add_fuzz_target_c(fuzz_goinoutarr fuzz_goinoutarr.c)
@@ -31,12 +27,16 @@ add_fuzz_target_c(fuzz_parser_verify fuzz_parser_verify.c)
 add_fuzz_target_c(fuzz_verify_array fuzz_verify_array.c)
 
 if(WITH_PRINT)
-add_fuzz_target_c(fuzz_to_string fuzz_to_string.c)
+    add_fuzz_target_c(fuzz_to_string fuzz_to_string.c)
 endif(WITH_PRINT)
 
-add_fuzz_target_cpp(fuzz_class fuzz_class.cpp binson_class)
+if(WITH_CPP)
+    add_library(main_entry_cpp main_entry.cpp)
+    target_compile_options(main_entry_cpp PRIVATE -DFUZZ_TOOL=${FUZZ_TOOL} -Werror -Wall -Wextra -Wpedantic -Wshadow -std=c++11)
+    add_fuzz_target_cpp(fuzz_class fuzz_class.cpp binson_class)
+endif(WITH_CPP)
 
-file(GLOB files "${CMAKE_SOURCE_DIR}/utest/test_data/valid_objects/*")
+file(GLOB files "../utest/test_data/valid_objects/*")
 foreach(file ${files})
     get_filename_component(barename ${file} NAME)
     add_test(
@@ -49,7 +49,7 @@ foreach(file ${files})
     endif(WITH_PRINT)
 endforeach()
 
-file(GLOB files "${CMAKE_SOURCE_DIR}/utest/test_data/bad_objects/*")
+file(GLOB files "../utest/test_data/bad_objects/*")
 foreach(file ${files})
     get_filename_component(barename ${file} NAME)
     add_test(
