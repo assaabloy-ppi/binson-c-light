@@ -39,19 +39,25 @@ extern "C" {
         .cb_context = NULL                          \
     }
 
+#ifndef UNIQUE_NAME
+#define UNIQUE_NAME(prefix) JOIN(prefix, __LINE__)
+#define JOIN(a, b) DO_JOIN(a, b)
+#define DO_JOIN(a, b) a##b
+#endif
+
 #define BINSON_PARSER_DEFAULT_DEPTH     (10U)
 #define BINSON_PARSER_DEF_DEPTH(p, depth)           \
-    binson_state p##data##__LINE__[depth];          \
+    binson_state UNIQUE_NAME(state_data)[depth];    \
     binson_parser p;                                \
     p.max_depth = depth;                            \
-    p.state = p##data##__LINE__
+    p.state = UNIQUE_NAME(state_data)
 #define BINSON_PARSER_DEF(p) \
     BINSON_PARSER_DEF_DEPTH(p, BINSON_PARSER_DEFAULT_DEPTH)
-#define BINSON_PARSER_DEF_DEPTH_STATIC(p, depth)    \
-    static binson_state p##data##__LINE__[depth];   \
-    static binson_parser p;                         \
-    p.max_depth = depth;                            \
-    p.state = p##data##__LINE__
+#define BINSON_PARSER_DEF_DEPTH_STATIC(p, depth)        \
+    static binson_state UNIQUE_NAME(state_data)[depth]; \
+    static binson_parser p;                             \
+    p.max_depth = depth;                                \
+    p.state = UNIQUE_NAME(state_data)
 #define BINSON_PARSER_DEF_STATIC(p) \
     BINSON_PARSER_DEF_DEPTH_STATIC(p, BINSON_PARSER_DEFAULT_DEPTH)
 
