@@ -1,9 +1,10 @@
 language: c
 os: linux
-install: make cmake
-compiler: gcc
-script:
- - bash build.sh
-
-after_success:
- - bash <(curl -s https://codecov.io/bash)
+jobs:
+  - stage: build
+    install: make cmake
+    compiler: gcc
+    script:
+      - bash build.sh
+    after_success:
+      - bash <(curl -s https://codecov.io/bash)
