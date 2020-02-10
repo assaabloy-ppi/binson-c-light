@@ -1,6 +1,14 @@
 language: c
 os: linux
 jobs:
+  - stage: lint
+    dist: bionic
+    install: sudo apt-get install -qq cppcheck
+    compiler: gcc
+    script:
+      - cppcheck --version
+      - cppcheck --quiet -i fuzz-test -i old -i utest .
+
   - stage: build
     install: make cmake
     compiler: gcc
