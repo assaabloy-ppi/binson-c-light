@@ -1,7 +1,7 @@
-language: C
+language: c
+os: linux
 install: make cmake
-compiler:
- - gcc
+compiler: gcc
 script:
  - bash build.sh
 
