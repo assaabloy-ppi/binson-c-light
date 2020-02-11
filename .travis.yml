@@ -1,9 +1,18 @@
-language: C
-install: make cmake
-compiler:
- - gcc
-script:
- - bash build.sh
+language: c
+os: linux
+jobs:
+  - stage: lint
+    dist: bionic
+    install: sudo apt-get install -qq cppcheck
+    compiler: gcc
+    script:
+      - cppcheck --version
+      - cppcheck --quiet -i fuzz-test -i old -i utest .
 
-after_success:
- - bash <(curl -s https://codecov.io/bash)
+  - stage: build
+    install: make cmake
+    compiler: gcc
+    script:
+      - bash build.sh
+    after_success:
+      - bash <(curl -s https://codecov.io/bash)
