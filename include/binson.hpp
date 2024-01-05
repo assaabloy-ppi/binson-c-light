@@ -6,6 +6,7 @@
 #include <vector>
 #include <array>
 #include <stdint.h>
+#include <stdexcept>
 
 #include <binson_light.h>
 
