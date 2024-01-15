@@ -1,0 +1,24 @@
+name: cppcheck
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  lint:
+    name: cppcheck
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install cppcheck
+      run: sudo apt-get -y install cppcheck
+
+    - name: Check cppcheck version
+      run: cppcheck --version
+
+    - name: cppcheck the code
+      run: cppcheck --quiet -i fuzz-test -i old -i utest .
