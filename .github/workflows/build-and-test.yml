@@ -1,0 +1,21 @@
+name: build-and-test
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    name: build-and-test
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install depends
+      run: sudo apt-get -y install bash make cmake
+
+    - name: Build and test
+      run: bash ./build.sh
