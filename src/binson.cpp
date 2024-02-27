@@ -233,7 +233,8 @@ void Binson::deseralizeItems(binson_parser *p)
         bbuf *buf;
         buf = binson_parser_get_name(p);
         CheckParserState(p);
-        ifRuntimeError(buf != nullptr, "Parse error");
+        ifRuntimeError(buf != nullptr, "buf is null");
+        ifRuntimeError(buf->bptr != nullptr, "buf->bptr is null");
         string name(reinterpret_cast<const char*>(buf->bptr), buf->bsize);
         put(name, deseralizeItem(p));
     }
