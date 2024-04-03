@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 project(binson-c-light)
 enable_language(C)
 enable_language(CXX)
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 find_package(Sanitizers)
 include(cmake/coverage.cmake)
 
