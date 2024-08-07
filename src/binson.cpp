@@ -290,8 +290,8 @@ string Binson::toStr() const
     if (!result)
     {
         str_vector.resize(size);
+	result = binson_parser_to_string(&p, str_vector.data(), &size, true);
     }
-    result = binson_parser_to_string(&p, str_vector.data(), &size, true);
     if (!result)
     {
         return string();

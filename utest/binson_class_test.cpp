@@ -195,6 +195,38 @@ TEST(binson_class_test1)
     ASSERT_TRUE(binson_writer_get_counter(&w) == binson_expected_size);
 }
 
+TEST(binson_class_test2)
+{
+    uint8_t binson_data[] = "\x40\x14\x01\x74\x10\x02\x41";
+    size_t binson_data_size = sizeof(binson_data) - 1;
+    BINSON_PARSER_DEF(p);
+    ASSERT_TRUE(binson_parser_init(&p, binson_data, binson_data_size));
+    ASSERT_TRUE(binson_parser_verify(&p));
+
+    Binson b;
+    binson_parser_reset(&p);
+    b.deserialize(&p);
+
+    string json = b.toStr();
+    ASSERT_TRUE(json == string("{\"t\":2}"));
+}
+
+TEST(binson_class_test_empty_object)
+{
+    uint8_t binson_data[] = "\x40\x41";
+    size_t binson_data_size = sizeof(binson_data) - 1;
+    BINSON_PARSER_DEF(p);
+    ASSERT_TRUE(binson_parser_init(&p, binson_data, binson_data_size));
+    ASSERT_TRUE(binson_parser_verify(&p));
+
+    Binson b;
+    binson_parser_reset(&p);
+    b.deserialize(&p);
+
+    string json = b.toStr();
+    ASSERT_TRUE(json == string("{}"));
+}
+
 TEST(unsorted_writing)
 {
     uint8_t buf[64];
@@ -244,6 +276,8 @@ TEST(serialize_vector)
 
 int main(void) {
     RUN_TEST(binson_class_test1);
+    RUN_TEST(binson_class_test2);
+    RUN_TEST(binson_class_test_empty_object);
     RUN_TEST(unsorted_writing);
     RUN_TEST(serialize_vector);
     PRINT_RESULT();
